@@ -10,8 +10,8 @@ const getApiUrl = (): string => {
     if (hostname === 'app.menodao.org') {
       return 'https://api.menodao.org';
     }
-    if (hostname === 'stg.menodao.org') {
-      return 'https://stg-api.menodao.org';
+    if (hostname === 'dev.menodao.org') {
+      return 'https://dev-api.menodao.org';
     }
   }
   
