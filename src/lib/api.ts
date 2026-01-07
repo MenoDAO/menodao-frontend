@@ -1,4 +1,25 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const getApiUrl = (): string => {
+  // Check for environment variable first (works for SSR and build-time)
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // Client-side runtime detection based on hostname
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'app.menodao.org') {
+      return 'https://api.menodao.org';
+    }
+    if (hostname === 'stg.menodao.org') {
+      return 'https://stg-api.menodao.org';
+    }
+  }
+  
+  // Default to localhost for development
+  return 'http://localhost:3000';
+};
+
+const API_BASE_URL = getApiUrl();
 
 class ApiClient {
   private baseUrl: string;
