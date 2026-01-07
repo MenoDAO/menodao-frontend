@@ -16,8 +16,24 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "MenoDAO - Member Portal",
-  description: "Community-led dental care membership portal",
+  title: {
+    default: "MenoDAO - Member Portal | Dental Care Dashboard",
+    template: "%s | MenoDAO",
+  },
+  description: "Access your MenoDAO dental care membership. View your dental benefits, make contributions, submit claims, and find dental clinics near you. Affordable dental care for Kenyan families.",
+  keywords: [
+    "MenoDAO", "Meno DAO", "dental care portal", "dental membership",
+    "dental sacco Kenya", "dental benefits", "dental claims",
+    "dental care dashboard", "affordable dental care",
+    "community dental care", "dental health Kenya",
+    "low cost dental treatment", "dental insurance alternative",
+  ],
+  authors: [{ name: "MenoDAO", url: "https://menodao.org" }],
+  creator: "MenoDAO",
+  robots: {
+    index: false, // Member portal should not be indexed
+    follow: false,
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -25,6 +41,20 @@ export const metadata: Metadata = {
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
     apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_KE",
+    url: "https://app.menodao.org",
+    siteName: "MenoDAO",
+    title: "MenoDAO Member Portal",
+    description: "Manage your dental care membership, contributions, and claims.",
+    images: [{ url: "/logo.png", alt: "MenoDAO" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "MenoDAO Member Portal",
+    description: "Your dental care membership dashboard",
   },
 };
 
