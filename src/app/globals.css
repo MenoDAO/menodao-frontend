@@ -1,12 +1,33 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --font-inter: "Inter", sans-serif;
   --font-outfit: "Outfit", sans-serif;
+  --background: 250 250 250;
+  --foreground: 17 24 39;
+  --card: 255 255 255;
+  --card-foreground: 17 24 39;
+  --border: 229 231 235;
+  --primary: 16 185 129;
+  --primary-foreground: 255 255 255;
+}
+
+.dark {
+  --background: 17 24 39;
+  --foreground: 243 244 246;
+  --card: 31 41 55;
+  --card-foreground: 243 244 246;
+  --border: 55 65 81;
+  --primary: 16 185 129;
+  --primary-foreground: 255 255 255;
 }
 
 body {
   font-family: var(--font-inter);
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
 }
 
 h1, h2, h3, h4, h5, h6 {
