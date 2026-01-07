@@ -1,4 +1,4 @@
-const getApiUrl = (): string => {
+export const getApiUrl = (): string => {
   // Check for environment variable first (works for SSR and build-time)
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;

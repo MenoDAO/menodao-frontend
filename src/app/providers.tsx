@@ -3,6 +3,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/lib/auth-store";
+import { WagmiProvider } from "wagmi";
+import { RainbowKitProvider, darkTheme, lightTheme } from "@rainbow-me/rainbowkit";
+import { wagmiConfig } from "@/lib/wagmi-config";
+import { useThemeStore } from "@/lib/theme-store";
+import "@rainbow-me/rainbowkit/styles.css";
 
 function AuthLoader({ children }: { children: React.ReactNode }) {
   const loadUser = useAuthStore((state) => state.loadUser);
@@ -26,6 +31,39 @@ function AuthLoader({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function WalletProviderWrapper({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  const { getEffectiveTheme } = useThemeStore();
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render wallet components until client-side
+  if (!mounted) {
+    return <>{children}</>;
+  }
+
+  const effectiveTheme = getEffectiveTheme();
+
+  return (
+    <RainbowKitProvider
+      theme={effectiveTheme === "dark" ? darkTheme({
+        accentColor: "#10b981",
+        accentColorForeground: "white",
+        borderRadius: "medium",
+      }) : lightTheme({
+        accentColor: "#10b981",
+        accentColorForeground: "white",
+        borderRadius: "medium",
+      })}
+      modalSize="compact"
+    >
+      {children}
+    </RainbowKitProvider>
+  );
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -40,8 +78,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthLoader>{children}</AuthLoader>
-    </QueryClientProvider>
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <WalletProviderWrapper>
+          <AuthLoader>{children}</AuthLoader>
+        </WalletProviderWrapper>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }
