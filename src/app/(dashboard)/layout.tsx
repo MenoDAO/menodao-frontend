@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import NotificationPrompt from "./dashboard/NotificationPrompt";
 import { useState } from "react";
 
 const navItems = [
@@ -175,6 +176,9 @@ export default function DashboardLayout({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+
+      {/* Notification Permission Prompt */}
+      <NotificationPrompt />
     </div>
   );
 }
