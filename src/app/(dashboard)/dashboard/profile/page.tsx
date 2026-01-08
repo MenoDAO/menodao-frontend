@@ -67,20 +67,20 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6 animate-fade-in max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 font-outfit">Profile</h1>
-        <p className="text-gray-600 mt-1">Manage your account information</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">Profile</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your account information</p>
       </div>
 
       {/* Profile Form */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="font-semibold text-gray-900">Personal Information</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="font-semibold text-gray-900 dark:text-white">Personal Information</h2>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Full Name
               </label>
               <div className="relative">
@@ -89,7 +89,7 @@ export default function ProfilePage() {
                   {...register("fullName")}
                   type="text"
                   placeholder="Enter your full name"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
                 />
               </div>
               {errors.fullName && (
@@ -98,7 +98,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Phone Number
               </label>
               <div className="relative">
@@ -107,14 +107,14 @@ export default function ProfilePage() {
                   type="text"
                   value={member?.phoneNumber || ""}
                   disabled
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500">Phone number cannot be changed</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Phone number cannot be changed</p>
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Location
               </label>
               <div className="relative">
@@ -123,7 +123,7 @@ export default function ProfilePage() {
                   {...register("location")}
                   type="text"
                   placeholder="e.g., Mombasa, Kenya"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
                 />
               </div>
             </div>

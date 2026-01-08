@@ -111,8 +111,8 @@ export default function SubscriptionPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 font-outfit">My Package</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">My Package</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
           {subscription
             ? "Manage your membership and make payments"
             : "Choose a package to start your dental care journey"}
@@ -202,7 +202,7 @@ export default function SubscriptionPage() {
 
       {/* Package Selection */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           {subscription ? "Upgrade Your Package" : "Choose Your Package"}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -218,8 +218,8 @@ export default function SubscriptionPage() {
                 key={pkg.tier}
                 className={`relative rounded-2xl border-2 overflow-hidden transition-all ${
                   isCurrentTier
-                    ? `${colors.border} ${colors.bg} ring-2 ring-offset-2 ring-${pkg.tier.toLowerCase()}-500`
-                    : `border-gray-200 bg-white hover:border-gray-300 ${isDisabled ? "opacity-60" : ""}`
+                    ? `${colors.border} ${colors.bg} dark:bg-gray-800 ring-2 ring-offset-2 ring-${pkg.tier.toLowerCase()}-500`
+                    : `border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 ${isDisabled ? "opacity-60" : ""}`
                 }`}
               >
                 {isCurrentTier && (
@@ -238,17 +238,17 @@ export default function SubscriptionPage() {
                     <Icon className="w-6 h-6" />
                   </div>
 
-                  <h3 className="text-xl font-bold text-gray-900">{pkg.tier}</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">{pkg.tier}</h3>
                   <div className="mt-2">
-                    <span className="text-3xl font-bold text-gray-900">
+                    <span className="text-3xl font-bold text-gray-900 dark:text-white">
                       KES {pkg.monthlyPrice}
                     </span>
-                    <span className="text-gray-500">/month</span>
+                    <span className="text-gray-500 dark:text-gray-400">/month</span>
                   </div>
 
                   <ul className="mt-6 space-y-3">
                     {pkg.benefits.map((benefit, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <Check className={`w-5 h-5 ${colors.text} shrink-0 mt-0.5`} />
                         <span>{benefit}</span>
                       </li>
