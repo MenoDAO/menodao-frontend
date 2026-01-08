@@ -58,13 +58,17 @@ export async function registerForPushNotifications(): Promise<string | null> {
     console.log('Service worker registered:', registration);
 
     // Get push subscription
-    const subscription = await registration.pushManager.subscribe({
+    const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+    const subscriptionOptions: PushSubscriptionOptionsInit = {
       userVisibleOnly: true,
-      // In production, you would use the VAPID key from Firebase
-      applicationServerKey: urlBase64ToUint8Array(
-        process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || ''
-      ),
-    });
+    };
+    
+    // Only add applicationServerKey if VAPID key is configured
+    if (vapidKey) {
+      subscriptionOptions.applicationServerKey = vapidKey;
+    }
+    
+    const subscription = await registration.pushManager.subscribe(subscriptionOptions);
 
     // Convert subscription to token format
     const token = btoa(JSON.stringify(subscription.toJSON()));
@@ -145,20 +149,3 @@ function getAuthToken(): string | null {
   return localStorage.getItem('accessToken');
 }
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  if (!base64String) {
-    return new Uint8Array(0);
-  }
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
