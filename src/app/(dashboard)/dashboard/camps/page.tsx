@@ -141,20 +141,20 @@ export default function CampsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 font-outfit">Find Dental Camps</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">Find Dental Camps</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Discover upcoming dental camps near you
           </p>
         </div>
         
         {/* View Toggle */}
-        <div className="flex bg-gray-100 rounded-lg p-1">
+        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           <button
             onClick={() => setViewMode("list")}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === "list"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             <List className="w-4 h-4" />
@@ -164,8 +164,8 @@ export default function CampsPage() {
             onClick={() => setViewMode("map")}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === "map"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             <Map className="w-4 h-4" />
@@ -222,22 +222,22 @@ export default function CampsPage() {
       {/* My Registrations */}
       {myRegistrations && myRegistrations.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">My Registrations</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Registrations</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {myRegistrations
               .filter((reg) => reg.status === "REGISTERED")
               .map((reg) => (
                 <div
                   key={reg.id}
-                  className="bg-emerald-50 border border-emerald-200 rounded-xl p-4"
+                  className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4"
                 >
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-emerald-600" />
-                        <h3 className="font-semibold text-gray-900">{reg.camp.name}</h3>
+                        <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{reg.camp.name}</h3>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{reg.camp.venue}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{reg.camp.venue}</p>
                       <p className="text-sm text-emerald-600 mt-2">
                         {new Date(reg.camp.startDate).toLocaleDateString("en-KE", {
                           weekday: "long",
@@ -376,7 +376,7 @@ export default function CampsPage() {
       {/* Camps List */}
       {viewMode === "list" && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             {userLocation ? "Camps Near You" : "Upcoming Camps"}
           </h2>
 
@@ -385,10 +385,10 @@ export default function CampsPage() {
               <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
             </div>
           ) : campsToShow.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-xl">
+            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl">
               <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">No Upcoming Camps</h3>
-              <p className="text-gray-600 mt-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">No Upcoming Camps</h3>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
                 Check back later for new dental camp announcements
               </p>
             </div>
@@ -401,26 +401,26 @@ export default function CampsPage() {
                 return (
                   <div
                     key={camp.id}
-                    className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+                    className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow"
                   >
                     <div className="p-4 sm:p-5">
                       <div className="flex items-start justify-between mb-3">
-                        <div className="p-2 bg-emerald-100 rounded-lg">
-                          <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+                        <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                          <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         {campWithDistance.distanceKm !== undefined && (
-                          <span className="text-xs sm:text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                          <span className="text-xs sm:text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full">
                             {campWithDistance.distanceKm} km
                           </span>
                         )}
                       </div>
 
-                      <h3 className="font-semibold text-gray-900 text-base sm:text-lg">{camp.name}</h3>
-                      <p className="text-gray-600 text-xs sm:text-sm mt-1 line-clamp-1">{camp.venue}</p>
-                      <p className="text-gray-500 text-xs sm:text-sm line-clamp-1">{camp.address}</p>
+                      <h3 className="font-semibold text-gray-900 dark:text-white text-base sm:text-lg">{camp.name}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mt-1 line-clamp-1">{camp.venue}</p>
+                      <p className="text-gray-500 dark:text-gray-500 text-xs sm:text-sm line-clamp-1">{camp.address}</p>
 
                       <div className="mt-3 sm:mt-4 space-y-1.5 sm:space-y-2">
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                           <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                           <span className="truncate">
                             {new Date(camp.startDate).toLocaleDateString("en-KE", {
@@ -430,23 +430,23 @@ export default function CampsPage() {
                             })}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                           <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                           {new Date(camp.startDate).toLocaleTimeString("en-KE", {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
                         </div>
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                           <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                           Capacity: {camp.capacity}
                         </div>
                       </div>
                     </div>
 
-                    <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gray-50 border-t border-gray-100">
+                    <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
                       {registered ? (
-                        <div className="flex items-center justify-center gap-2 text-emerald-600 font-medium text-sm">
+                        <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-medium text-sm">
                           <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                           Registered
                         </div>

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, Package } from "@/lib/api";
-import { useAuthStore } from "@/lib/auth-store";
 import {
   CreditCard,
   Check,
@@ -12,8 +11,8 @@ import {
   Shield,
   Loader2,
   ArrowRight,
-  Smartphone,
 } from "lucide-react";
+import PaymentDialog from "./PaymentDialog";
 
 const tierIcons = {
   BRONZE: Shield,
@@ -47,9 +46,8 @@ const tierColors = {
 
 export default function SubscriptionPage() {
   const queryClient = useQueryClient();
-  const member = useAuthStore((state) => state.member);
   const [selectedTier, setSelectedTier] = useState<"BRONZE" | "SILVER" | "GOLD" | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "card">("mpesa");
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const { data: packages, isLoading: packagesLoading } = useQuery({
     queryKey: ["packages"],
@@ -79,22 +77,19 @@ export default function SubscriptionPage() {
     },
   });
 
-  const paymentMutation = useMutation({
-    mutationFn: ({ amount, method }: { amount: number; method: string }) =>
-      api.initiatePayment(amount, method),
-    onSuccess: (data) => {
-      // Handle payment initiation response
-      // For M-Pesa, this would trigger STK push
-      alert(`Payment initiated! Reference: ${data.contributionId}`);
-    },
-  });
-
   const handleSubscribe = (tier: "BRONZE" | "SILVER" | "GOLD") => {
     if (subscription) {
       upgradeMutation.mutate(tier);
     } else {
       subscribeMutation.mutate(tier);
     }
+  };
+
+  const handlePaymentComplete = () => {
+    // Refresh subscription and profile data after successful payment
+    queryClient.invalidateQueries({ queryKey: ["subscription"] });
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
+    queryClient.invalidateQueries({ queryKey: ["contributions"] });
   };
 
   const tierOrder = { BRONZE: 1, SILVER: 2, GOLD: 3 };
@@ -111,15 +106,15 @@ export default function SubscriptionPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 font-outfit">My Package</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">My Package</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
           {subscription
             ? "Manage your membership and make payments"
             : "Choose a package to start your dental care journey"}
         </p>
       </div>
 
-      {/* Current Subscription */}
+      {/* Current Subscription Card */}
       {subscription && (
         <div className={`rounded-2xl p-6 bg-gradient-to-r ${tierColors[subscription.tier].gradient} text-white shadow-lg`}>
           <div className="flex items-start justify-between">
@@ -136,6 +131,7 @@ export default function SubscriptionPage() {
             <CreditCard className="w-12 h-12 text-white/30" />
           </div>
 
+          {/* Benefits */}
           <div className="mt-6">
             <h3 className="text-sm font-medium text-white/80 mb-2">Your Benefits</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -148,61 +144,22 @@ export default function SubscriptionPage() {
             </div>
           </div>
 
-          {/* Payment Section */}
+          {/* Pay Button */}
           <div className="mt-6 pt-6 border-t border-white/20">
-            <h3 className="font-semibold mb-4">Make Monthly Payment</h3>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPaymentMethod("mpesa")}
-                  className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
-                    paymentMethod === "mpesa"
-                      ? "bg-white text-gray-900"
-                      : "bg-white/20 text-white"
-                  }`}
-                >
-                  <Smartphone className="w-4 h-4" />
-                  M-Pesa
-                </button>
-                <button
-                  onClick={() => setPaymentMethod("card")}
-                  className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
-                    paymentMethod === "card"
-                      ? "bg-white text-gray-900"
-                      : "bg-white/20 text-white"
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  Card
-                </button>
-              </div>
-              <button
-                onClick={() =>
-                  paymentMutation.mutate({
-                    amount: subscription.monthlyAmount,
-                    method: paymentMethod,
-                  })
-                }
-                disabled={paymentMutation.isPending}
-                className="px-6 py-2 bg-white text-gray-900 rounded-lg font-semibold hover:bg-white/90 transition-colors flex items-center gap-2"
-              >
-                {paymentMutation.isPending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    Pay KES {subscription.monthlyAmount}
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
+            <button
+              onClick={() => setIsPaymentDialogOpen(true)}
+              className="px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-white/90 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
+            >
+              Pay KES {subscription.monthlyAmount}
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
 
       {/* Package Selection */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           {subscription ? "Upgrade Your Package" : "Choose Your Package"}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -218,8 +175,8 @@ export default function SubscriptionPage() {
                 key={pkg.tier}
                 className={`relative rounded-2xl border-2 overflow-hidden transition-all ${
                   isCurrentTier
-                    ? `${colors.border} ${colors.bg} ring-2 ring-offset-2 ring-${pkg.tier.toLowerCase()}-500`
-                    : `border-gray-200 bg-white hover:border-gray-300 ${isDisabled ? "opacity-60" : ""}`
+                    ? `${colors.border} ${colors.bg} dark:bg-gray-800 ring-2 ring-offset-2 ring-${pkg.tier.toLowerCase()}-500`
+                    : `border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 ${isDisabled ? "opacity-60" : ""}`
                 }`}
               >
                 {isCurrentTier && (
@@ -238,17 +195,17 @@ export default function SubscriptionPage() {
                     <Icon className="w-6 h-6" />
                   </div>
 
-                  <h3 className="text-xl font-bold text-gray-900">{pkg.tier}</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">{pkg.tier}</h3>
                   <div className="mt-2">
-                    <span className="text-3xl font-bold text-gray-900">
+                    <span className="text-3xl font-bold text-gray-900 dark:text-white">
                       KES {pkg.monthlyPrice}
                     </span>
-                    <span className="text-gray-500">/month</span>
+                    <span className="text-gray-500 dark:text-gray-400">/month</span>
                   </div>
 
                   <ul className="mt-6 space-y-3">
                     {pkg.benefits.map((benefit, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <Check className={`w-5 h-5 ${colors.text} shrink-0 mt-0.5`} />
                         <span>{benefit}</span>
                       </li>
@@ -286,6 +243,17 @@ export default function SubscriptionPage() {
           })}
         </div>
       </div>
+
+      {/* Payment Dialog */}
+      {subscription && (
+        <PaymentDialog
+          isOpen={isPaymentDialogOpen}
+          onClose={() => setIsPaymentDialogOpen(false)}
+          amount={subscription.monthlyAmount}
+          tier={subscription.tier}
+          onPaymentComplete={handlePaymentComplete}
+        />
+      )}
     </div>
   );
 }

@@ -114,7 +114,7 @@ export default function LoginPage() {
                     {...phoneForm.register("phoneNumber")}
                     type="tel"
                     placeholder="0712345678"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-gray-900 placeholder-gray-400"
                   />
                 </div>
                 {phoneForm.formState.errors.phoneNumber && (
@@ -153,7 +153,7 @@ export default function LoginPage() {
                     inputMode="numeric"
                     maxLength={6}
                     placeholder="123456"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-center text-2xl tracking-widest font-mono"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-center text-2xl tracking-widest font-mono text-gray-900 placeholder-gray-400"
                   />
                 </div>
                 {otpForm.formState.errors.code && (

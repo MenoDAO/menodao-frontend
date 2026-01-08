@@ -1,4 +1,25 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const getApiUrl = (): string => {
+  // Check for environment variable first (works for SSR and build-time)
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // Client-side runtime detection based on hostname
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'app.menodao.org') {
+      return 'https://api.menodao.org';
+    }
+    if (hostname === 'dev.menodao.org') {
+      return 'https://dev-api.menodao.org';
+    }
+  }
+  
+  // Default to localhost for development
+  return 'http://localhost:3000';
+};
+
+const API_BASE_URL = getApiUrl();
 
 class ApiClient {
   private baseUrl: string;
@@ -123,11 +144,15 @@ class ApiClient {
     return this.request<ContributionSummary>('/contributions/summary');
   }
 
-  async initiatePayment(amount: number, paymentMethod: string) {
+  async initiatePayment(amount: number, paymentMethod: string, phoneNumber?: string) {
     return this.request<PaymentInitiation>('/contributions/pay', {
       method: 'POST',
-      body: JSON.stringify({ amount, paymentMethod }),
+      body: JSON.stringify({ amount, paymentMethod, phoneNumber }),
     });
+  }
+
+  async checkPaymentStatus(contributionId: string) {
+    return this.request<PaymentStatusResponse>(`/contributions/status/${contributionId}`);
   }
 
   // Claims endpoints
@@ -236,6 +261,19 @@ export interface PaymentInitiation {
   amount: number;
   paymentMethod: string;
   status: string;
+  reference?: string;
+  checkoutRequestId?: string;
+  message?: string;
+}
+
+export interface PaymentStatusResponse {
+  contributionId: string;
+  status: "PENDING" | "COMPLETED" | "FAILED";
+  amount: number;
+  paymentRef?: string;
+  txHash?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Claim {
