@@ -1,0 +1,356 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
+import {
+  X,
+  Phone,
+  User,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Smartphone,
+} from "lucide-react";
+
+type PaymentStatus = "IDLE" | "STARTED" | "PENDING" | "COMPLETED" | "FAILED";
+
+interface PaymentDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  amount: number;
+  tier: string;
+  onPaymentComplete: () => void;
+}
+
+export default function PaymentDialog({
+  isOpen,
+  onClose,
+  amount,
+  tier,
+  onPaymentComplete,
+}: PaymentDialogProps) {
+  const member = useAuthStore((state) => state.member);
+  const [payerPhone, setPayerPhone] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("IDLE");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [contributionId, setContributionId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setPayerPhone("");
+      setPaymentStatus("IDLE");
+      setStatusMessage("");
+      setContributionId(null);
+      setErrorMessage(null);
+      setValidationError(null);
+    }
+  }, [isOpen]);
+
+  // Payment initiation mutation
+  const paymentMutation = useMutation({
+    mutationFn: ({ amount, phoneNumber }: { amount: number; phoneNumber?: string }) =>
+      api.initiatePayment(amount, "MPESA", phoneNumber),
+    onSuccess: (data) => {
+      setContributionId(data.contributionId);
+      setPaymentStatus("PENDING");
+      setStatusMessage("Check your phone for M-Pesa prompt");
+    },
+    onError: (error: Error) => {
+      setPaymentStatus("FAILED");
+      setErrorMessage(error.message || "Failed to initiate payment");
+    },
+  });
+
+  // Poll for payment status
+  const checkStatus = useCallback(async () => {
+    if (!contributionId || paymentStatus === "COMPLETED" || paymentStatus === "FAILED") {
+      return;
+    }
+
+    try {
+      const status = await api.checkPaymentStatus(contributionId);
+      
+      if (status.status === "COMPLETED") {
+        setPaymentStatus("COMPLETED");
+        setStatusMessage("Payment successful!");
+        onPaymentComplete();
+      } else if (status.status === "FAILED") {
+        setPaymentStatus("FAILED");
+        setErrorMessage("Payment was not completed. Please try again.");
+      }
+    } catch (error) {
+      // Continue polling on error
+      console.error("Status check error:", error);
+    }
+  }, [contributionId, paymentStatus, onPaymentComplete]);
+
+  // Polling effect
+  useEffect(() => {
+    if (paymentStatus !== "PENDING" || !contributionId) {
+      return;
+    }
+
+    const interval = setInterval(checkStatus, 3000); // Poll every 3 seconds
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      if (paymentStatus === "PENDING") {
+        setStatusMessage("Payment is taking longer than expected. Please check your phone.");
+      }
+    }, 120000); // Stop polling after 2 minutes
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [paymentStatus, contributionId, checkStatus]);
+
+  const validatePhone = (phone: string): boolean => {
+    if (!phone.trim()) return true; // Empty is valid (will use registered number)
+    return /^(\+?254|0)?[17]\d{8}$/.test(phone.trim());
+  };
+
+  const handlePayment = () => {
+    setValidationError(null);
+    const phoneToUse = payerPhone.trim() || undefined;
+
+    if (phoneToUse && !validatePhone(phoneToUse)) {
+      setValidationError("Please enter a valid Kenyan phone number (e.g., 0712345678)");
+      return;
+    }
+
+    setPaymentStatus("STARTED");
+    setStatusMessage("Initiating payment...");
+
+    paymentMutation.mutate({
+      amount,
+      phoneNumber: phoneToUse,
+    });
+  };
+
+  const useMyNumber = () => {
+    if (member?.phoneNumber) {
+      setPayerPhone(member.phoneNumber);
+      setValidationError(null);
+    }
+  };
+
+  const handleClose = () => {
+    if (paymentStatus === "PENDING") {
+      // Allow closing during pending but warn user
+      const confirmClose = window.confirm(
+        "Payment is still processing. Are you sure you want to close? You can check your payment history later."
+      );
+      if (!confirmClose) return;
+    }
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {paymentStatus === "COMPLETED"
+              ? "Payment Complete"
+              : paymentStatus === "FAILED"
+              ? "Payment Failed"
+              : "Confirm Payment"}
+          </h2>
+          <button
+            onClick={handleClose}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {/* Success State */}
+          {paymentStatus === "COMPLETED" && (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-6 animate-bounce-in">
+                <CheckCircle2 className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Payment Successful!
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Your {tier} membership payment of KES {amount.toLocaleString()} has been received.
+              </p>
+              <button
+                onClick={onClose}
+                className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          )}
+
+          {/* Failed State */}
+          {paymentStatus === "FAILED" && (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 dark:bg-red-900/30 mb-6 animate-shake">
+                <XCircle className="w-12 h-12 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Payment Failed
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-2">
+                {errorMessage || "Something went wrong with your payment."}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
+                Please try again or contact support if the issue persists.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => {
+                    setPaymentStatus("IDLE");
+                    setErrorMessage(null);
+                  }}
+                  className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={onClose}
+                  className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Processing State */}
+          {(paymentStatus === "STARTED" || paymentStatus === "PENDING") && (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-100 dark:bg-amber-900/30 mb-6">
+                <Loader2 className="w-12 h-12 text-amber-600 dark:text-amber-400 animate-spin" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                {paymentStatus === "STARTED" ? "Initiating Payment..." : "Waiting for Payment"}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">{statusMessage}</p>
+              
+              {/* Progress Steps */}
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <div className={`w-3 h-3 rounded-full ${paymentStatus === "STARTED" || paymentStatus === "PENDING" ? "bg-emerald-500" : "bg-gray-300"}`} />
+                <div className={`w-8 h-0.5 ${paymentStatus === "PENDING" ? "bg-emerald-500" : "bg-gray-300"}`} />
+                <div className={`w-3 h-3 rounded-full ${paymentStatus === "PENDING" ? "bg-amber-500 animate-pulse" : "bg-gray-300"}`} />
+                <div className="w-8 h-0.5 bg-gray-300" />
+                <div className="w-3 h-3 rounded-full bg-gray-300" />
+              </div>
+              
+              <div className="text-sm text-gray-500 dark:text-gray-500">
+                <p>1. Request sent ✓</p>
+                <p className={paymentStatus === "PENDING" ? "text-amber-600 dark:text-amber-400 font-medium" : ""}>
+                  2. {paymentStatus === "PENDING" ? "Awaiting confirmation..." : "Pending"}
+                </p>
+                <p>3. Confirm payment</p>
+              </div>
+            </div>
+          )}
+
+          {/* Initial State - Phone Input */}
+          {paymentStatus === "IDLE" && (
+            <>
+              {/* Amount Display */}
+              <div className="text-center mb-6">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Amount to pay</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                  KES {amount.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {tier} Membership
+                </p>
+              </div>
+
+              {/* Phone Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  M-Pesa Phone Number
+                </label>
+                <div className="flex flex-col gap-2">
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="tel"
+                      value={payerPhone}
+                      onChange={(e) => {
+                        setPayerPhone(e.target.value);
+                        setValidationError(null);
+                      }}
+                      placeholder="e.g. 0712345678"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={useMyNumber}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    Use My Registered Number
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                  Leave empty to use your registered number ({member?.phoneNumber || "not set"})
+                </p>
+              </div>
+
+              {/* Validation Error */}
+              {validationError && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                  {validationError}
+                </div>
+              )}
+
+              {/* M-Pesa Info */}
+              <div className="flex items-start gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg mb-6">
+                <Smartphone className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div className="text-sm text-emerald-800 dark:text-emerald-300">
+                  <p className="font-medium mb-1">How M-Pesa Payment Works</p>
+                  <p className="text-emerald-700 dark:text-emerald-400">
+                    You will receive an M-Pesa prompt on your phone. Enter your PIN to complete the payment.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={onClose}
+                  className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePayment}
+                  disabled={paymentMutation.isPending}
+                  className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {paymentMutation.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      Pay KES {amount.toLocaleString()}
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

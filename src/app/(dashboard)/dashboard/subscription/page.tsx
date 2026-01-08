@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, Package } from "@/lib/api";
-import { useAuthStore } from "@/lib/auth-store";
 import {
   CreditCard,
   Check,
@@ -12,10 +11,8 @@ import {
   Shield,
   Loader2,
   ArrowRight,
-  Smartphone,
-  Phone,
-  User,
 } from "lucide-react";
+import PaymentDialog from "./PaymentDialog";
 
 const tierIcons = {
   BRONZE: Shield,
@@ -49,11 +46,8 @@ const tierColors = {
 
 export default function SubscriptionPage() {
   const queryClient = useQueryClient();
-  const member = useAuthStore((state) => state.member);
   const [selectedTier, setSelectedTier] = useState<"BRONZE" | "SILVER" | "GOLD" | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "card">("mpesa");
-  const [payerPhone, setPayerPhone] = useState<string>("");
-  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const { data: packages, isLoading: packagesLoading } = useQuery({
     queryKey: ["packages"],
@@ -83,49 +77,19 @@ export default function SubscriptionPage() {
     },
   });
 
-  const paymentMutation = useMutation({
-    mutationFn: ({ amount, method, phoneNumber }: { amount: number; method: string; phoneNumber?: string }) =>
-      api.initiatePayment(amount, method, phoneNumber),
-    onSuccess: (data) => {
-      // Handle payment initiation response
-      // For M-Pesa, this would trigger STK push
-      setPaymentError(null);
-      alert(`Payment initiated! Check your phone for M-Pesa prompt.\n\nReference: ${data.contributionId}`);
-    },
-    onError: (error: Error) => {
-      setPaymentError(error.message);
-    },
-  });
-
-  const handlePayment = () => {
-    setPaymentError(null);
-    const phoneToUse = payerPhone.trim() || undefined;
-    
-    // Validate phone if provided
-    if (phoneToUse && !/^(\+?254|0)?[17]\d{8}$/.test(phoneToUse)) {
-      setPaymentError("Please enter a valid Kenyan phone number");
-      return;
-    }
-
-    paymentMutation.mutate({
-      amount: subscription?.monthlyAmount || 0,
-      method: paymentMethod,
-      phoneNumber: phoneToUse,
-    });
-  };
-
-  const useMyNumber = () => {
-    if (member?.phoneNumber) {
-      setPayerPhone(member.phoneNumber);
-    }
-  };
-
   const handleSubscribe = (tier: "BRONZE" | "SILVER" | "GOLD") => {
     if (subscription) {
       upgradeMutation.mutate(tier);
     } else {
       subscribeMutation.mutate(tier);
     }
+  };
+
+  const handlePaymentComplete = () => {
+    // Refresh subscription and profile data after successful payment
+    queryClient.invalidateQueries({ queryKey: ["subscription"] });
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
+    queryClient.invalidateQueries({ queryKey: ["contributions"] });
   };
 
   const tierOrder = { BRONZE: 1, SILVER: 2, GOLD: 3 };
@@ -150,7 +114,7 @@ export default function SubscriptionPage() {
         </p>
       </div>
 
-      {/* Current Subscription */}
+      {/* Current Subscription Card */}
       {subscription && (
         <div className={`rounded-2xl p-6 bg-gradient-to-r ${tierColors[subscription.tier].gradient} text-white shadow-lg`}>
           <div className="flex items-start justify-between">
@@ -167,6 +131,7 @@ export default function SubscriptionPage() {
             <CreditCard className="w-12 h-12 text-white/30" />
           </div>
 
+          {/* Benefits */}
           <div className="mt-6">
             <h3 className="text-sm font-medium text-white/80 mb-2">Your Benefits</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -179,89 +144,14 @@ export default function SubscriptionPage() {
             </div>
           </div>
 
-          {/* Payment Section */}
+          {/* Pay Button */}
           <div className="mt-6 pt-6 border-t border-white/20">
-            <h3 className="font-semibold mb-4">Make Monthly Payment</h3>
-            
-            {/* Payment Method Selection */}
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setPaymentMethod("mpesa")}
-                className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
-                  paymentMethod === "mpesa"
-                    ? "bg-white text-gray-900"
-                    : "bg-white/20 text-white"
-                }`}
-              >
-                <Smartphone className="w-4 h-4" />
-                M-Pesa
-              </button>
-              <button
-                onClick={() => setPaymentMethod("card")}
-                className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
-                  paymentMethod === "card"
-                    ? "bg-white text-gray-900"
-                    : "bg-white/20 text-white"
-                }`}
-              >
-                <CreditCard className="w-4 h-4" />
-                Card
-              </button>
-            </div>
-
-            {/* Payer Phone Number */}
-            {paymentMethod === "mpesa" && (
-              <div className="mb-4">
-                <label className="block text-sm text-white/80 mb-2">
-                  M-Pesa Phone Number
-                </label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="relative flex-1">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="tel"
-                      value={payerPhone}
-                      onChange={(e) => setPayerPhone(e.target.value)}
-                      placeholder="e.g. 0712345678"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={useMyNumber}
-                    className="px-4 py-2.5 bg-white/20 text-white rounded-lg font-medium hover:bg-white/30 transition-colors flex items-center gap-2 whitespace-nowrap"
-                  >
-                    <User className="w-4 h-4" />
-                    Use My Number
-                  </button>
-                </div>
-                <p className="text-xs text-white/60 mt-1">
-                  Leave empty to use your registered number, or enter a different M-Pesa number
-                </p>
-              </div>
-            )}
-
-            {/* Error Message */}
-            {paymentError && (
-              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-white text-sm">
-                {paymentError}
-              </div>
-            )}
-
-            {/* Pay Button */}
             <button
-              onClick={handlePayment}
-              disabled={paymentMutation.isPending}
+              onClick={() => setIsPaymentDialogOpen(true)}
               className="px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-white/90 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
             >
-              {paymentMutation.isPending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  Pay KES {subscription.monthlyAmount}
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              Pay KES {subscription.monthlyAmount}
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -353,6 +243,17 @@ export default function SubscriptionPage() {
           })}
         </div>
       </div>
+
+      {/* Payment Dialog */}
+      {subscription && (
+        <PaymentDialog
+          isOpen={isPaymentDialogOpen}
+          onClose={() => setIsPaymentDialogOpen(false)}
+          amount={subscription.monthlyAmount}
+          tier={subscription.tier}
+          onPaymentComplete={handlePaymentComplete}
+        />
+      )}
     </div>
   );
 }

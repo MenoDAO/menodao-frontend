@@ -151,6 +151,10 @@ class ApiClient {
     });
   }
 
+  async checkPaymentStatus(contributionId: string) {
+    return this.request<PaymentStatusResponse>(`/contributions/status/${contributionId}`);
+  }
+
   // Claims endpoints
   async getMyClaims() {
     return this.request<ClaimsResponse>('/claims');
@@ -257,6 +261,19 @@ export interface PaymentInitiation {
   amount: number;
   paymentMethod: string;
   status: string;
+  reference?: string;
+  checkoutRequestId?: string;
+  message?: string;
+}
+
+export interface PaymentStatusResponse {
+  contributionId: string;
+  status: "PENDING" | "COMPLETED" | "FAILED";
+  amount: number;
+  paymentRef?: string;
+  txHash?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Claim {
