@@ -144,10 +144,10 @@ class ApiClient {
     return this.request<ContributionSummary>('/contributions/summary');
   }
 
-  async initiatePayment(amount: number, paymentMethod: string) {
+  async initiatePayment(amount: number, paymentMethod: string, phoneNumber?: string) {
     return this.request<PaymentInitiation>('/contributions/pay', {
       method: 'POST',
-      body: JSON.stringify({ amount, paymentMethod }),
+      body: JSON.stringify({ amount, paymentMethod, phoneNumber }),
     });
   }
 
