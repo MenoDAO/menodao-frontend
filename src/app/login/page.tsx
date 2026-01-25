@@ -188,13 +188,22 @@ export default function LoginPage() {
             </form>
           )}
 
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-3">
             <p className="text-sm text-gray-600">
               Don&apos;t have an account?{" "}
               <a href="https://menodao.org" className="text-emerald-600 hover:text-emerald-700 font-medium">
                 Join MenoDAO
               </a>
             </p>
+            <div>
+              <a
+                href="/staff/login"
+                className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <Shield className="w-3 h-3" />
+                Staff Login
+              </a>
+            </div>
           </div>
         </div>
 
