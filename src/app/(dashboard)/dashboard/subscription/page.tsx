@@ -46,7 +46,9 @@ const tierColors = {
 
 export default function SubscriptionPage() {
   const queryClient = useQueryClient();
-  const [selectedTier, setSelectedTier] = useState<"BRONZE" | "SILVER" | "GOLD" | null>(null);
+  const [selectedTier, setSelectedTier] = useState<
+    "BRONZE" | "SILVER" | "GOLD" | null
+  >(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const { data: packages, isLoading: packagesLoading } = useQuery({
@@ -77,12 +79,36 @@ export default function SubscriptionPage() {
     },
   });
 
+  // [DEV ONLY] Mock payment mutation for testing
+  const devMockPaymentMutation = useMutation({
+    mutationFn: (tier: "BRONZE" | "SILVER" | "GOLD") =>
+      api.devMockPayment(tier),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["contributions"] });
+      setSelectedTier(null);
+    },
+  });
+
+  // Check if we're in dev environment
+  const isDevEnvironment =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "dev.menodao.org" ||
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1");
+
   const handleSubscribe = (tier: "BRONZE" | "SILVER" | "GOLD") => {
     if (subscription) {
       upgradeMutation.mutate(tier);
     } else {
       subscribeMutation.mutate(tier);
     }
+  };
+
+  // [DEV ONLY] Handle mock payment
+  const handleDevMockPayment = (tier: "BRONZE" | "SILVER" | "GOLD") => {
+    devMockPaymentMutation.mutate(tier);
   };
 
   const handlePaymentComplete = () => {
@@ -106,7 +132,9 @@ export default function SubscriptionPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">My Package</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">
+          My Package
+        </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           {subscription
             ? "Manage your membership and make payments"
@@ -116,16 +144,21 @@ export default function SubscriptionPage() {
 
       {/* Current Subscription Card */}
       {subscription && (
-        <div className={`rounded-2xl p-6 bg-gradient-to-r ${tierColors[subscription.tier].gradient} text-white shadow-lg`}>
+        <div
+          className={`rounded-2xl p-6 bg-gradient-to-r ${tierColors[subscription.tier].gradient} text-white shadow-lg`}
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-white/80 text-sm">Current Package</p>
-              <h2 className="text-2xl font-bold mt-1">{subscription.tier} Membership</h2>
+              <h2 className="text-2xl font-bold mt-1">
+                {subscription.tier} Membership
+              </h2>
               <p className="text-white/80 mt-2">
                 KES {subscription.monthlyAmount}/month
               </p>
               <p className="text-white/60 text-sm mt-1">
-                Member since {new Date(subscription.startDate).toLocaleDateString("en-KE")}
+                Member since{" "}
+                {new Date(subscription.startDate).toLocaleDateString("en-KE")}
               </p>
             </div>
             <CreditCard className="w-12 h-12 text-white/30" />
@@ -133,7 +166,9 @@ export default function SubscriptionPage() {
 
           {/* Benefits */}
           <div className="mt-6">
-            <h3 className="text-sm font-medium text-white/80 mb-2">Your Benefits</h3>
+            <h3 className="text-sm font-medium text-white/80 mb-2">
+              Your Benefits
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {subscription.benefits?.map((benefit, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm">
@@ -180,7 +215,9 @@ export default function SubscriptionPage() {
                 }`}
               >
                 {isCurrentTier && (
-                  <div className={`absolute top-0 left-0 right-0 py-1 text-center text-xs font-semibold text-white bg-gradient-to-r ${colors.gradient}`}>
+                  <div
+                    className={`absolute top-0 left-0 right-0 py-1 text-center text-xs font-semibold text-white bg-gradient-to-r ${colors.gradient}`}
+                  >
                     CURRENT PLAN
                   </div>
                 )}
@@ -190,23 +227,36 @@ export default function SubscriptionPage() {
                   </div>
                 )}
 
-                <div className={`p-6 ${isCurrentTier || pkg.tier === "GOLD" ? "pt-10" : ""}`}>
-                  <div className={`w-12 h-12 rounded-xl ${colors.bg} ${colors.text} flex items-center justify-center mb-4`}>
+                <div
+                  className={`p-6 ${isCurrentTier || pkg.tier === "GOLD" ? "pt-10" : ""}`}
+                >
+                  <div
+                    className={`w-12 h-12 rounded-xl ${colors.bg} ${colors.text} flex items-center justify-center mb-4`}
+                  >
                     <Icon className="w-6 h-6" />
                   </div>
 
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">{pkg.tier}</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {pkg.tier}
+                  </h3>
                   <div className="mt-2">
                     <span className="text-3xl font-bold text-gray-900 dark:text-white">
                       KES {pkg.monthlyPrice}
                     </span>
-                    <span className="text-gray-500 dark:text-gray-400">/month</span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      /month
+                    </span>
                   </div>
 
                   <ul className="mt-6 space-y-3">
                     {pkg.benefits.map((benefit, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
-                        <Check className={`w-5 h-5 ${colors.text} shrink-0 mt-0.5`} />
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"
+                      >
+                        <Check
+                          className={`w-5 h-5 ${colors.text} shrink-0 mt-0.5`}
+                        />
                         <span>{benefit}</span>
                       </li>
                     ))}
@@ -214,16 +264,21 @@ export default function SubscriptionPage() {
 
                   <button
                     onClick={() => handleSubscribe(pkg.tier)}
-                    disabled={isDisabled || subscribeMutation.isPending || upgradeMutation.isPending}
+                    disabled={
+                      isDisabled ||
+                      subscribeMutation.isPending ||
+                      upgradeMutation.isPending
+                    }
                     className={`mt-6 w-full py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
                       isCurrentTier
                         ? "bg-gray-100 text-gray-500 cursor-not-allowed"
                         : isDisabled
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : `${colors.button} text-white`
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : `${colors.button} text-white`
                     }`}
                   >
-                    {subscribeMutation.isPending || upgradeMutation.isPending ? (
+                    {subscribeMutation.isPending ||
+                    upgradeMutation.isPending ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : isCurrentTier ? (
                       "Current Plan"
@@ -237,6 +292,21 @@ export default function SubscriptionPage() {
                       "Select Package"
                     )}
                   </button>
+
+                  {/* [DEV ONLY] Mock Payment Button */}
+                  {isDevEnvironment && !isCurrentTier && !isDisabled && (
+                    <button
+                      onClick={() => handleDevMockPayment(pkg.tier)}
+                      disabled={devMockPaymentMutation.isPending}
+                      className="mt-2 w-full py-2 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50"
+                    >
+                      {devMockPaymentMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>⚡ DEV: Activate Instantly</>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             );

@@ -3,20 +3,20 @@ export const getApiUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  
+
   // Client-side runtime detection based on hostname
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
-    if (hostname === 'app.menodao.org') {
-      return 'https://api.menodao.org';
+    if (hostname === "app.menodao.org") {
+      return "https://api.menodao.org";
     }
-    if (hostname === 'dev.menodao.org') {
-      return 'https://dev-api.menodao.org';
+    if (hostname === "dev.menodao.org") {
+      return "https://dev-api.menodao.org";
     }
   }
-  
+
   // Default to localhost for development
-  return 'http://localhost:3000';
+  return "http://localhost:3000";
 };
 
 const API_BASE_URL = getApiUrl();
@@ -27,18 +27,18 @@ class ApiClient {
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('accessToken');
+    if (typeof window !== "undefined") {
+      this.token = localStorage.getItem("accessToken");
     }
   }
 
   setToken(token: string | null) {
     this.token = token;
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       if (token) {
-        localStorage.setItem('accessToken', token);
+        localStorage.setItem("accessToken", token);
       } else {
-        localStorage.removeItem('accessToken');
+        localStorage.removeItem("accessToken");
       }
     }
   }
@@ -49,15 +49,16 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<T> {
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options.headers,
     };
 
     if (this.token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
+      (headers as Record<string, string>)["Authorization"] =
+        `Bearer ${this.token}`;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -66,7 +67,9 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Request failed" }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }
 
@@ -75,105 +78,135 @@ class ApiClient {
 
   // Auth endpoints
   async requestOtp(phoneNumber: string) {
-    return this.request<{ message: string }>('/auth/request-otp', {
-      method: 'POST',
+    return this.request<{ message: string }>("/auth/request-otp", {
+      method: "POST",
       body: JSON.stringify({ phoneNumber }),
     });
   }
 
   async verifyOtp(phoneNumber: string, code: string) {
-    return this.request<{ accessToken: string; member: Member }>('/auth/verify-otp', {
-      method: 'POST',
-      body: JSON.stringify({ phoneNumber, code }),
-    });
+    return this.request<{ accessToken: string; member: Member }>(
+      "/auth/verify-otp",
+      {
+        method: "POST",
+        body: JSON.stringify({ phoneNumber, code }),
+      },
+    );
   }
 
   async getMe() {
-    return this.request<Member>('/auth/me');
+    return this.request<Member>("/auth/me");
   }
 
   // Member endpoints
   async getProfile() {
-    return this.request<MemberProfile>('/members/profile');
+    return this.request<MemberProfile>("/members/profile");
   }
 
   async updateProfile(data: { fullName?: string; location?: string }) {
-    return this.request<Member>('/members/profile', {
-      method: 'PATCH',
+    return this.request<Member>("/members/profile", {
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }
 
   async getContributions(page = 1, limit = 20) {
-    return this.request<PaginatedResponse<Contribution>>(`/members/contributions?page=${page}&limit=${limit}`);
+    return this.request<PaginatedResponse<Contribution>>(
+      `/members/contributions?page=${page}&limit=${limit}`,
+    );
   }
 
   async getClaims(page = 1, limit = 20) {
-    return this.request<PaginatedResponse<Claim>>(`/members/claims?page=${page}&limit=${limit}`);
+    return this.request<PaginatedResponse<Claim>>(
+      `/members/claims?page=${page}&limit=${limit}`,
+    );
   }
 
   async getTransactions(page = 1, limit = 20) {
-    return this.request<PaginatedResponse<Transaction>>(`/members/transactions?page=${page}&limit=${limit}`);
+    return this.request<PaginatedResponse<Transaction>>(
+      `/members/transactions?page=${page}&limit=${limit}`,
+    );
   }
 
   // Subscription endpoints
   async getPackages() {
-    return this.request<Package[]>('/subscriptions/packages');
+    return this.request<Package[]>("/subscriptions/packages");
   }
 
   async getCurrentSubscription() {
-    return this.request<Subscription | null>('/subscriptions/current');
+    return this.request<Subscription | null>("/subscriptions/current");
   }
 
-  async subscribe(tier: 'BRONZE' | 'SILVER' | 'GOLD') {
-    return this.request<Subscription>('/subscriptions/subscribe', {
-      method: 'POST',
+  async subscribe(tier: "BRONZE" | "SILVER" | "GOLD") {
+    return this.request<Subscription>("/subscriptions/subscribe", {
+      method: "POST",
       body: JSON.stringify({ tier }),
     });
   }
 
-  async upgrade(newTier: 'BRONZE' | 'SILVER' | 'GOLD') {
-    return this.request<Subscription>('/subscriptions/upgrade', {
-      method: 'POST',
+  async upgrade(newTier: "BRONZE" | "SILVER" | "GOLD") {
+    return this.request<Subscription>("/subscriptions/upgrade", {
+      method: "POST",
       body: JSON.stringify({ newTier }),
+    });
+  }
+
+  // [DEV ONLY] Mock payment for testing without real payment provider
+  async devMockPayment(tier: "BRONZE" | "SILVER" | "GOLD") {
+    return this.request<{
+      success: boolean;
+      subscription: Subscription;
+      mockPaymentRef: string;
+      message: string;
+    }>("/subscriptions/dev/mock-payment", {
+      method: "POST",
+      body: JSON.stringify({ tier }),
     });
   }
 
   // Contribution endpoints
   async getContributionSummary() {
-    return this.request<ContributionSummary>('/contributions/summary');
+    return this.request<ContributionSummary>("/contributions/summary");
   }
 
-  async initiatePayment(amount: number, paymentMethod: string, phoneNumber?: string) {
-    return this.request<PaymentInitiation>('/contributions/pay', {
-      method: 'POST',
+  async initiatePayment(
+    amount: number,
+    paymentMethod: string,
+    phoneNumber?: string,
+  ) {
+    return this.request<PaymentInitiation>("/contributions/pay", {
+      method: "POST",
       body: JSON.stringify({ amount, paymentMethod, phoneNumber }),
     });
   }
 
   async checkPaymentStatus(contributionId: string) {
-    return this.request<PaymentStatusResponse>(`/contributions/status/${contributionId}`);
+    return this.request<PaymentStatusResponse>(
+      `/contributions/status/${contributionId}`,
+    );
   }
 
   // Claims endpoints
   async getMyClaims() {
-    return this.request<ClaimsResponse>('/claims');
+    return this.request<ClaimsResponse>("/claims");
   }
 
   async createClaim(data: CreateClaimData) {
-    return this.request<Claim>('/claims', {
-      method: 'POST',
+    return this.request<Claim>("/claims", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   // Camps endpoints
   async getUpcomingCamps() {
-    return this.request<Camp[]>('/camps');
+    return this.request<Camp[]>("/camps");
   }
 
   async getNearby(lat: number, lng: number, radius = 50) {
-    return this.request<CampWithDistance[]>(`/camps/nearby?lat=${lat}&lng=${lng}&radius=${radius}`);
+    return this.request<CampWithDistance[]>(
+      `/camps/nearby?lat=${lat}&lng=${lng}&radius=${radius}`,
+    );
   }
 
   async getCamp(id: string) {
@@ -182,23 +215,25 @@ class ApiClient {
 
   async registerForCamp(campId: string) {
     return this.request<CampRegistration>(`/camps/${campId}/register`, {
-      method: 'POST',
+      method: "POST",
     });
   }
 
   async cancelRegistration(campId: string) {
     return this.request<CampRegistration>(`/camps/${campId}/register`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   async getMyRegistrations() {
-    return this.request<CampRegistration[]>('/camps/my-registrations');
+    return this.request<CampRegistration[]>("/camps/my-registrations");
   }
 
   // Blockchain endpoints
   async getAllTransactions(page = 1, limit = 50) {
-    return this.request<PaginatedResponse<Transaction>>(`/blockchain/transactions?page=${page}&limit=${limit}`);
+    return this.request<PaginatedResponse<Transaction>>(
+      `/blockchain/transactions?page=${page}&limit=${limit}`,
+    );
   }
 
   async getTransactionByHash(txHash: string) {
@@ -225,7 +260,7 @@ export interface MemberProfile extends Member {
 
 export interface Subscription {
   id: string;
-  tier: 'BRONZE' | 'SILVER' | 'GOLD';
+  tier: "BRONZE" | "SILVER" | "GOLD";
   monthlyAmount: number;
   startDate: string;
   endDate?: string;
@@ -234,7 +269,7 @@ export interface Subscription {
 }
 
 export interface Package {
-  tier: 'BRONZE' | 'SILVER' | 'GOLD';
+  tier: "BRONZE" | "SILVER" | "GOLD";
   monthlyPrice: number;
   benefits: string[];
 }
@@ -246,7 +281,7 @@ export interface Contribution {
   paymentMethod: string;
   paymentRef?: string;
   txHash?: string;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
+  status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
   createdAt: string;
 }
 
@@ -281,7 +316,7 @@ export interface Claim {
   claimType: string;
   description: string;
   amount: number;
-  status: 'PENDING' | 'APPROVED' | 'PROCESSING' | 'DISBURSED' | 'REJECTED';
+  status: "PENDING" | "APPROVED" | "PROCESSING" | "DISBURSED" | "REJECTED";
   txHash?: string;
   processedAt?: string;
   createdAt: string;
@@ -329,7 +364,7 @@ export interface CampDetails extends Camp {
 
 export interface CampRegistration {
   id: string;
-  status: 'REGISTERED' | 'ATTENDED' | 'NO_SHOW' | 'CANCELLED';
+  status: "REGISTERED" | "ATTENDED" | "NO_SHOW" | "CANCELLED";
   createdAt: string;
   camp: Camp;
 }
@@ -337,7 +372,7 @@ export interface CampRegistration {
 export interface NFT {
   id: string;
   tokenId: string;
-  tier: 'BRONZE' | 'SILVER' | 'GOLD';
+  tier: "BRONZE" | "SILVER" | "GOLD";
   contractAddress: string;
   txHash: string;
   mintedAt: string;
@@ -346,13 +381,13 @@ export interface NFT {
 export interface Transaction {
   id: string;
   txHash: string;
-  txType: 'NFT_MINT' | 'CONTRIBUTION' | 'CLAIM_DISBURSEMENT' | 'UPGRADE';
+  txType: "NFT_MINT" | "CONTRIBUTION" | "CLAIM_DISBURSEMENT" | "UPGRADE";
   fromAddress: string;
   toAddress: string;
   amount?: string;
   tokenId?: string;
   network: string;
-  status: 'PENDING' | 'CONFIRMED' | 'FAILED';
+  status: "PENDING" | "CONFIRMED" | "FAILED";
   blockNumber?: number;
   createdAt: string;
   confirmedAt?: string;
