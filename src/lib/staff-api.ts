@@ -253,6 +253,20 @@ class StaffApiClient {
     return this.request<Camp[]>("/camps");
   }
 
+  async getUpcomingCamps(): Promise<Camp[]> {
+    return this.request<Camp[]>("/camps/upcoming");
+  }
+
+  async getNearbyCamps(
+    lat: number,
+    lon: number,
+    radius: number = 50,
+  ): Promise<Array<Camp & { distanceKm: number }>> {
+    return this.request<Array<Camp & { distanceKm: number }>>(
+      `/camps/nearby?lat=${lat}&lon=${lon}&radius=${radius}`,
+    );
+  }
+
   async createCamp(data: CreateCampDto): Promise<Camp> {
     return this.request<Camp>("/camps", {
       method: "POST",
@@ -269,15 +283,26 @@ class StaffApiClient {
 
   async deleteCamp(id: string): Promise<void> {
     return this.request<void>(`/camps/${id}`, {
-      method: "DELETE", // Note: This might effectively deactivate if backend logic decides so
+      method: "DELETE",
     });
   }
 
-  async assignMemberToCamp(campId: string, memberId: string): Promise<any> {
-    return this.request(`/camps/${campId}/assign`, {
+  async registerForCamp(campId: string, memberId: string): Promise<any> {
+    return this.request(`/camps/${campId}/register`, {
       method: "POST",
       body: JSON.stringify({ memberId }),
     });
+  }
+
+  async cancelRegistration(campId: string, memberId: string): Promise<any> {
+    return this.request(`/camps/${campId}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ memberId }),
+    });
+  }
+
+  async getMemberRegistrations(memberId: string): Promise<any[]> {
+    return this.request<any[]>(`/camps/member/${memberId}`);
   }
 }
 
