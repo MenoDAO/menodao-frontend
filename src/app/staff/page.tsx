@@ -8,9 +8,17 @@ import DischargeScreen from "./components/DischargeScreen";
 
 type Screen = "overview" | "checkin" | "treatment" | "discharge";
 
+interface DashboardCamp {
+  id: string;
+  name: string;
+  expectedMembers: number;
+  startDate: string;
+  venue: string;
+}
+
 interface Stats {
   branchMemberCount: number;
-  upcomingCamps: any[];
+  upcomingCamps: DashboardCamp[];
   totalClaimsPending: number;
 }
 
@@ -57,8 +65,8 @@ export default function StaffDashboardPage() {
           setCurrentScreen("checkin");
         }
       }
-    } catch (error: any) {
-      alert(error.message || "Failed to search member");
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : "Failed to search member");
     }
   };
 
@@ -73,8 +81,10 @@ export default function StaffDashboardPage() {
       if (visit) {
         setOpenVisit(visit);
       }
-    } catch (error: any) {
-      alert(error.message || "Failed to check in patient");
+    } catch (error: unknown) {
+      alert(
+        error instanceof Error ? error.message : "Failed to check in patient",
+      );
     }
   };
 
@@ -96,8 +106,10 @@ export default function StaffDashboardPage() {
       setOpenVisit(null);
       setCurrentScreen("overview");
       alert("Patient discharged successfully! SMS notification sent.");
-    } catch (error: any) {
-      alert(error.message || "Failed to discharge patient");
+    } catch (error: unknown) {
+      alert(
+        error instanceof Error ? error.message : "Failed to discharge patient",
+      );
     }
   };
 
@@ -111,7 +123,7 @@ export default function StaffDashboardPage() {
             </h1>
             <button
               onClick={() => setCurrentScreen("checkin")}
-              className="bg-primary text-white py-3 px-8 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all"
+              className="bg-primary text-primary-foreground py-3 px-8 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
             >
               Start New Check-In
             </button>
@@ -152,7 +164,7 @@ export default function StaffDashboardPage() {
                   No upcoming camps scheduled
                 </p>
               ) : (
-                stats.upcomingCamps.map((camp: any) => (
+                stats.upcomingCamps.map((camp: DashboardCamp) => (
                   <div
                     key={camp.id}
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl"
