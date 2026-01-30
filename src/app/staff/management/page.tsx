@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   UserPlusIcon,
   ShieldCheckIcon,
@@ -9,7 +9,7 @@ import {
   ExclamationCircleIcon,
   MapPinIcon,
 } from "@heroicons/react/24/outline";
-import { staffApi, Staff } from "@/lib/staff-api";
+import { staffApi, Staff, StaffEnrollmentData } from "@/lib/staff-api";
 import { format } from "date-fns";
 
 export default function StaffManagementPage() {
@@ -18,20 +18,21 @@ export default function StaffManagementPage() {
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
 
   // Form State
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<StaffEnrollmentData>({
     username: "",
     password: "",
     fullName: "",
     role: "STAFF",
     branch: "",
   });
-  const [enrollStatus, setEnrollStatus] = useState<any>(null);
+  const [enrollStatus, setEnrollStatus] = useState<{
+    loading?: boolean;
+    success?: boolean;
+    error?: boolean;
+    message?: string;
+  } | null>(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const data = await staffApi.getStaffUsers();
@@ -41,7 +42,11 @@ export default function StaffManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleEnroll = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,10 +66,11 @@ export default function StaffManagementPage() {
       });
       fetchUsers();
       setTimeout(() => setIsEnrollModalOpen(false), 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setEnrollStatus({
         error: true,
-        message: error.message || "Failed to enroll staff",
+        message:
+          error instanceof Error ? error.message : "Failed to enroll staff",
       });
     }
   };

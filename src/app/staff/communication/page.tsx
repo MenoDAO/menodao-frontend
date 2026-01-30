@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ChatBubbleBottomCenterTextIcon,
   UserGroupIcon,
@@ -9,34 +9,33 @@ import {
   ExclamationCircleIcon,
   ClockIcon,
 } from "@heroicons/react/24/outline";
-import { staffApi } from "@/lib/staff-api";
+import { staffApi, StaffPortalMember, BulkSmsResponse } from "@/lib/staff-api";
 
 export default function CommunicationPage() {
-  const [members, setMembers] = useState<any[]>([]);
+  const [members, setMembers] = useState<StaffPortalMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
-  const [result, setResult] = useState<any>(null);
-
-  useEffect(() => {
-    fetchMembers();
-  }, [selectedBranch]);
-
-  const fetchMembers = async () => {
+  const [result, setResult] = useState<BulkSmsResponse | null>(null);
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
       const data = await staffApi.getMembers(selectedBranch || undefined);
       setMembers(data);
       // Automatically select all members in the current view
-      setSelectedMembers(data.map((m: any) => m.phoneNumber));
+      setSelectedMembers(data.map((m) => m.phoneNumber));
     } catch (error) {
       console.error("Failed to fetch members:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedBranch]);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [selectedBranch, fetchMembers]);
 
   const handleSend = async () => {
     if (!message || selectedMembers.length === 0) return;
@@ -47,9 +46,15 @@ export default function CommunicationPage() {
       const resp = await staffApi.sendBulkSms(selectedMembers, message);
       setResult(resp);
       setMessage("");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to send SMS:", error);
-      setResult({ error: error.message || "Failed to send messages" });
+      setResult({
+        total: selectedMembers.length,
+        successful: 0,
+        failed: selectedMembers.length,
+        error:
+          error instanceof Error ? error.message : "Failed to send messages",
+      });
     } finally {
       setSending(false);
     }

@@ -1,31 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
-  ClipboardDocumentCheckIcon,
-  FunnelIcon,
   MagnifyingGlassIcon,
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
-import { staffApi } from "@/lib/staff-api";
+import { staffApi, StaffPortalClaim } from "@/lib/staff-api";
 import { format } from "date-fns";
 
 export default function StaffClaimsPage() {
-  const [claims, setClaims] = useState<any[]>([]);
+  const [claims, setClaims] = useState<StaffPortalClaim[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedClaim, setSelectedClaim] = useState<any>(null);
+  const [selectedClaim, setSelectedClaim] = useState<StaffPortalClaim | null>(
+    null,
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    fetchClaims();
-  }, [statusFilter]);
-
-  const fetchClaims = async () => {
+  const fetchClaims = useCallback(async () => {
     setLoading(true);
     try {
       const data = await staffApi.getStaffClaims(statusFilter || undefined);
@@ -35,7 +31,11 @@ export default function StaffClaimsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchClaims();
+  }, [statusFilter, fetchClaims]);
 
   const filteredClaims = claims.filter(
     (claim) =>

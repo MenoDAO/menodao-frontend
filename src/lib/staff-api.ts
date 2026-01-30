@@ -216,10 +216,10 @@ class StaffApiClient {
   async getOpenVisit(memberId: string): Promise<OpenVisit | null> {
     try {
       return await this.request<OpenVisit>(`/visits/open/${memberId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (
-        error.message.includes("404") ||
-        error.message.includes("not found")
+        error instanceof Error &&
+        (error.message.includes("404") || error.message.includes("not found"))
       ) {
         return null;
       }
@@ -230,8 +230,8 @@ class StaffApiClient {
   async addProcedure(
     visitId: string,
     procedureId: string,
-  ): Promise<{ visit: any; remainingLimit: number }> {
-    return this.request<{ visit: any; remainingLimit: number }>(
+  ): Promise<{ visit: OpenVisit["visit"]; remainingLimit: number }> {
+    return this.request<{ visit: OpenVisit["visit"]; remainingLimit: number }>(
       "/visits/add-procedure",
       {
         method: "POST",
@@ -294,27 +294,37 @@ class StaffApiClient {
     });
   }
 
-  async registerForCamp(campId: string, memberId: string): Promise<any> {
-    return this.request(`/camps/${campId}/register`, {
+  async registerForCamp(
+    campId: string,
+    memberId: string,
+  ): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/camps/${campId}/register`, {
       method: "POST",
       body: JSON.stringify({ memberId }),
     });
   }
 
-  async cancelRegistration(campId: string, memberId: string): Promise<any> {
-    return this.request(`/camps/${campId}/cancel`, {
+  async cancelRegistration(
+    campId: string,
+    memberId: string,
+  ): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/camps/${campId}/cancel`, {
       method: "POST",
       body: JSON.stringify({ memberId }),
     });
   }
 
-  async getMemberRegistrations(memberId: string): Promise<any[]> {
-    return this.request<any[]>(`/camps/member/${memberId}`);
+  async getMemberRegistrations(
+    memberId: string,
+  ): Promise<Array<{ id: string; camp: Camp; status: string }>> {
+    return this.request<Array<{ id: string; camp: Camp; status: string }>>(
+      `/camps/member/${memberId}`,
+    );
   }
 
-  async getMembers(branch?: string): Promise<any[]> {
+  async getMembers(branch?: string): Promise<StaffPortalMember[]> {
     const url = branch ? `/staff/members?branch=${branch}` : "/staff/members";
-    return this.request<any[]>(url);
+    return this.request<StaffPortalMember[]>(url);
   }
 
   async getStaffUsers(branch?: string, role?: string): Promise<Staff[]> {
@@ -343,7 +353,7 @@ class StaffApiClient {
   }
 
   // Staff Management
-  async enrollStaff(data: any): Promise<Staff> {
+  async enrollStaff(data: StaffEnrollmentData): Promise<Staff> {
     return this.request<Staff>("/staff/enroll", {
       method: "POST",
       body: JSON.stringify(data),
@@ -351,19 +361,24 @@ class StaffApiClient {
   }
 
   // Claims
-  async getStaffClaims(status?: string, memberId?: string): Promise<any[]> {
+  async getStaffClaims(
+    status?: string,
+    memberId?: string,
+  ): Promise<StaffPortalClaim[]> {
     let url = "/claims/staff";
     const params = new URLSearchParams();
     if (status) params.append("status", status);
     if (memberId) params.append("memberId", memberId);
     if (params.toString()) url += `?${params.toString()}`;
-    return this.request<any[]>(url);
+    return this.request<StaffPortalClaim[]>(url);
   }
 
   // Communication
-  async sendBulkSms(phoneNumbers: string[], message: string): Promise<any> {
-    return this.request("/staff/bulk-sms", {
-      // I should have added this endpoint to StaffController
+  async sendBulkSms(
+    phoneNumbers: string[],
+    message: string,
+  ): Promise<BulkSmsResponse> {
+    return this.request<BulkSmsResponse>("/staff/bulk-sms", {
       method: "POST",
       body: JSON.stringify({ phoneNumbers, message }),
     });
@@ -395,6 +410,51 @@ export interface CreateCampDto {
   startDate: string;
   endDate: string;
   capacity: number;
+}
+
+export interface DischargeResponse {
+  message: string;
+  totalCost: number;
+}
+
+export interface BulkSmsResponse {
+  total: number;
+  successful: number;
+  failed: number;
+  error?: string;
+}
+
+export interface StaffPortalMember {
+  id: string;
+  phoneNumber: string;
+  fullName: string | null;
+  branch: string | null;
+  subscription?: {
+    tier: string;
+    isActive: boolean;
+  };
+}
+
+export interface StaffPortalClaim {
+  id: string;
+  claimType: string;
+  description: string;
+  amount: number;
+  status: string;
+  txHash: string | null;
+  createdAt: string;
+  member: {
+    fullName: string | null;
+    phoneNumber: string;
+  };
+}
+
+export interface StaffEnrollmentData {
+  username: string;
+  password?: string;
+  fullName: string;
+  role: string;
+  branch?: string;
 }
 
 export const staffApi = new StaffApiClient();
