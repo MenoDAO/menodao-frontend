@@ -1,4 +1,4 @@
-import { getApiUrl } from './api';
+import { getApiUrl } from "./api";
 
 const API_BASE_URL = getApiUrl();
 
@@ -8,8 +8,8 @@ class AdminApiClient {
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('admin-auth-storage');
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("admin-auth-storage");
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -25,14 +25,18 @@ class AdminApiClient {
     this.token = token;
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+  ): Promise<T> {
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options.headers,
     };
 
     if (this.token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
+      (headers as Record<string, string>)["Authorization"] =
+        `Bearer ${this.token}`;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -41,7 +45,13 @@ class AdminApiClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      if (response.status === 401 && typeof window !== "undefined") {
+        this.setToken(null);
+        window.location.href = "/admin/login";
+      }
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Request failed" }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }
 
@@ -50,62 +60,76 @@ class AdminApiClient {
 
   // Auth
   async login(username: string, password: string) {
-    return this.request<{ accessToken: string; admin: { id: string; username: string } }>(
-      '/admin/login',
-      {
-        method: 'POST',
-        body: JSON.stringify({ username, password }),
-      }
-    );
+    return this.request<{
+      accessToken: string;
+      admin: { id: string; username: string };
+    }>("/admin/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
   }
 
   async getProfile() {
-    return this.request<{ id: string; username: string; lastLogin: string; createdAt: string }>(
-      '/admin/profile'
-    );
+    return this.request<{
+      id: string;
+      username: string;
+      lastLogin: string;
+      createdAt: string;
+    }>("/admin/profile");
   }
 
   async changePassword(currentPassword: string, newPassword: string) {
-    return this.request<{ message: string }>('/admin/change-password', {
-      method: 'POST',
+    return this.request<{ message: string }>("/admin/change-password", {
+      method: "POST",
       body: JSON.stringify({ currentPassword, newPassword }),
     });
   }
 
   // Stats
   async getOverviewStats() {
-    return this.request<OverviewStats>('/admin/stats/overview');
+    return this.request<OverviewStats>("/admin/stats/overview");
   }
 
   async getUserStats() {
-    return this.request<UserStats>('/admin/stats/users');
+    return this.request<UserStats>("/admin/stats/users");
   }
 
   async getPaymentStats() {
-    return this.request<PaymentStats>('/admin/stats/payments');
+    return this.request<PaymentStats>("/admin/stats/payments");
   }
 
   async getTechnicalStats() {
-    return this.request<TechnicalStats>('/admin/stats/technical');
+    return this.request<TechnicalStats>("/admin/stats/technical");
   }
 
   async getRecentSignups(limit = 10) {
-    return this.request<RecentSignup[]>(`/admin/stats/recent-signups?limit=${limit}`);
+    return this.request<RecentSignup[]>(
+      `/admin/stats/recent-signups?limit=${limit}`,
+    );
   }
 
   async getRecentPayments(limit = 10) {
-    return this.request<RecentPayment[]>(`/admin/stats/recent-payments?limit=${limit}`);
+    return this.request<RecentPayment[]>(
+      `/admin/stats/recent-payments?limit=${limit}`,
+    );
   }
 
   // Users
-  async listUsers(params: { page?: number; limit?: number; search?: string; tier?: string }) {
+  async listUsers(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    tier?: string;
+  }) {
     const searchParams = new URLSearchParams();
-    if (params.page) searchParams.set('page', String(params.page));
-    if (params.limit) searchParams.set('limit', String(params.limit));
-    if (params.search) searchParams.set('search', params.search);
-    if (params.tier) searchParams.set('tier', params.tier);
-    
-    return this.request<PaginatedResponse<AdminUser>>(`/admin/users?${searchParams}`);
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.limit) searchParams.set("limit", String(params.limit));
+    if (params.search) searchParams.set("search", params.search);
+    if (params.tier) searchParams.set("tier", params.tier);
+
+    return this.request<PaginatedResponse<AdminUser>>(
+      `/admin/users?${searchParams}`,
+    );
   }
 
   async getUserDetail(id: string) {
@@ -122,31 +146,38 @@ class AdminApiClient {
     search?: string;
   }) {
     const searchParams = new URLSearchParams();
-    if (params.page) searchParams.set('page', String(params.page));
-    if (params.limit) searchParams.set('limit', String(params.limit));
-    if (params.status) searchParams.set('status', params.status);
-    if (params.startDate) searchParams.set('startDate', params.startDate);
-    if (params.endDate) searchParams.set('endDate', params.endDate);
-    if (params.search) searchParams.set('search', params.search);
-    
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.limit) searchParams.set("limit", String(params.limit));
+    if (params.status) searchParams.set("status", params.status);
+    if (params.startDate) searchParams.set("startDate", params.startDate);
+    if (params.endDate) searchParams.set("endDate", params.endDate);
+    if (params.search) searchParams.set("search", params.search);
+
     return this.request<PaymentListResponse>(`/admin/payments?${searchParams}`);
   }
 
   async getPaymentSummary() {
-    return this.request<PaymentSummary[]>('/admin/payments/summary');
+    return this.request<PaymentSummary[]>("/admin/payments/summary");
   }
 
   // Notifications
-  async sendNotification(title: string, body: string, data?: Record<string, string>) {
-    return this.request<{ success: boolean; sentTo: number }>('/admin/alerts/send', {
-      method: 'POST',
-      body: JSON.stringify({ title, body, data }),
-    });
+  async sendNotification(
+    title: string,
+    body: string,
+    data?: Record<string, string>,
+  ) {
+    return this.request<{ success: boolean; sentTo: number }>(
+      "/admin/alerts/send",
+      {
+        method: "POST",
+        body: JSON.stringify({ title, body, data }),
+      },
+    );
   }
 
   async getNotificationHistory(page = 1, limit = 20) {
     return this.request<PaginatedResponse<NotificationHistory>>(
-      `/admin/alerts/history?page=${page}&limit=${limit}`
+      `/admin/alerts/history?page=${page}&limit=${limit}`,
     );
   }
 }
@@ -185,11 +216,20 @@ export interface OverviewStats {
 
 export interface UserStats {
   signupsPerDay: { date: string; count: number }[];
-  subscriptionDistribution: { tier: string; isActive: boolean; count: number }[];
+  subscriptionDistribution: {
+    tier: string;
+    isActive: boolean;
+    count: number;
+  }[];
 }
 
 export interface PaymentStats {
-  paymentsPerDay: { date: string; completed: number; failed: number; revenue: number }[];
+  paymentsPerDay: {
+    date: string;
+    completed: number;
+    failed: number;
+    revenue: number;
+  }[];
   paymentMethods: { method: string; count: number; totalAmount: number }[];
 }
 
@@ -200,7 +240,12 @@ export interface TechnicalStats {
     thisMonth: number;
     total: number;
     byStatus: { status: string; count: number }[];
-    recentLogs: { id: string; phoneNumber: string; status: string; createdAt: string }[];
+    recentLogs: {
+      id: string;
+      phoneNumber: string;
+      status: string;
+      createdAt: string;
+    }[];
   };
   deviceTokens: { platform: string; count: number }[];
   blockchain: {
@@ -232,7 +277,12 @@ export interface AdminUser {
   location: string | null;
   isVerified: boolean;
   createdAt: string;
-  subscription: { tier: string; isActive: boolean; monthlyAmount: number; startDate: string } | null;
+  subscription: {
+    tier: string;
+    isActive: boolean;
+    monthlyAmount: number;
+    startDate: string;
+  } | null;
   _count: { contributions: number; claims: number };
 }
 

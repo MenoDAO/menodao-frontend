@@ -7,6 +7,9 @@ export interface Staff {
   username: string;
   fullName: string;
   role: "STAFF" | "ADMIN";
+  branch?: string;
+  lastLogin?: string;
+  createdAt?: string;
 }
 
 export interface StaffLoginResponse {
@@ -163,6 +166,10 @@ class StaffApiClient {
     });
 
     if (!response.ok) {
+      if (response.status === 401 && typeof window !== "undefined") {
+        this.setToken(null);
+        window.location.href = "/staff/login";
+      }
       const error = await response
         .json()
         .catch(() => ({ message: "Request failed" }));
@@ -303,6 +310,63 @@ class StaffApiClient {
 
   async getMemberRegistrations(memberId: string): Promise<any[]> {
     return this.request<any[]>(`/camps/member/${memberId}`);
+  }
+
+  async getMembers(branch?: string): Promise<any[]> {
+    const url = branch ? `/staff/members?branch=${branch}` : "/staff/members";
+    return this.request<any[]>(url);
+  }
+
+  async getStaffUsers(branch?: string, role?: string): Promise<Staff[]> {
+    const params = new URLSearchParams();
+    if (branch) params.append("branch", branch);
+    if (role) params.append("role", role);
+    const url = params.toString()
+      ? `/staff/users?${params.toString()}`
+      : "/staff/users";
+    return this.request<Staff[]>(url);
+  }
+
+  // Dashboard & Stats
+  async getStats(): Promise<{
+    branchMemberCount: number;
+    upcomingCamps: Array<{
+      id: string;
+      name: string;
+      expectedMembers: number;
+      startDate: string;
+      venue: string;
+    }>;
+    totalClaimsPending: number;
+  }> {
+    return this.request("/staff/stats");
+  }
+
+  // Staff Management
+  async enrollStaff(data: any): Promise<Staff> {
+    return this.request<Staff>("/staff/enroll", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Claims
+  async getStaffClaims(status?: string, memberId?: string): Promise<any[]> {
+    let url = "/claims/staff";
+    const params = new URLSearchParams();
+    if (status) params.append("status", status);
+    if (memberId) params.append("memberId", memberId);
+    if (params.toString()) url += `?${params.toString()}`;
+    return this.request<any[]>(url);
+  }
+
+  // Communication
+  async sendBulkSms(phoneNumbers: string[], message: string): Promise<any> {
+    return this.request("/staff/bulk-sms", {
+      // I should have added this endpoint to StaffController
+      method: "POST",
+      body: JSON.stringify({ phoneNumbers, message }),
+    });
   }
 }
 
