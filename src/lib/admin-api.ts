@@ -47,7 +47,6 @@ class AdminApiClient {
     if (!response.ok) {
       if (response.status === 401 && typeof window !== "undefined") {
         this.setToken(null);
-        window.location.href = "/admin/login";
       }
       const error = await response
         .json()

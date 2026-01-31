@@ -168,7 +168,6 @@ class StaffApiClient {
     if (!response.ok) {
       if (response.status === 401 && typeof window !== "undefined") {
         this.setToken(null);
-        window.location.href = "/staff/login";
       }
       const error = await response
         .json()
