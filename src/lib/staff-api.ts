@@ -120,6 +120,15 @@ export interface DischargeResponse {
   };
 }
 
+export interface CheckInDto {
+  phoneNumber: string;
+  chiefComplaint: string;
+  medicalHistory?: string;
+  vitals?: Record<string, unknown>;
+  clinicalNotes?: string;
+  hasConsent: boolean;
+}
+
 class StaffApiClient {
   private baseUrl: string;
   private token: string | null = null;
@@ -205,10 +214,10 @@ class StaffApiClient {
     });
   }
 
-  async checkIn(phoneNumber: string): Promise<CheckInResponse> {
+  async checkIn(dto: CheckInDto): Promise<CheckInResponse> {
     return this.request<CheckInResponse>("/visits/check-in", {
       method: "POST",
-      body: JSON.stringify({ phoneNumber }),
+      body: JSON.stringify(dto),
     });
   }
 
@@ -411,11 +420,6 @@ export interface CreateCampDto {
   capacity: number;
 }
 
-export interface DischargeResponse {
-  message: string;
-  totalCost: number;
-}
-
 export interface BulkSmsResponse {
   total: number;
   successful: number;
@@ -428,10 +432,7 @@ export interface StaffPortalMember {
   phoneNumber: string;
   fullName: string | null;
   branch: string | null;
-  subscription?: {
-    tier: string;
-    isActive: boolean;
-  };
+  tier: string;
 }
 
 export interface StaffPortalClaim {

@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { staffApi, MemberSearchResult, OpenVisit } from "@/lib/staff-api";
+import {
+  staffApi,
+  MemberSearchResult,
+  OpenVisit,
+  CheckInDto,
+} from "@/lib/staff-api";
 import CheckInScreen from "./components/CheckInScreen";
 import TreatmentRoomScreen from "./components/TreatmentRoomScreen";
 import DischargeScreen from "./components/DischargeScreen";
@@ -28,8 +33,7 @@ export default function StaffDashboardPage() {
   const [searchResult, setSearchResult] = useState<MemberSearchResult | null>(
     null,
   );
-  // The checkInData state is no longer needed as per the diff, as its only usage (setCheckInData) is removed.
-  // const [checkInData, setCheckInData] = useState<CheckInResponse | null>(null);
+
   const [openVisit, setOpenVisit] = useState<OpenVisit | null>(null);
 
   const fetchStats = useCallback(async () => {
@@ -70,10 +74,9 @@ export default function StaffDashboardPage() {
     }
   };
 
-  const handleCheckIn = async (phoneNumber: string) => {
+  const handleCheckIn = async (data: CheckInDto) => {
     try {
-      const result = await staffApi.checkIn(phoneNumber);
-      // setCheckInData(result); // This line was removed as per the diff
+      const result = await staffApi.checkIn(data);
       setCurrentScreen("treatment");
 
       // Fetch the open visit
