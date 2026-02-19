@@ -159,6 +159,10 @@ class AdminApiClient {
     return this.request<PaymentSummary[]>("/admin/payments/summary");
   }
 
+  async getFinancialSummary() {
+    return this.request<FinancialSummary>("/admin/payments/financial-summary");
+  }
+
   // Notifications
   async sendNotification(
     title: string,
@@ -313,6 +317,21 @@ export interface PaymentSummary {
   status: string;
   count: number;
   totalAmount: number;
+}
+
+export interface FinancialSummary {
+  collected: { total: number; thisMonth: number; thisYear: number };
+  disbursed: { total: number; thisMonth: number; thisYear: number };
+  netBalance: number;
+  recentDisbursals: Array<{
+    id: string;
+    amount: number;
+    claimType: string;
+    memberName: string;
+    memberPhone: string;
+    txHash: string | null;
+    processedAt: string | null;
+  }>;
 }
 
 export interface NotificationHistory {

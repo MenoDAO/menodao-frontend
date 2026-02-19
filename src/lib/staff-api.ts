@@ -381,6 +381,22 @@ class StaffApiClient {
     return this.request<StaffPortalClaim[]>(url);
   }
 
+  async approveClaim(claimId: string): Promise<StaffPortalClaim> {
+    return this.request<StaffPortalClaim>(`/claims/${claimId}/approve`, {
+      method: "POST",
+    });
+  }
+
+  async rejectClaim(
+    claimId: string,
+    reason: string,
+  ): Promise<StaffPortalClaim> {
+    return this.request<StaffPortalClaim>(`/claims/${claimId}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    });
+  }
+
   // Communication
   async sendBulkSms(
     phoneNumbers: string[],
@@ -441,7 +457,9 @@ export interface StaffPortalClaim {
   description: string;
   amount: number;
   status: string;
+  rejectionReason: string | null;
   txHash: string | null;
+  processedAt: string | null;
   createdAt: string;
   member: {
     fullName: string | null;
