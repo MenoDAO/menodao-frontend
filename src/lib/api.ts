@@ -242,6 +242,28 @@ class ApiClient {
   async getTransactionByHash(txHash: string) {
     return this.request<Transaction>(`/blockchain/transactions/${txHash}`);
   }
+
+  async getWallet() {
+    return this.request<WalletInfo>("/blockchain/wallet");
+  }
+
+  async getNFTs() {
+    return this.request<NFT[]>("/blockchain/nfts");
+  }
+
+  async claimNFT(nftId: string, externalWallet: string) {
+    return this.request<{ success: boolean; txHash: string; message: string }>(
+      `/blockchain/nfts/${nftId}/claim`,
+      {
+        method: "POST",
+        body: JSON.stringify({ externalWallet }),
+      },
+    );
+  }
+
+  async getSupportedChains() {
+    return this.request<SupportedChain[]>("/blockchain/chains");
+  }
 }
 
 // Types
@@ -404,6 +426,35 @@ export interface PaginatedResponse<T> {
     limit: number;
     totalPages: number;
   };
+}
+
+export interface WalletInfo {
+  address: string;
+  type: string;
+  message: string;
+}
+
+export interface NFT {
+  id: string;
+  memberId: string;
+  tokenId: string;
+  tier: "BRONZE" | "SILVER" | "GOLD";
+  contractAddress: string;
+  txHash: string;
+  mintedAt: string;
+  metadata: Record<string, unknown>;
+  chain?: string;
+  explorerUrl?: string;
+  isCustodial?: boolean;
+}
+
+export interface SupportedChain {
+  id: string;
+  name: string;
+  chainId: number;
+  explorerUrl: string;
+  isTestnet: boolean;
+  isConfigured: boolean;
 }
 
 export const api = new ApiClient(API_BASE_URL);

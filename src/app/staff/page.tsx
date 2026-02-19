@@ -159,12 +159,12 @@ export default function StaffDashboardPage() {
 
           <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
             <h2 className="text-lg font-bold text-gray-900 mb-6">
-              Upcoming Medical Camps
+              Upcoming Clinics
             </h2>
             <div className="space-y-4">
               {!stats?.upcomingCamps || stats.upcomingCamps.length === 0 ? (
                 <p className="text-gray-400 text-center py-4">
-                  No upcoming camps scheduled
+                  No upcoming clinics scheduled
                 </p>
               ) : (
                 stats.upcomingCamps.map((camp: DashboardCamp) => (
