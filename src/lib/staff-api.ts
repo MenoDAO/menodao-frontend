@@ -175,7 +175,14 @@ class StaffApiClient {
     });
 
     if (!response.ok) {
-      if (response.status === 401 && typeof window !== "undefined") {
+      // Only clear token if the profile validation endpoint returns 401
+      // Other endpoints may return 401 for permission reasons without meaning
+      // the token itself is invalid
+      if (
+        response.status === 401 &&
+        typeof window !== "undefined" &&
+        endpoint === "/staff/profile"
+      ) {
         this.setToken(null);
       }
       const error = await response
