@@ -68,7 +68,11 @@ class ApiClient {
 
     if (!response.ok) {
       if (response.status === 401 && typeof window !== "undefined") {
-        this.setToken(null);
+        // Only clear token if this is an auth check (/auth/me) —
+        // other 401s may be permission issues, not invalid tokens
+        if (endpoint === "/auth/me") {
+          this.setToken(null);
+        }
       }
       const error = await response
         .json()
