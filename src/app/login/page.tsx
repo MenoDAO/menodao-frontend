@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuthStore } from "@/lib/auth-store";
 import { api } from "@/lib/api";
-import { Phone, Shield, ArrowRight, Loader2, User, MapPin } from "lucide-react";
+import { KENYA_COUNTIES } from "@/lib/kenya-counties";
+import {
+  Phone,
+  Shield,
+  ArrowRight,
+  Loader2,
+  User,
+  MapPin,
+  ChevronDown,
+  Search,
+  Check,
+} from "lucide-react";
 
 const phoneSchema = z.object({
   phoneNumber: z
@@ -35,6 +46,37 @@ export default function LoginPage() {
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [profileName, setProfileName] = useState("");
   const [profileLocation, setProfileLocation] = useState("");
+
+  // County dropdown state
+  const [isCountyDropdownOpen, setIsCountyDropdownOpen] = useState(false);
+  const [countySearch, setCountySearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredCounties = KENYA_COUNTIES.filter((county) =>
+    county.toLowerCase().includes(countySearch.toLowerCase()),
+  );
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsCountyDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isCountyDropdownOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isCountyDropdownOpen]);
 
   const phoneForm = useForm<PhoneFormData>({
     resolver: zodResolver(phoneSchema),
@@ -103,6 +145,12 @@ export default function LoginPage() {
     router.push("/dashboard");
   };
 
+  const handleSelectCounty = (county: string) => {
+    setProfileLocation(county);
+    setIsCountyDropdownOpen(false);
+    setCountySearch("");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 p-4">
       {/* Background decoration */}
@@ -159,20 +207,79 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {/* County Dropdown */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location{" "}
+                  County{" "}
                   <span className="text-gray-400 text-xs">(optional)</span>
                 </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={profileLocation}
-                    onChange={(e) => setProfileLocation(e.target.value)}
-                    placeholder="e.g. Nairobi, Westlands"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-gray-900 placeholder-gray-400"
-                  />
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setIsCountyDropdownOpen(!isCountyDropdownOpen)
+                    }
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-left bg-white"
+                  >
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <span
+                      className={
+                        profileLocation ? "text-gray-900" : "text-gray-400"
+                      }
+                    >
+                      {profileLocation || "Select your county"}
+                    </span>
+                    <ChevronDown
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-transform ${
+                        isCountyDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {isCountyDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                      {/* Search field */}
+                      <div className="p-2 border-b border-gray-100 sticky top-0 bg-white">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            ref={searchInputRef}
+                            type="text"
+                            value={countySearch}
+                            onChange={(e) => setCountySearch(e.target.value)}
+                            placeholder="Search county..."
+                            className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-gray-900 placeholder-gray-400"
+                          />
+                        </div>
+                      </div>
+                      {/* County list */}
+                      <div className="overflow-y-auto max-h-48">
+                        {filteredCounties.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                            No counties found
+                          </div>
+                        ) : (
+                          filteredCounties.map((county) => (
+                            <button
+                              key={county}
+                              type="button"
+                              onClick={() => handleSelectCounty(county)}
+                              className={`w-full px-4 py-2.5 text-left text-sm hover:bg-emerald-50 transition-colors flex items-center justify-between ${
+                                profileLocation === county
+                                  ? "bg-emerald-50 text-emerald-700 font-medium"
+                                  : "text-gray-700"
+                              }`}
+                            >
+                              {county}
+                              {profileLocation === county && (
+                                <Check className="w-4 h-4 text-emerald-600" />
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
