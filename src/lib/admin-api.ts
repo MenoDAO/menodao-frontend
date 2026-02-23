@@ -183,6 +183,13 @@ class AdminApiClient {
       `/admin/alerts/history?page=${page}&limit=${limit}`,
     );
   }
+
+  // Site Visit Analytics
+  async getSiteVisitMetrics(days = 30) {
+    return this.request<SiteVisitMetrics>(
+      `/admin/stats/site-visits?days=${days}`,
+    );
+  }
 }
 
 // Types
@@ -354,3 +361,17 @@ export interface PaginatedResponse<T> {
 }
 
 export const adminApi = new AdminApiClient(API_BASE_URL);
+
+export interface SiteVisitMetrics {
+  summary: {
+    totalVisits: number;
+    uniqueSessions: number;
+    todayVisits: number;
+    days: number;
+  };
+  visitsPerDay: { date: string; count: number }[];
+  topReferrers: { referrer: string; count: number }[];
+  topUtmSources: { source: string; count: number }[];
+  topUtmCampaigns: { campaign: string; count: number }[];
+  topPages: { page: string; count: number }[];
+}

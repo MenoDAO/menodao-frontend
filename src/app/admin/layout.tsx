@@ -14,18 +14,24 @@ import {
   Shield,
   Menu,
   X,
+  BarChart3,
 } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/metrics", label: "Metrics", icon: BarChart3 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/alerts", label: "Alerts", icon: Bell },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, admin, logout } = useAdminStore();
@@ -82,7 +88,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-700">
             <div className="flex items-center gap-2">
               <Shield className="w-8 h-8 text-emerald-500" />
-              <span className="font-bold text-white text-lg">MenoDAO Admin</span>
+              <span className="font-bold text-white text-lg">
+                MenoDAO Admin
+              </span>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -158,9 +166,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          {children}
-        </main>
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">{children}</main>
       </div>
     </div>
   );
