@@ -135,6 +135,13 @@ class AdminApiClient {
     return this.request<AdminUserDetail>(`/admin/users/${id}`);
   }
 
+  async deleteSubscription(memberId: string) {
+    return this.request<{ success: boolean; message: string }>(
+      `/admin/users/${memberId}/subscription`,
+      { method: "DELETE" },
+    );
+  }
+
   // Payments
   async listPayments(params: {
     page?: number;
