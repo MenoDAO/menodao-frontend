@@ -72,7 +72,7 @@ export default function StaffLayout({
                       : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300"
                   }`}
                 >
-                  Camps
+                  Clinics
                 </a>
                 <a
                   onClick={() => router.push("/staff/claims")}

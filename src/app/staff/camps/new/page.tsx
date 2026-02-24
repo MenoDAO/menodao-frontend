@@ -70,10 +70,10 @@ export default function NewCampPage() {
           onClick={() => router.back()}
           className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-2"
         >
-          ← Back to Camps
+          ← Back to Clinics
         </button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Create New Camp
+          Add New Clinic
         </h1>
       </div>
 
@@ -83,7 +83,7 @@ export default function NewCampPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Camp Name
+                Clinic Name
               </label>
               <input
                 type="text"
@@ -92,7 +92,7 @@ export default function NewCampPage() {
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="e.g. Nairobi Dental Camp 2024"
+                placeholder="e.g. Nairobi Dental Clinic"
               />
             </div>
 
@@ -106,7 +106,7 @@ export default function NewCampPage() {
                 onChange={handleChange}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="Brief details about the camp..."
+                placeholder="Brief details about the clinic..."
               />
             </div>
 
@@ -229,7 +229,7 @@ export default function NewCampPage() {
               disabled={loading}
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
-              {loading ? "Creating..." : "Create Camp"}
+              {loading ? "Creating..." : "Create Clinic"}
             </button>
           </div>
         </form>

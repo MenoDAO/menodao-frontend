@@ -142,6 +142,37 @@ class AdminApiClient {
     );
   }
 
+  // Clinics
+  async listClinics(status?: string) {
+    const params = status ? `?status=${status}` : "";
+    return this.request<AdminClinic[]>(`/admin/clinics${params}`);
+  }
+
+  async getClinicDetail(id: string) {
+    return this.request<AdminClinic>(`/admin/clinics/${id}`);
+  }
+
+  async approveClinic(id: string) {
+    return this.request<{ success: boolean; message: string }>(
+      `/admin/clinics/${id}/approve`,
+      { method: "POST" },
+    );
+  }
+
+  async suspendClinic(id: string) {
+    return this.request<{ success: boolean; message: string }>(
+      `/admin/clinics/${id}/suspend`,
+      { method: "POST" },
+    );
+  }
+
+  async rejectClinic(id: string, reason: string) {
+    return this.request<{ success: boolean; message: string }>(
+      `/admin/clinics/${id}/reject`,
+      { method: "POST", body: JSON.stringify({ reason }) },
+    );
+  }
+
   // Payments
   async listPayments(params: {
     page?: number;
@@ -368,6 +399,27 @@ export interface PaginatedResponse<T> {
 }
 
 export const adminApi = new AdminApiClient(API_BASE_URL);
+
+export interface AdminClinic {
+  id: string;
+  name: string;
+  subCounty: string;
+  physicalLocation: string;
+  leadDentistName: string;
+  ownerPhone: string;
+  managerName?: string;
+  whatsappNumber: string;
+  email?: string;
+  mpesaTillOrPaybill: string;
+  tillPaybillName: string;
+  status: "PENDING" | "APPROVED" | "SUSPENDED" | "REJECTED";
+  rejectionReason?: string;
+  approvedAt?: string;
+  activeDentalChairs: number;
+  kmpdcRegNumber?: string;
+  createdAt: string;
+  _count: { staffUsers: number };
+}
 
 export interface SiteVisitMetrics {
   summary: {

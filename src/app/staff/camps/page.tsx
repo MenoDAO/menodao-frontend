@@ -45,20 +45,20 @@ export default function CampsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Camps & Clinics
+          Clinics
         </h1>
         <button
           onClick={() => router.push("/staff/camps/new")}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
         >
-          + Create New Camp
+          + Add New Clinic
         </button>
       </div>
 
       {camps.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
           <p className="text-gray-500 dark:text-gray-400">
-            No camps found. Create one to get started.
+            No clinics found. Create one to get started.
           </p>
         </div>
       ) : (
