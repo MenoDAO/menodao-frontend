@@ -58,18 +58,31 @@ export default function StaffDashboardPage() {
   const handleSearch = async (phoneNumber: string) => {
     try {
       const result = await staffApi.searchMember(phoneNumber);
+      console.log("Search result:", result);
       setSearchResult(result);
 
       // If member not found or inactive, just show the result on checkin screen
       if (!result.found || !result.active || !result.member) {
+        console.log("Member not found or inactive");
         return;
       }
 
       // Member found and active - check for open visit
       try {
         const visit = await staffApi.getOpenVisit(result.member.id);
+        console.log("Open visit response:", visit);
 
         if (visit) {
+          console.log("Visit has member?", !!visit.member);
+          console.log("Visit has subscription?", !!visit.member?.subscription);
+
+          // Validate before switching
+          if (!visit.member || !visit.member.subscription) {
+            console.error("Invalid visit data:", visit);
+            alert("Error: Visit data is incomplete. Please contact support.");
+            return;
+          }
+
           // Has open visit - go to treatment
           setOpenVisit(visit);
           setCurrentScreen("treatment");
