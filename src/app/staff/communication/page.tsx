@@ -19,9 +19,17 @@ export default function CommunicationPage() {
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<BulkSmsResponse | null>(null);
+  const [clinicInfo, setClinicInfo] = useState<string>("");
+
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
+      // Get staff profile to check clinic association
+      const profile = await staffApi.getProfile();
+      if (profile.clinic) {
+        setClinicInfo(`${profile.clinic.name} - ${profile.clinic.subCounty}`);
+      }
+
       const data = await staffApi.getMembers(selectedBranch || undefined);
       setMembers(data);
       // Automatically select all members in the current view
@@ -83,6 +91,11 @@ export default function CommunicationPage() {
         <p className="text-gray-500">
           Send bulk updates and notifications to members
         </p>
+        {clinicInfo && (
+          <p className="text-sm text-blue-600 font-medium mt-1">
+            📍 {clinicInfo} - Showing only patients who have visited your clinic
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

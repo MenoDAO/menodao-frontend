@@ -18,18 +18,22 @@ export default function StaffLayout({
     // Check authentication on mount and route changes
     if (!isAuthenticated && pathname !== "/staff/login") {
       router.push("/staff/login");
+      return;
     } else if (isAuthenticated && pathname === "/staff/login") {
       router.push("/staff");
+      return;
     }
 
-    // Verify token is still valid
-    if (isAuthenticated && staffApi.getToken()) {
-      staffApi.getProfile().catch(() => {
+    // Verify token is still valid only on mount, not on every route change
+    if (isAuthenticated && staffApi.getToken() && pathname !== "/staff/login") {
+      staffApi.getProfile().catch((error) => {
+        console.error("Token validation failed:", error);
         logout();
         router.push("/staff/login");
       });
     }
-  }, [isAuthenticated, pathname, router, logout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, pathname]);
 
   if (!isAuthenticated && pathname !== "/staff/login") {
     return null;

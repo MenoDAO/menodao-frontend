@@ -8,8 +8,14 @@ export interface Staff {
   fullName: string;
   role: "STAFF" | "ADMIN";
   branch?: string;
+  clinicId?: string;
   lastLogin?: string;
   createdAt?: string;
+  clinic?: {
+    id: string;
+    name: string;
+    subCounty: string;
+  };
 }
 
 export interface StaffLoginResponse {
@@ -185,13 +191,35 @@ class StaffApiClient {
       ) {
         this.setToken(null);
       }
-      const error = await response
-        .json()
-        .catch(() => ({ message: "Request failed" }));
-      throw new Error(error.message || `HTTP ${response.status}`);
+
+      // Try to parse error response
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        // If JSON parsing fails, use status text
+        errorMessage = response.statusText || errorMessage;
+      }
+
+      throw new Error(errorMessage);
     }
 
-    return response.json();
+    // Handle empty responses (204 No Content, etc.)
+    if (
+      response.status === 204 ||
+      response.headers.get("content-length") === "0"
+    ) {
+      return {} as T;
+    }
+
+    // Try to parse JSON response
+    try {
+      return await response.json();
+    } catch (error) {
+      console.error("Failed to parse JSON response:", error);
+      throw new Error("Invalid response from server");
+    }
   }
 
   // Staff auth
