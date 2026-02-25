@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { getApiUrl } from "@/lib/api";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://api.dev.menodao.org";
+const API_URL = getApiUrl();
 
 type XRayCapability = "NONE" | "PERIAPICAL" | "OPG";
 
