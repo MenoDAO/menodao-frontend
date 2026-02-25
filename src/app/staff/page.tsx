@@ -61,15 +61,22 @@ export default function StaffDashboardPage() {
 
       if (result.found && result.active && result.member) {
         // Check if there's an open visit
-        const visit = await staffApi.getOpenVisit(result.member.id);
-        if (visit) {
-          setOpenVisit(visit);
-          setCurrentScreen("treatment");
-        } else {
+        try {
+          const visit = await staffApi.getOpenVisit(result.member.id);
+          if (visit) {
+            setOpenVisit(visit);
+            setCurrentScreen("treatment");
+          } else {
+            setCurrentScreen("checkin");
+          }
+        } catch (visitError) {
+          // No open visit found, proceed to check-in
+          console.log("No open visit found, proceeding to check-in");
           setCurrentScreen("checkin");
         }
       }
     } catch (error: unknown) {
+      console.error("Search error:", error);
       alert(error instanceof Error ? error.message : "Failed to search member");
     }
   };
@@ -80,11 +87,17 @@ export default function StaffDashboardPage() {
       setCurrentScreen("treatment");
 
       // Fetch the open visit
-      const visit = await staffApi.getOpenVisit(result.member.id);
-      if (visit) {
-        setOpenVisit(visit);
+      try {
+        const visit = await staffApi.getOpenVisit(result.member.id);
+        if (visit) {
+          setOpenVisit(visit);
+        }
+      } catch (visitError) {
+        console.error("Failed to fetch open visit after check-in:", visitError);
+        // Continue anyway, the visit was created
       }
     } catch (error: unknown) {
+      console.error("Check-in error:", error);
       alert(
         error instanceof Error ? error.message : "Failed to check in patient",
       );
@@ -93,10 +106,14 @@ export default function StaffDashboardPage() {
 
   const handleProcedureAdded = async () => {
     if (openVisit) {
-      // Refresh the open visit
-      const visit = await staffApi.getOpenVisit(openVisit.visit.memberId);
-      if (visit) {
-        setOpenVisit(visit);
+      try {
+        // Refresh the open visit
+        const visit = await staffApi.getOpenVisit(openVisit.visit.memberId);
+        if (visit) {
+          setOpenVisit(visit);
+        }
+      } catch (error) {
+        console.error("Failed to refresh visit after procedure:", error);
       }
     }
   };
