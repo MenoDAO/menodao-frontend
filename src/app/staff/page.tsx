@@ -10,6 +10,7 @@ import {
 import CheckInScreen from "./components/CheckInScreen";
 import TreatmentRoomScreen from "./components/TreatmentRoomScreen";
 import DischargeScreen from "./components/DischargeScreen";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 type Screen = "overview" | "checkin" | "treatment" | "discharge";
 
@@ -65,14 +66,19 @@ export default function StaffDashboardPage() {
       }
 
       // Member found and active - check for open visit
-      const visit = await staffApi.getOpenVisit(result.member.id);
+      try {
+        const visit = await staffApi.getOpenVisit(result.member.id);
 
-      if (visit) {
-        // Has open visit - go to treatment
-        setOpenVisit(visit);
-        setCurrentScreen("treatment");
+        if (visit) {
+          // Has open visit - go to treatment
+          setOpenVisit(visit);
+          setCurrentScreen("treatment");
+        }
+        // If no visit, stay on checkin screen (already there)
+      } catch (visitError) {
+        // Error fetching visit - stay on checkin screen
+        console.error("Error fetching open visit:", visitError);
       }
-      // If no visit, stay on checkin screen (already there)
     } catch (error: unknown) {
       console.error("Search error:", error);
       alert(error instanceof Error ? error.message : "Failed to search member");
@@ -211,19 +217,23 @@ export default function StaffDashboardPage() {
       )}
 
       {currentScreen === "checkin" && (
-        <CheckInScreen
-          searchResult={searchResult}
-          onSearch={handleSearch}
-          onCheckIn={handleCheckIn}
-        />
+        <ErrorBoundary>
+          <CheckInScreen
+            searchResult={searchResult}
+            onSearch={handleSearch}
+            onCheckIn={handleCheckIn}
+          />
+        </ErrorBoundary>
       )}
 
       {currentScreen === "treatment" && openVisit && (
-        <TreatmentRoomScreen
-          visit={openVisit}
-          onProcedureAdded={handleProcedureAdded}
-          onDischarge={() => setCurrentScreen("discharge")}
-        />
+        <ErrorBoundary>
+          <TreatmentRoomScreen
+            visit={openVisit}
+            onProcedureAdded={handleProcedureAdded}
+            onDischarge={() => setCurrentScreen("discharge")}
+          />
+        </ErrorBoundary>
       )}
 
       {currentScreen === "discharge" && openVisit && (
