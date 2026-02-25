@@ -131,14 +131,6 @@ export default function StaffDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {console.log(
-        "Current screen:",
-        currentScreen,
-        "OpenVisit:",
-        openVisit,
-        "SearchResult:",
-        searchResult,
-      )}
       {currentScreen === "overview" && (
         <div className="space-y-8">
           <div className="flex justify-between items-center">
