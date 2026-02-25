@@ -88,12 +88,26 @@ export default function StaffDashboardPage() {
   const handleCheckIn = async (data: CheckInDto) => {
     try {
       const result = await staffApi.checkIn(data);
+      console.log("Check-in result:", result);
 
       // Fetch the open visit
       const visit = await staffApi.getOpenVisit(result.member.id);
+      console.log("Fetched open visit:", visit);
 
       if (!visit) {
         throw new Error("Failed to retrieve visit after check-in");
+      }
+
+      if (!visit.member) {
+        console.error("Visit missing member data:", visit);
+        throw new Error("Visit data incomplete - missing member information");
+      }
+
+      if (!visit.member.subscription) {
+        console.error("Visit missing subscription data:", visit);
+        throw new Error(
+          "Visit data incomplete - missing subscription information",
+        );
       }
 
       setOpenVisit(visit);
