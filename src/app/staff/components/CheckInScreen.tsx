@@ -276,7 +276,7 @@ export default function CheckInScreen({
                 <button
                   onClick={handleCheckInSubmit}
                   disabled={!hasConsent || !chiefComplaint}
-                  className="w-full px-6 py-4 bg-primary text-white font-bold rounded-2xl transition-all shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
+                  className="w-full px-6 py-4 bg-emerald-600 text-white font-bold rounded-2xl transition-all shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
                 >
                   COMPLETE CHECK-IN & SEND TO TREATMENT
                 </button>

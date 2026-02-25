@@ -143,7 +143,7 @@ export default function StaffDashboardPage() {
             </h1>
             <button
               onClick={() => setCurrentScreen("checkin")}
-              className="bg-primary text-primary-foreground py-3 px-8 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
+              className="bg-emerald-600 text-white py-3 px-8 rounded-2xl font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:shadow-emerald-600/30 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
             >
               Start New Check-In
             </button>
@@ -154,7 +154,7 @@ export default function StaffDashboardPage() {
               <p className="text-sm font-semibold text-gray-500 uppercase mb-1">
                 Branch Members
               </p>
-              <p className="text-3xl font-bold text-primary">
+              <p className="text-3xl font-bold text-emerald-600">
                 {stats?.branchMemberCount || 0}
               </p>
             </div>
@@ -190,7 +190,7 @@ export default function StaffDashboardPage() {
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary font-bold">
+                      <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-emerald-600 font-bold">
                         {new Date(camp.startDate).getDate()}
                       </div>
                       <div>
@@ -199,7 +199,7 @@ export default function StaffDashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-primary">
+                      <p className="font-bold text-emerald-600">
                         {camp.expectedMembers}
                       </p>
                       <p className="text-xs text-gray-400 uppercase font-semibold">
