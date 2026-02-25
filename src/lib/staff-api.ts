@@ -258,7 +258,26 @@ class StaffApiClient {
 
   async getOpenVisit(memberId: string): Promise<OpenVisit | null> {
     try {
-      return await this.request<OpenVisit>(`/visits/open/${memberId}`);
+      const response = await this.request<OpenVisit>(
+        `/visits/open/${memberId}`,
+      );
+
+      // Check if response is an empty object or missing required fields
+      if (
+        !response ||
+        typeof response !== "object" ||
+        Object.keys(response).length === 0
+      ) {
+        return null;
+      }
+
+      // Validate that response has required structure
+      if (!response.visit || !response.member) {
+        console.warn("getOpenVisit returned incomplete data:", response);
+        return null;
+      }
+
+      return response;
     } catch (error: unknown) {
       if (
         error instanceof Error &&
