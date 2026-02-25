@@ -64,17 +64,18 @@ export default function StaffDashboardPage() {
         try {
           const visit = await staffApi.getOpenVisit(result.member.id);
           if (visit) {
+            // Member has an open visit, go to treatment
             setOpenVisit(visit);
-            setCurrentScreen("treatment");
+            // Use setTimeout to avoid state update during render
+            setTimeout(() => setCurrentScreen("treatment"), 0);
           } else {
+            // No open visit, stay on checkin screen
             setOpenVisit(null);
-            setCurrentScreen("checkin");
           }
         } catch (visitError) {
-          // No open visit found, proceed to check-in
-          console.log("No open visit found, proceeding to check-in");
+          // No open visit found, stay on check-in screen
+          console.log("No open visit found, staying on check-in");
           setOpenVisit(null);
-          setCurrentScreen("checkin");
         }
       }
     } catch (error: unknown) {
@@ -92,7 +93,8 @@ export default function StaffDashboardPage() {
         const visit = await staffApi.getOpenVisit(result.member.id);
         if (visit) {
           setOpenVisit(visit);
-          setCurrentScreen("treatment");
+          // Use setTimeout to avoid state update during render
+          setTimeout(() => setCurrentScreen("treatment"), 0);
         } else {
           throw new Error("Failed to retrieve visit after check-in");
         }
