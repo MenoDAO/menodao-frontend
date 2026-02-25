@@ -159,7 +159,7 @@ export default function CheckInScreen({
                       <div
                         className="bg-green-500 h-full transition-all duration-500"
                         style={{
-                          width: `${(searchResult.claimLimit.remaining / searchResult.claimLimit.allocated) * 100}%`,
+                          width: `${searchResult.claimLimit.allocated > 0 ? (searchResult.claimLimit.remaining / searchResult.claimLimit.allocated) * 100 : 0}%`,
                         }}
                       ></div>
                     </div>
