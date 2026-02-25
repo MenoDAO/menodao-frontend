@@ -57,33 +57,22 @@ export default function StaffDashboardPage() {
   const handleSearch = async (phoneNumber: string) => {
     try {
       const result = await staffApi.searchMember(phoneNumber);
-      console.log("Search result:", result);
       setSearchResult(result);
 
-      if (result.found && result.active && result.member) {
-        // Check if there's an open visit
-        try {
-          const visit = await staffApi.getOpenVisit(result.member.id);
-          console.log("Open visit:", visit);
-          if (visit) {
-            // Member has an open visit, go to treatment
-            setOpenVisit(visit);
-            // Use setTimeout to avoid state update during render
-            setTimeout(() => {
-              console.log("Switching to treatment screen");
-              setCurrentScreen("treatment");
-            }, 0);
-          } else {
-            // No open visit, stay on checkin screen
-            console.log("No open visit, staying on checkin");
-            setOpenVisit(null);
-          }
-        } catch (visitError) {
-          // No open visit found, stay on check-in screen
-          console.log("No open visit found, staying on check-in");
-          setOpenVisit(null);
-        }
+      // If member not found or inactive, just show the result on checkin screen
+      if (!result.found || !result.active || !result.member) {
+        return;
       }
+
+      // Member found and active - check for open visit
+      const visit = await staffApi.getOpenVisit(result.member.id);
+
+      if (visit) {
+        // Has open visit - go to treatment
+        setOpenVisit(visit);
+        setCurrentScreen("treatment");
+      }
+      // If no visit, stay on checkin screen (already there)
     } catch (error: unknown) {
       console.error("Search error:", error);
       alert(error instanceof Error ? error.message : "Failed to search member");
@@ -94,22 +83,15 @@ export default function StaffDashboardPage() {
     try {
       const result = await staffApi.checkIn(data);
 
-      // Fetch the open visit BEFORE changing screen
-      try {
-        const visit = await staffApi.getOpenVisit(result.member.id);
-        if (visit) {
-          setOpenVisit(visit);
-          // Use setTimeout to avoid state update during render
-          setTimeout(() => setCurrentScreen("treatment"), 0);
-        } else {
-          throw new Error("Failed to retrieve visit after check-in");
-        }
-      } catch (visitError) {
-        console.error("Failed to fetch open visit after check-in:", visitError);
-        alert(
-          "Check-in succeeded but failed to load visit details. Please refresh.",
-        );
+      // Fetch the open visit
+      const visit = await staffApi.getOpenVisit(result.member.id);
+
+      if (!visit) {
+        throw new Error("Failed to retrieve visit after check-in");
       }
+
+      setOpenVisit(visit);
+      setCurrentScreen("treatment");
     } catch (error: unknown) {
       console.error("Check-in error:", error);
       alert(
@@ -244,16 +226,13 @@ export default function StaffDashboardPage() {
         />
       )}
 
-      {currentScreen === "treatment" &&
-        openVisit &&
-        openVisit.member &&
-        openVisit.member.subscription && (
-          <TreatmentRoomScreen
-            visit={openVisit}
-            onProcedureAdded={handleProcedureAdded}
-            onDischarge={() => setCurrentScreen("discharge")}
-          />
-        )}
+      {currentScreen === "treatment" && openVisit && (
+        <TreatmentRoomScreen
+          visit={openVisit}
+          onProcedureAdded={handleProcedureAdded}
+          onDischarge={() => setCurrentScreen("discharge")}
+        />
+      )}
 
       {currentScreen === "discharge" && openVisit && (
         <DischargeScreen

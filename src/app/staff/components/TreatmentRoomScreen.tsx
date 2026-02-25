@@ -35,6 +35,17 @@ export default function TreatmentRoomScreen({
     loadProcedures();
   }, [loadProcedures]);
 
+  // Safety check
+  if (!visit.member.subscription) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <p className="text-red-600">
+          Error: Member subscription data not available
+        </p>
+      </div>
+    );
+  }
+
   const handleAddProcedure = async () => {
     if (!selectedProcedureId) return;
 
