@@ -538,14 +538,14 @@ export interface Clinic {
   id: string;
   name: string;
   subCounty: string;
-  ward: string;
-  contactPerson: string;
-  contactPhone: string;
-  contactEmail: string;
+  physicalLocation: string;
+  leadDentistName: string;
+  ownerPhone: string;
+  whatsappNumber: string;
+  email: string | null;
   status: string;
   createdAt: string;
   approvedAt?: string;
-  approvedBy?: string;
 }
 
 export const staffApi = new StaffApiClient();

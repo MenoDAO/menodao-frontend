@@ -97,26 +97,32 @@ export default function ClinicsPage() {
                 <div className="space-y-2 text-sm text-gray-600 mb-4">
                   <p>
                     <span className="font-semibold">Location:</span>{" "}
-                    {clinic.ward}, {clinic.subCounty}
+                    {clinic.physicalLocation}, {clinic.subCounty}
                   </p>
                   <p>
-                    <span className="font-semibold">Contact Person:</span>{" "}
+                    <span className="font-semibold">Lead Dentist:</span>{" "}
                     {isSelected
-                      ? clinic.contactPerson
-                      : blurText(clinic.contactPerson)}
+                      ? clinic.leadDentistName
+                      : blurText(clinic.leadDentistName)}
                   </p>
                   <p>
                     <span className="font-semibold">Phone:</span>{" "}
                     {isSelected
-                      ? clinic.contactPhone
-                      : blurText(clinic.contactPhone)}
+                      ? clinic.ownerPhone
+                      : blurText(clinic.ownerPhone)}
                   </p>
                   <p>
-                    <span className="font-semibold">Email:</span>{" "}
+                    <span className="font-semibold">WhatsApp:</span>{" "}
                     {isSelected
-                      ? clinic.contactEmail
-                      : blurText(clinic.contactEmail)}
+                      ? clinic.whatsappNumber
+                      : blurText(clinic.whatsappNumber)}
                   </p>
+                  {clinic.email && (
+                    <p>
+                      <span className="font-semibold">Email:</span>{" "}
+                      {isSelected ? clinic.email : blurText(clinic.email)}
+                    </p>
+                  )}
                   {clinic.approvedAt && (
                     <p className="text-xs text-gray-500 mt-3">
                       Approved: {formatDate(clinic.approvedAt)}
