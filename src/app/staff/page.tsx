@@ -57,19 +57,25 @@ export default function StaffDashboardPage() {
   const handleSearch = async (phoneNumber: string) => {
     try {
       const result = await staffApi.searchMember(phoneNumber);
+      console.log("Search result:", result);
       setSearchResult(result);
 
       if (result.found && result.active && result.member) {
         // Check if there's an open visit
         try {
           const visit = await staffApi.getOpenVisit(result.member.id);
+          console.log("Open visit:", visit);
           if (visit) {
             // Member has an open visit, go to treatment
             setOpenVisit(visit);
             // Use setTimeout to avoid state update during render
-            setTimeout(() => setCurrentScreen("treatment"), 0);
+            setTimeout(() => {
+              console.log("Switching to treatment screen");
+              setCurrentScreen("treatment");
+            }, 0);
           } else {
             // No open visit, stay on checkin screen
+            console.log("No open visit, staying on checkin");
             setOpenVisit(null);
           }
         } catch (visitError) {
@@ -143,6 +149,14 @@ export default function StaffDashboardPage() {
 
   return (
     <div className="space-y-6">
+      {console.log(
+        "Current screen:",
+        currentScreen,
+        "OpenVisit:",
+        openVisit,
+        "SearchResult:",
+        searchResult,
+      )}
       {currentScreen === "overview" && (
         <div className="space-y-8">
           <div className="flex justify-between items-center">
