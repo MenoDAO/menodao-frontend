@@ -24,7 +24,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/dashboard/subscription", label: "My Package", icon: CreditCard },
   { href: "/dashboard/claims", label: "Claims", icon: FileText },
-  { href: "/dashboard/camps", label: "Find Camps", icon: MapPin },
+  { href: "/dashboard/camps", label: "Find a Clinic", icon: MapPin },
   { href: "/dashboard/transactions", label: "Blockchain", icon: LinkIcon },
   { href: "/dashboard/profile", label: "Profile", icon: User },
 ];
@@ -98,7 +98,9 @@ export default function DashboardLayout({
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
                     {member?.fullName || "Member"}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{member?.phoneNumber}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {member?.phoneNumber}
+                  </p>
                 </div>
                 <ThemeToggle />
                 <button
@@ -120,7 +122,11 @@ export default function DashboardLayout({
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-lg"
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {mobileMenuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
               </button>
             </div>
           </div>
@@ -134,9 +140,11 @@ export default function DashboardLayout({
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 {member?.fullName || "Member"}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{member?.phoneNumber}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {member?.phoneNumber}
+              </p>
             </div>
-            
+
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;

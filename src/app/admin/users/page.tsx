@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi, AdminUser } from "@/lib/admin-api";
 import {
   Search,
@@ -13,7 +13,10 @@ import {
   Crown,
   Check,
   X,
+  Trash2,
 } from "lucide-react";
+
+import { useEffect } from "react";
 
 function TierBadge({ tier }: { tier: string }) {
   const colors = {
@@ -27,9 +30,11 @@ function TierBadge({ tier }: { tier: string }) {
     GOLD: Crown,
   };
   const Icon = icons[tier as keyof typeof icons] || Shield;
-  
+
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${colors[tier as keyof typeof colors] || "bg-gray-500/20 text-gray-400"}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${colors[tier as keyof typeof colors] || "bg-gray-500/20 text-gray-400"}`}
+    >
       <Icon className="w-3 h-3" />
       {tier}
     </span>
@@ -41,6 +46,19 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
   const limit = 20;
 
   const { data, isLoading, isFetching } = useQuery({
@@ -54,6 +72,24 @@ export default function UsersPage() {
       }),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (memberId: string) => adminApi.deleteSubscription(memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      setToast({
+        message: "Subscription removed successfully",
+        type: "success",
+      });
+      setDeleteConfirmId(null);
+    },
+    onError: (error: any) => {
+      setToast({
+        message: error.message || "Failed to remove subscription",
+        type: "error",
+      });
+    },
+  });
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearch(searchInput);
@@ -62,6 +98,24 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-[100] px-5 py-3 rounded-2xl shadow-xl text-sm font-medium flex items-center gap-2 animate-in slide-in-from-top-2 fade-in duration-200 ${
+            toast.type === "success"
+              ? "bg-green-600 text-white"
+              : "bg-red-600 text-white"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <Check className="w-5 h-5" />
+          ) : (
+            <X className="w-5 h-5" />
+          )}
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Users</h1>
@@ -140,7 +194,9 @@ export default function UsersPage() {
                           <p className="text-white font-medium">
                             {user.fullName || "—"}
                           </p>
-                          <p className="text-gray-500 text-sm">{user.phoneNumber}</p>
+                          <p className="text-gray-500 text-sm">
+                            {user.phoneNumber}
+                          </p>
                         </div>
                       </td>
                       <td className="py-4 px-6">
@@ -156,17 +212,54 @@ export default function UsersPage() {
                         )}
                       </td>
                       <td className="py-4 px-6">
-                        {user.subscription?.isActive ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-400 text-sm">
-                            <Check className="w-4 h-4" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-gray-500 text-sm">
-                            <X className="w-4 h-4" />
-                            Inactive
-                          </span>
-                        )}
+                        <div className="flex flex-col gap-2">
+                          {user.subscription?.isActive ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-400 text-sm">
+                              <Check className="w-4 h-4" />
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-gray-500 text-sm">
+                              <X className="w-4 h-4" />
+                              Inactive
+                            </span>
+                          )}
+
+                          {user.subscription && (
+                            <div className="flex items-center gap-2">
+                              {deleteConfirmId === user.id ? (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() =>
+                                      deleteMutation.mutate(user.id)
+                                    }
+                                    disabled={deleteMutation.isPending}
+                                    className="text-xs font-semibold text-red-500 hover:text-red-400"
+                                  >
+                                    {deleteMutation.isPending
+                                      ? "Removing..."
+                                      : "Confirm"}
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteConfirmId(null)}
+                                    className="text-xs font-semibold text-gray-400 hover:text-gray-300"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setDeleteConfirmId(user.id)}
+                                  className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-red-400 transition-colors"
+                                  title="Remove Subscription"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 px-6 text-gray-300">
                         {user._count.contributions}
