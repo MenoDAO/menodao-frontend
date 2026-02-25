@@ -463,11 +463,20 @@ export default function RegisterClinicPage() {
                 name="xrayCapability"
                 value={form.xrayCapability}
                 onChange={handleChange}
-                className={inputClass}
+                className={`${inputClass} !text-emerald-900 !bg-emerald-50`}
               >
-                <option value="NONE">None</option>
-                <option value="PERIAPICAL">Periapical (Small)</option>
-                <option value="OPG">OPG (Full Mouth)</option>
+                <option value="NONE" className="text-emerald-900 bg-white">
+                  None
+                </option>
+                <option
+                  value="PERIAPICAL"
+                  className="text-emerald-900 bg-white"
+                >
+                  Periapical (Small)
+                </option>
+                <option value="OPG" className="text-emerald-900 bg-white">
+                  OPG (Full Mouth)
+                </option>
               </select>
             </div>
             <div>
