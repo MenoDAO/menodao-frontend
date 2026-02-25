@@ -67,11 +67,13 @@ export default function StaffDashboardPage() {
             setOpenVisit(visit);
             setCurrentScreen("treatment");
           } else {
+            setOpenVisit(null);
             setCurrentScreen("checkin");
           }
         } catch (visitError) {
           // No open visit found, proceed to check-in
           console.log("No open visit found, proceeding to check-in");
+          setOpenVisit(null);
           setCurrentScreen("checkin");
         }
       }
@@ -84,17 +86,21 @@ export default function StaffDashboardPage() {
   const handleCheckIn = async (data: CheckInDto) => {
     try {
       const result = await staffApi.checkIn(data);
-      setCurrentScreen("treatment");
 
-      // Fetch the open visit
+      // Fetch the open visit BEFORE changing screen
       try {
         const visit = await staffApi.getOpenVisit(result.member.id);
         if (visit) {
           setOpenVisit(visit);
+          setCurrentScreen("treatment");
+        } else {
+          throw new Error("Failed to retrieve visit after check-in");
         }
       } catch (visitError) {
         console.error("Failed to fetch open visit after check-in:", visitError);
-        // Continue anyway, the visit was created
+        alert(
+          "Check-in succeeded but failed to load visit details. Please refresh.",
+        );
       }
     } catch (error: unknown) {
       console.error("Check-in error:", error);
@@ -222,13 +228,15 @@ export default function StaffDashboardPage() {
         />
       )}
 
-      {currentScreen === "treatment" && openVisit && (
-        <TreatmentRoomScreen
-          visit={openVisit}
-          onProcedureAdded={handleProcedureAdded}
-          onDischarge={() => setCurrentScreen("discharge")}
-        />
-      )}
+      {currentScreen === "treatment" &&
+        openVisit &&
+        openVisit.member.subscription && (
+          <TreatmentRoomScreen
+            visit={openVisit}
+            onProcedureAdded={handleProcedureAdded}
+            onDischarge={() => setCurrentScreen("discharge")}
+          />
+        )}
 
       {currentScreen === "discharge" && openVisit && (
         <DischargeScreen
