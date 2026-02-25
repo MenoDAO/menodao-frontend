@@ -1,29 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { staffApi, Camp } from "@/lib/staff-api";
+import { useState, useEffect, useCallback } from "react";
+import { staffApi, Clinic } from "@/lib/staff-api";
 
-export default function CampsPage() {
-  const router = useRouter();
-  const [camps, setCamps] = useState<Camp[]>([]);
+export default function ClinicsPage() {
+  const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>("all");
 
-  useEffect(() => {
-    loadCamps();
-  }, []);
-
-  const loadCamps = async () => {
+  const loadClinics = useCallback(async () => {
     try {
-      const data = await staffApi.getCamps();
-      setCamps(data);
+      const statusFilter = filter === "all" ? undefined : filter;
+      const data = await staffApi.getClinics(statusFilter);
+      setClinics(data);
     } catch (error) {
-      console.error("Failed to load camps:", error);
-      alert("Failed to load camps. Please try again.");
+      console.error("Failed to load clinics:", error);
+      alert("Failed to load clinics. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    loadClinics();
+  }, [loadClinics]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-KE", {
@@ -33,10 +33,25 @@ export default function CampsPage() {
     });
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "APPROVED":
+        return "bg-green-100 text-green-800";
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800";
+      case "SUSPENDED":
+        return "bg-red-100 text-red-800";
+      case "REJECTED":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -44,66 +59,85 @@ export default function CampsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Clinics
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">Registered Clinics</h1>
         <button
-          onClick={() => router.push("/staff/camps/new")}
+          onClick={() => window.open("/register-clinic", "_blank")}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
         >
           + Add New Clinic
         </button>
       </div>
 
-      {camps.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-          <p className="text-gray-500 dark:text-gray-400">
-            No clinics found. Create one to get started.
+      {/* Filter Tabs */}
+      <div className="flex gap-2 border-b border-gray-200">
+        {["all", "APPROVED", "PENDING", "SUSPENDED"].map((status) => (
+          <button
+            key={status}
+            onClick={() => setFilter(status)}
+            className={`px-4 py-2 font-medium transition-colors ${
+              filter === status
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            {status === "all"
+              ? "All"
+              : status.charAt(0) + status.slice(1).toLowerCase()}
+          </button>
+        ))}
+      </div>
+
+      {clinics.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-lg shadow">
+          <p className="text-gray-500">
+            No clinics found{filter !== "all" ? ` with status: ${filter}` : ""}.
           </p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {camps.map((camp) => (
+          {clinics.map((clinic) => (
             <div
-              key={camp.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow p-6"
+              key={clinic.id}
+              className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6"
             >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {camp.name}
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {clinic.name}
                 </h3>
                 <span
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    camp.isActive
-                      ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                      : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                  }`}
+                  className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(
+                    clinic.status,
+                  )}`}
                 >
-                  {camp.isActive ? "Active" : "Inactive"}
+                  {clinic.status}
                 </span>
               </div>
 
-              <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <div className="space-y-2 text-sm text-gray-600 mb-4">
                 <p>
-                  <span className="font-semibold">Venue:</span> {camp.venue}
+                  <span className="font-semibold">Location:</span> {clinic.ward}
+                  , {clinic.subCounty}
                 </p>
                 <p>
-                  <span className="font-semibold">Dates:</span>{" "}
-                  {formatDate(camp.startDate)} - {formatDate(camp.endDate)}
+                  <span className="font-semibold">Contact:</span>{" "}
+                  {clinic.contactPerson}
                 </p>
                 <p>
-                  <span className="font-semibold">Capacity:</span>{" "}
-                  {camp._count?.registrations || 0} / {camp.capacity}
+                  <span className="font-semibold">Phone:</span>{" "}
+                  {clinic.contactPhone}
                 </p>
-              </div>
-
-              <div className="pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-2">
-                <button
-                  onClick={() => router.push(`/staff/camps/${camp.id}`)}
-                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium text-sm"
-                >
-                  View Details
-                </button>
+                <p>
+                  <span className="font-semibold">Email:</span>{" "}
+                  {clinic.contactEmail}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Registered: {formatDate(clinic.createdAt)}
+                </p>
+                {clinic.approvedAt && (
+                  <p className="text-xs text-gray-500">
+                    Approved: {formatDate(clinic.approvedAt)}
+                  </p>
+                )}
               </div>
             </div>
           ))}

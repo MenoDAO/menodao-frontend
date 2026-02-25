@@ -461,6 +461,12 @@ class StaffApiClient {
       body: JSON.stringify({ phoneNumbers, message }),
     });
   }
+
+  // Clinics (admin only)
+  async getClinics(status?: string): Promise<Clinic[]> {
+    const url = status ? `/admin/clinics?status=${status}` : "/admin/clinics";
+    return this.request<Clinic[]>(url);
+  }
 }
 
 export interface Camp {
@@ -527,6 +533,20 @@ export interface StaffEnrollmentData {
   fullName: string;
   role: string;
   branch?: string;
+}
+
+export interface Clinic {
+  id: string;
+  name: string;
+  subCounty: string;
+  ward: string;
+  contactPerson: string;
+  contactPhone: string;
+  contactEmail: string;
+  status: string;
+  createdAt: string;
+  approvedAt?: string;
+  approvedBy?: string;
 }
 
 export const staffApi = new StaffApiClient();
