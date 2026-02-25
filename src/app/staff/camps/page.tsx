@@ -6,12 +6,11 @@ import { staffApi, Clinic } from "@/lib/staff-api";
 export default function ClinicsPage() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
+  const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
   const loadClinics = useCallback(async () => {
     try {
-      const statusFilter = filter === "all" ? undefined : filter;
-      const data = await staffApi.getClinics(statusFilter);
+      const data = await staffApi.getClinics();
       setClinics(data);
     } catch (error) {
       console.error("Failed to load clinics:", error);
@@ -19,7 +18,7 @@ export default function ClinicsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, []);
 
   useEffect(() => {
     loadClinics();
@@ -33,19 +32,13 @@ export default function ClinicsPage() {
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "APPROVED":
-        return "bg-green-100 text-green-800";
-      case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
-      case "SUSPENDED":
-        return "bg-red-100 text-red-800";
-      case "REJECTED":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  const blurText = (text: string) => {
+    return text
+      .split("")
+      .map((char, i) =>
+        char === " " || char === "@" || char === "." ? char : "•",
+      )
+      .join("");
   };
 
   if (loading) {
@@ -59,88 +52,86 @@ export default function ClinicsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Registered Clinics</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Partner Clinics</h1>
         <button
           onClick={() => window.open("/register-clinic", "_blank")}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
         >
-          + Add New Clinic
+          + Register New Clinic
         </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
-        {["all", "APPROVED", "PENDING", "SUSPENDED"].map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-4 py-2 font-medium transition-colors ${
-              filter === status
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            {status === "all"
-              ? "All"
-              : status.charAt(0) + status.slice(1).toLowerCase()}
-          </button>
-        ))}
-      </div>
+      <p className="text-sm text-gray-600">
+        Showing approved partner clinics. Click on a clinic to view full contact
+        details.
+      </p>
 
       {clinics.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg shadow">
-          <p className="text-gray-500">
-            No clinics found{filter !== "all" ? ` with status: ${filter}` : ""}.
-          </p>
+          <p className="text-gray-500">No approved clinics found.</p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {clinics.map((clinic) => (
-            <div
-              key={clinic.id}
-              className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {clinic.name}
-                </h3>
-                <span
-                  className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(
-                    clinic.status,
-                  )}`}
-                >
-                  {clinic.status}
-                </span>
-              </div>
+          {clinics.map((clinic) => {
+            const isSelected = selectedClinicId === clinic.id;
 
-              <div className="space-y-2 text-sm text-gray-600 mb-4">
-                <p>
-                  <span className="font-semibold">Location:</span> {clinic.ward}
-                  , {clinic.subCounty}
-                </p>
-                <p>
-                  <span className="font-semibold">Contact:</span>{" "}
-                  {clinic.contactPerson}
-                </p>
-                <p>
-                  <span className="font-semibold">Phone:</span>{" "}
-                  {clinic.contactPhone}
-                </p>
-                <p>
-                  <span className="font-semibold">Email:</span>{" "}
-                  {clinic.contactEmail}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Registered: {formatDate(clinic.createdAt)}
-                </p>
-                {clinic.approvedAt && (
-                  <p className="text-xs text-gray-500">
-                    Approved: {formatDate(clinic.approvedAt)}
+            return (
+              <div
+                key={clinic.id}
+                onClick={() =>
+                  setSelectedClinicId(isSelected ? null : clinic.id)
+                }
+                className={`bg-white rounded-lg shadow hover:shadow-lg transition-all p-6 cursor-pointer ${
+                  isSelected ? "ring-2 ring-blue-500" : ""
+                }`}
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {clinic.name}
+                  </h3>
+                  <span className="px-2 py-1 text-xs rounded-full font-medium bg-green-100 text-green-800">
+                    ACTIVE
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-sm text-gray-600 mb-4">
+                  <p>
+                    <span className="font-semibold">Location:</span>{" "}
+                    {clinic.ward}, {clinic.subCounty}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Contact Person:</span>{" "}
+                    {isSelected
+                      ? clinic.contactPerson
+                      : blurText(clinic.contactPerson)}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Phone:</span>{" "}
+                    {isSelected
+                      ? clinic.contactPhone
+                      : blurText(clinic.contactPhone)}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Email:</span>{" "}
+                    {isSelected
+                      ? clinic.contactEmail
+                      : blurText(clinic.contactEmail)}
+                  </p>
+                  {clinic.approvedAt && (
+                    <p className="text-xs text-gray-500 mt-3">
+                      Approved: {formatDate(clinic.approvedAt)}
+                    </p>
+                  )}
+                </div>
+
+                {!isSelected && (
+                  <p className="text-xs text-blue-600 font-medium">
+                    Click to view contact details
                   </p>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

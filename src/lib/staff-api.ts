@@ -462,10 +462,9 @@ class StaffApiClient {
     });
   }
 
-  // Clinics (admin only)
-  async getClinics(status?: string): Promise<Clinic[]> {
-    const url = status ? `/admin/clinics?status=${status}` : "/admin/clinics";
-    return this.request<Clinic[]>(url);
+  // Clinics (staff view - approved only)
+  async getClinics(): Promise<Clinic[]> {
+    return this.request<Clinic[]>("/staff/clinics");
   }
 }
 
