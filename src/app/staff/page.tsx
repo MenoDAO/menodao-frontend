@@ -232,6 +232,7 @@ export default function StaffDashboardPage() {
 
       {currentScreen === "treatment" &&
         openVisit &&
+        openVisit.member &&
         openVisit.member.subscription && (
           <TreatmentRoomScreen
             visit={openVisit}

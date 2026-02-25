@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { OpenVisit, Procedure, staffApi } from '@/lib/staff-api';
+import { useState, useEffect, useCallback } from "react";
+import { OpenVisit, Procedure, staffApi } from "@/lib/staff-api";
 
 interface TreatmentRoomScreenProps {
   visit: OpenVisit;
@@ -15,15 +15,11 @@ export default function TreatmentRoomScreen({
   onDischarge,
 }: TreatmentRoomScreenProps) {
   const [procedures, setProcedures] = useState<Procedure[]>([]);
-  const [selectedProcedureId, setSelectedProcedureId] = useState('');
+  const [selectedProcedureId, setSelectedProcedureId] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    loadProcedures();
-  }, [visit.member.subscription?.tier]);
-
-  const loadProcedures = async () => {
+  const loadProcedures = useCallback(async () => {
     try {
       const tier = visit.member.subscription?.tier;
       if (tier) {
@@ -31,22 +27,26 @@ export default function TreatmentRoomScreen({
         setProcedures(procs);
       }
     } catch (err: any) {
-      console.error('Failed to load procedures:', err);
+      console.error("Failed to load procedures:", err);
     }
-  };
+  }, [visit.member.subscription?.tier]);
+
+  useEffect(() => {
+    loadProcedures();
+  }, [loadProcedures]);
 
   const handleAddProcedure = async () => {
     if (!selectedProcedureId) return;
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       await staffApi.addProcedure(visit.visit.id, selectedProcedureId);
-      setSelectedProcedureId('');
+      setSelectedProcedureId("");
       onProcedureAdded();
     } catch (err: any) {
-      setError(err.message || 'Failed to add procedure');
+      setError(err.message || "Failed to add procedure");
     } finally {
       setLoading(false);
     }
@@ -54,18 +54,21 @@ export default function TreatmentRoomScreen({
 
   const getTierBadgeColor = (tier?: string) => {
     switch (tier) {
-      case 'GOLD':
-        return 'bg-yellow-500 text-yellow-900';
-      case 'SILVER':
-        return 'bg-gray-400 text-gray-900';
-      case 'BRONZE':
-        return 'bg-orange-600 text-orange-100';
+      case "GOLD":
+        return "bg-yellow-500 text-yellow-900";
+      case "SILVER":
+        return "bg-gray-400 text-gray-900";
+      case "BRONZE":
+        return "bg-orange-600 text-orange-100";
       default:
-        return 'bg-gray-500 text-white';
+        return "bg-gray-500 text-white";
     }
   };
 
-  const totalCost = visit.visit.procedures.reduce((sum, vp) => sum + vp.cost, 0);
+  const totalCost = visit.visit.procedures.reduce(
+    (sum, vp) => sum + vp.cost,
+    0,
+  );
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
@@ -81,7 +84,7 @@ export default function TreatmentRoomScreen({
         {visit.member.subscription?.tier && (
           <span
             className={`px-3 py-1 rounded-full text-sm font-semibold ${getTierBadgeColor(
-              visit.member.subscription.tier
+              visit.member.subscription.tier,
             )}`}
           >
             {visit.member.subscription.tier}
@@ -97,7 +100,7 @@ export default function TreatmentRoomScreen({
           KES {visit.remainingLimit.toLocaleString()}
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Visit Total: KES {totalCost.toLocaleString()} | Allocated: KES{' '}
+          Visit Total: KES {totalCost.toLocaleString()} | Allocated: KES{" "}
           {visit.allocatedLimit.toLocaleString()}
         </p>
       </div>
@@ -124,7 +127,7 @@ export default function TreatmentRoomScreen({
             disabled={!selectedProcedureId || loading}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
           >
-            {loading ? 'Adding...' : 'Add to Visit'}
+            {loading ? "Adding..." : "Add to Visit"}
           </button>
         </div>
         {error && (
