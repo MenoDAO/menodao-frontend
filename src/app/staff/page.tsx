@@ -90,28 +90,13 @@ export default function StaffDashboardPage() {
       const result = await staffApi.checkIn(data);
       console.log("Check-in result:", result);
 
-      // Fetch the open visit
-      const visit = await staffApi.getOpenVisit(result.member.id);
-      console.log("Fetched open visit:", visit);
+      // Show success and prompt to search again
+      alert(
+        "Patient checked in successfully! Search for the patient again to start treatment.",
+      );
 
-      if (!visit) {
-        throw new Error("Failed to retrieve visit after check-in");
-      }
-
-      if (!visit.member) {
-        console.error("Visit missing member data:", visit);
-        throw new Error("Visit data incomplete - missing member information");
-      }
-
-      if (!visit.member.subscription) {
-        console.error("Visit missing subscription data:", visit);
-        throw new Error(
-          "Visit data incomplete - missing subscription information",
-        );
-      }
-
-      setOpenVisit(visit);
-      setCurrentScreen("treatment");
+      // Reset search to allow fresh search
+      setSearchResult(null);
     } catch (error: unknown) {
       console.error("Check-in error:", error);
       alert(
