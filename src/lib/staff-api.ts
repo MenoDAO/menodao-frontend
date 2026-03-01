@@ -504,6 +504,11 @@ class StaffApiClient {
   async getClinics(): Promise<Clinic[]> {
     return this.request<Clinic[]>("/staff/clinics");
   }
+
+  // Patient History
+  async getPatientHistory(memberId: string): Promise<PatientHistory> {
+    return this.request<PatientHistory>(`/visits/history/${memberId}`);
+  }
 }
 
 export interface Camp {
@@ -584,6 +589,38 @@ export interface Clinic {
   status: string;
   createdAt: string;
   approvedAt?: string;
+}
+
+export interface PatientHistory {
+  member: {
+    id: string;
+    phoneNumber: string;
+    fullName: string | null;
+  };
+  visits: Array<{
+    id: string;
+    date: string;
+    status: string;
+    totalCost: number;
+    clinic: string;
+    isOwnClinic: boolean;
+    treatedBy: string;
+    procedures: Array<{
+      name: string;
+      cost: number;
+      addedAt: string;
+    }>;
+    clinicalData?: {
+      chiefComplaint?: string;
+      medicalHistory?: string;
+      vitals?: any;
+      clinicalNotes?: string;
+    } | null;
+    questionnaire?: any;
+  }>;
+  totalVisits: number;
+  ownClinicVisits: number;
+  otherClinicVisits: number;
 }
 
 export const staffApi = new StaffApiClient();
