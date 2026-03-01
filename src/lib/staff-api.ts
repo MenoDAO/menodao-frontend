@@ -126,6 +126,43 @@ export interface DischargeResponse {
   };
 }
 
+export interface QuestionnaireData {
+  age?: number;
+  gender?: string;
+  education?: string;
+  occupation?: string;
+  residenceVillage?: string;
+  residenceCounty?: string;
+  researchConsent: boolean;
+  lastDentalVisit?: string;
+  drugAllergies?: string;
+  currentMedications?: string;
+  medicalConditions?: string[];
+  familyHistory?: string[];
+  chiefComplaint?: string;
+  painLevel?: number;
+  recentSymptoms?: string[];
+  brushingFrequency?: string;
+  flossingFrequency?: string;
+  sugarIntake?: string;
+  smokesTobacco?: boolean;
+  alcoholUse?: string;
+  substanceUse?: boolean;
+  oralHygieneIndex?: string;
+  softTissueFindings?: string;
+  periodontalStatus?: string;
+  decayedTeeth?: number;
+  missingTeeth?: number;
+  filledTeeth?: number;
+  dmftScore?: number;
+  occlusionStatus?: string;
+  cariesRisk?: string;
+  periodontalRisk?: string;
+  oralCancerRisk?: string;
+  smileSatisfaction?: string;
+  careConfidence?: string;
+}
+
 export interface CheckInDto {
   phoneNumber: string;
   chiefComplaint: string;
@@ -133,6 +170,7 @@ export interface CheckInDto {
   vitals?: Record<string, unknown>;
   clinicalNotes?: string;
   hasConsent: boolean;
+  questionnaire?: QuestionnaireData;
 }
 
 class StaffApiClient {
