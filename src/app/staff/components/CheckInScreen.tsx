@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MemberSearchResult, CheckInDto } from "@/lib/staff-api";
+import { getTierColor, getTierDisplayName } from "@/lib/tier-utils";
 import QuestionnaireForm, { QuestionnaireData } from "./QuestionnaireForm";
 
 interface CheckInScreenProps {
@@ -63,13 +64,6 @@ export default function CheckInScreen({
 
     // Show questionnaire form
     setShowQuestionnaire(true);
-  };
-
-  const getTierColor = (tier?: string) => {
-    if (tier === "GOLD") return "bg-yellow-500 text-yellow-900";
-    if (tier === "SILVER") return "bg-gray-400 text-gray-900";
-    if (tier === "BRONZE") return "bg-orange-600 text-orange-100";
-    return "bg-gray-500 text-white";
   };
 
   const showMemberFound =
@@ -164,7 +158,7 @@ export default function CheckInScreen({
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-semibold ${getTierColor(searchResult.member.tier)}`}
                     >
-                      {searchResult.member.tier}
+                      {getTierDisplayName(searchResult.member.tier)}
                     </span>
                   )}
                 </div>

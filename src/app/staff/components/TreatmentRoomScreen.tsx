@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { OpenVisit, Procedure, staffApi } from "@/lib/staff-api";
+import { getTierBadgeColor, getTierDisplayName } from "@/lib/tier-utils";
 
 interface TreatmentRoomScreenProps {
   visit: OpenVisit;
@@ -90,19 +91,6 @@ export default function TreatmentRoomScreen({
     }
   };
 
-  const getTierBadgeColor = (tier?: string) => {
-    switch (tier) {
-      case "GOLD":
-        return "bg-yellow-500 text-yellow-900";
-      case "SILVER":
-        return "bg-gray-400 text-gray-900";
-      case "BRONZE":
-        return "bg-orange-600 text-orange-100";
-      default:
-        return "bg-gray-500 text-white";
-    }
-  };
-
   const totalCost = visit.visit.procedures.reduce(
     (sum, vp) => sum + vp.cost,
     0,
@@ -123,7 +111,7 @@ export default function TreatmentRoomScreen({
               visit.member.subscription.tier,
             )}`}
           >
-            {visit.member.subscription.tier}
+            {getTierDisplayName(visit.member.subscription.tier)}
           </span>
         )}
       </div>
