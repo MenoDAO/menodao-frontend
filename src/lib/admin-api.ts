@@ -201,12 +201,8 @@ class AdminApiClient {
     return this.request<FinancialSummary>("/admin/payments/financial-summary");
   }
 
-  // Notifications
-  async sendNotification(
-    title: string,
-    body: string,
-    data?: Record<string, string>,
-  ) {
+  // Notifications (Legacy Alerts System)
+  async sendAlert(title: string, body: string, data?: Record<string, string>) {
     return this.request<{ success: boolean; sentTo: number }>(
       "/admin/alerts/send",
       {
@@ -220,6 +216,45 @@ class AdminApiClient {
     return this.request<PaginatedResponse<NotificationHistory>>(
       `/admin/alerts/history?page=${page}&limit=${limit}`,
     );
+  }
+
+  async getSMSStats() {
+    return this.request<SMSStats>("/admin/notifications/sms-stats");
+  }
+
+  async getNotificationHistoryV2(params: {
+    page?: number;
+    pageSize?: number;
+    type?: string;
+    status?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.pageSize) searchParams.set("pageSize", String(params.pageSize));
+    if (params.type) searchParams.set("type", params.type);
+    if (params.status) searchParams.set("status", params.status);
+    if (params.dateFrom) searchParams.set("dateFrom", params.dateFrom);
+    if (params.dateTo) searchParams.set("dateTo", params.dateTo);
+
+    return this.request<NotificationHistoryResponse>(
+      `/admin/notifications/history?${searchParams}`,
+    );
+  }
+
+  async previewRecipients(filters: RecipientFilters) {
+    return this.request<{ count: number }>("/admin/notifications/preview", {
+      method: "POST",
+      body: JSON.stringify({ filters }),
+    });
+  }
+
+  async sendNotification(request: SendNotificationRequest) {
+    return this.request<SendNotificationResponse>("/admin/notifications/send", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
   }
 
   // Site Visit Analytics
@@ -388,6 +423,32 @@ export interface NotificationHistory {
   sentBy: string;
 }
 
+export interface SMSStats {
+  todayCount: number;
+  allTimeCount: number;
+}
+
+export interface NotificationRecord {
+  id: string;
+  type: "SMS" | "PUSH";
+  recipientCount: number;
+  message: string;
+  status: "PENDING" | "SENT" | "DELIVERED" | "FAILED" | "PARTIAL";
+  deliveryStats: {
+    successCount: number;
+    failureCount: number;
+  };
+  sentAt: string;
+  sentBy: string;
+}
+
+export interface NotificationHistoryResponse {
+  notifications: NotificationRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   meta: {
@@ -433,4 +494,27 @@ export interface SiteVisitMetrics {
   topUtmSources: { source: string; count: number }[];
   topUtmCampaigns: { campaign: string; count: number }[];
   topPages: { page: string; count: number }[];
+}
+
+export interface RecipientFilters {
+  packageTypes?: string[];
+  dateJoinedFrom?: string;
+  dateJoinedTo?: string;
+  balanceMin?: string;
+  balanceMax?: string;
+  subscriptionStatus?: "active" | "inactive" | "all";
+  singlePhoneNumber?: string;
+  csvPhoneNumbers?: string[];
+}
+
+export interface SendNotificationRequest {
+  type: "SMS" | "PUSH";
+  filters: Record<string, string | string[]>;
+  message: string;
+}
+
+export interface SendNotificationResponse {
+  success: boolean;
+  notificationId: string;
+  recipientCount: number;
 }
