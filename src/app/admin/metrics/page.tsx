@@ -279,8 +279,8 @@ export default function MetricsPage() {
         <p className="text-gray-500 text-sm leading-relaxed">
           Add UTM parameters to your shared links to track marketing
           effectiveness. Example:{" "}
-          <code className="bg-gray-700 text-emerald-400 px-2 py-0.5 rounded text-xs">
-            menodao.co.ke?utm_source=whatsapp&amp;utm_medium=social&amp;utm_campaign=launch
+          <code className="bg-gray-700 text-emerald-400 px-2 py-0.5 rounded text-xs break-all">
+            menodao.org?utm_source=whatsapp&amp;utm_medium=social&amp;utm_campaign=launch
           </code>
         </p>
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
