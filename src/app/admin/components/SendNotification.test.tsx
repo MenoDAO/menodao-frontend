@@ -333,7 +333,9 @@ invalid2
   it("should display notification type selector", () => {
     render(<SendNotification />);
 
-    expect(screen.getByText("Notification Type")).toBeInTheDocument();
+    expect(
+      screen.getByText("Notification Type (select one or both)"),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("SMS")).toBeInTheDocument();
     expect(screen.getByLabelText("Push Notification")).toBeInTheDocument();
   });

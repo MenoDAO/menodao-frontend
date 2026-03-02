@@ -24,9 +24,9 @@ interface RecipientFilters {
 }
 
 export function SendNotification() {
-  const [notificationType, setNotificationType] = useState<"SMS" | "PUSH">(
-    "SMS",
-  );
+  const [notificationTypes, setNotificationTypes] = useState<
+    ("SMS" | "PUSH")[]
+  >(["SMS"]);
   const [message, setMessage] = useState("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [recipientCount, setRecipientCount] = useState(0);
@@ -281,7 +281,7 @@ export function SendNotification() {
     }
 
     // Validate message length for SMS
-    if (notificationType === "SMS" && message.length > 1600) {
+    if (notificationTypes.includes("SMS") && message.length > 1600) {
       setSendError("SMS message exceeds maximum length of 1600 characters");
       return;
     }
@@ -357,17 +357,25 @@ export function SendNotification() {
         apiFilters.csvPhoneNumbers = csvPhoneNumbers;
       }
 
-      // Call send notification API
-      const result = await adminApi.sendNotification({
-        type: notificationType,
-        filters: apiFilters,
-        message: message,
-      });
+      // Send notifications for each selected type
+      const results = await Promise.all(
+        notificationTypes.map((type) =>
+          adminApi.sendNotification({
+            type,
+            filters: apiFilters,
+            message: message,
+          }),
+        ),
+      );
 
-      // Display success message
+      // Display success message with combined results
+      const totalRecipients = results.reduce(
+        (sum, r) => sum + r.recipientCount,
+        0,
+      );
       setSendSuccess({
-        notificationId: result.notificationId,
-        recipientCount: result.recipientCount,
+        notificationId: results.map((r) => r.notificationId).join(", "),
+        recipientCount: totalRecipients,
       });
 
       // Reset form after successful send
@@ -428,7 +436,8 @@ export function SendNotification() {
                 Notification Sent Successfully
               </h3>
               <p className="text-sm text-emerald-300">
-                Your {notificationType} notification has been sent to{" "}
+                Your {notificationTypes.join(" and ")} notification
+                {notificationTypes.length > 1 ? "s have" : " has"} been sent to{" "}
                 <span className="font-semibold">
                   {sendSuccess.recipientCount.toLocaleString()}
                 </span>{" "}
@@ -479,19 +488,24 @@ export function SendNotification() {
         {/* Notification Type Selector */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-3">
-            Notification Type
+            Notification Type (select one or both)
           </label>
           <div className="flex gap-4">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
-                type="radio"
-                name="notificationType"
+                type="checkbox"
                 value="SMS"
-                checked={notificationType === "SMS"}
-                onChange={(e) =>
-                  setNotificationType(e.target.value as "SMS" | "PUSH")
-                }
-                className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 focus:ring-emerald-500 focus:ring-2"
+                checked={notificationTypes.includes("SMS")}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setNotificationTypes([...notificationTypes, "SMS"]);
+                  } else {
+                    setNotificationTypes(
+                      notificationTypes.filter((t) => t !== "SMS"),
+                    );
+                  }
+                }}
+                className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500 focus:ring-2"
               />
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-gray-400" />
@@ -501,14 +515,19 @@ export function SendNotification() {
 
             <label className="flex items-center gap-3 cursor-pointer">
               <input
-                type="radio"
-                name="notificationType"
+                type="checkbox"
                 value="PUSH"
-                checked={notificationType === "PUSH"}
-                onChange={(e) =>
-                  setNotificationType(e.target.value as "SMS" | "PUSH")
-                }
-                className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 focus:ring-emerald-500 focus:ring-2"
+                checked={notificationTypes.includes("PUSH")}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setNotificationTypes([...notificationTypes, "PUSH"]);
+                  } else {
+                    setNotificationTypes(
+                      notificationTypes.filter((t) => t !== "PUSH"),
+                    );
+                  }
+                }}
+                className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500 focus:ring-2"
               />
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-gray-400" />
@@ -781,9 +800,9 @@ export function SendNotification() {
             rows={6}
             placeholder="Enter your notification message..."
             className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-            maxLength={notificationType === "SMS" ? 1600 : undefined}
+            maxLength={notificationTypes.includes("SMS") ? 1600 : undefined}
           />
-          {notificationType === "SMS" && (
+          {notificationTypes.includes("SMS") && (
             <p className="text-xs text-gray-500 mt-1">
               Maximum 1600 characters for SMS
             </p>
@@ -816,7 +835,11 @@ export function SendNotification() {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={!message.trim() || recipientCount === 0}
+            disabled={
+              !message.trim() ||
+              recipientCount === 0 ||
+              notificationTypes.length === 0
+            }
             className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             <Send className="w-4 h-4" />
@@ -836,7 +859,11 @@ export function SendNotification() {
                   Confirm Send
                 </h3>
                 <p className="text-gray-300 text-sm mb-4">
-                  You are about to send a {notificationType} notification to{" "}
+                  You are about to send{" "}
+                  {notificationTypes.length > 1
+                    ? `${notificationTypes.join(" and ")} notifications`
+                    : `a ${notificationTypes[0]} notification`}{" "}
+                  to{" "}
                   <span className="font-semibold text-white">
                     {recipientCount.toLocaleString()}
                   </span>{" "}

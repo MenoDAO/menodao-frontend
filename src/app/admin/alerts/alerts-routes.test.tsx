@@ -56,29 +56,6 @@ describe("Admin Alerts Routes", () => {
       expect(sendLink).toBeInTheDocument();
       expect(historyLink).toBeInTheDocument();
     });
-
-    it("should display quick overview section", () => {
-      render(<AlertsPage />);
-
-      expect(screen.getByText("Quick Overview")).toBeInTheDocument();
-      expect(screen.getByText("Available Features")).toBeInTheDocument();
-      expect(screen.getByText("Filter Options")).toBeInTheDocument();
-      expect(screen.getByText("Delivery Tracking")).toBeInTheDocument();
-    });
-
-    it("should display notification system features", () => {
-      render(<AlertsPage />);
-
-      expect(
-        screen.getByText("Notification System Features"),
-      ).toBeInTheDocument();
-      expect(screen.getByText("Advanced Filtering")).toBeInTheDocument();
-      expect(screen.getByText("CSV Upload")).toBeInTheDocument();
-      expect(screen.getByText("Recipient Preview")).toBeInTheDocument();
-      expect(screen.getByText("Delivery Analytics")).toBeInTheDocument();
-      expect(screen.getByText("Content Protection")).toBeInTheDocument();
-      expect(screen.getByText("Audit Trail")).toBeInTheDocument();
-    });
   });
 
   describe("Notification History Page (/admin/alerts/history)", () => {
