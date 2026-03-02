@@ -30,8 +30,6 @@ const navItems = [
     label: "Visits",
     icon: ClipboardList,
   },
-    icon: ClipboardList,
-  },
   { href: "/dashboard/camps", label: "Find a Clinic", icon: MapPin },
   { href: "/dashboard/transactions", label: "Blockchain", icon: LinkIcon },
   { href: "/dashboard/profile", label: "Profile", icon: User },
