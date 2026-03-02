@@ -126,6 +126,43 @@ export interface DischargeResponse {
   };
 }
 
+export interface QuestionnaireData {
+  age?: number;
+  gender?: string;
+  education?: string;
+  occupation?: string;
+  residenceVillage?: string;
+  residenceCounty?: string;
+  researchConsent: boolean;
+  lastDentalVisit?: string;
+  drugAllergies?: string;
+  currentMedications?: string;
+  medicalConditions?: string[];
+  familyHistory?: string[];
+  chiefComplaint?: string;
+  painLevel?: number;
+  recentSymptoms?: string[];
+  brushingFrequency?: string;
+  flossingFrequency?: string;
+  sugarIntake?: string;
+  smokesTobacco?: boolean;
+  alcoholUse?: string;
+  substanceUse?: boolean;
+  oralHygieneIndex?: string;
+  softTissueFindings?: string;
+  periodontalStatus?: string;
+  decayedTeeth?: number;
+  missingTeeth?: number;
+  filledTeeth?: number;
+  dmftScore?: number;
+  occlusionStatus?: string;
+  cariesRisk?: string;
+  periodontalRisk?: string;
+  oralCancerRisk?: string;
+  smileSatisfaction?: string;
+  careConfidence?: string;
+}
+
 export interface CheckInDto {
   phoneNumber: string;
   chiefComplaint: string;
@@ -133,6 +170,7 @@ export interface CheckInDto {
   vitals?: Record<string, unknown>;
   clinicalNotes?: string;
   hasConsent: boolean;
+  questionnaire?: QuestionnaireData;
 }
 
 class StaffApiClient {
@@ -466,6 +504,11 @@ class StaffApiClient {
   async getClinics(): Promise<Clinic[]> {
     return this.request<Clinic[]>("/staff/clinics");
   }
+
+  // Patient History
+  async getPatientHistory(memberId: string): Promise<PatientHistory> {
+    return this.request<PatientHistory>(`/visits/history/${memberId}`);
+  }
 }
 
 export interface Camp {
@@ -546,6 +589,38 @@ export interface Clinic {
   status: string;
   createdAt: string;
   approvedAt?: string;
+}
+
+export interface PatientHistory {
+  member: {
+    id: string;
+    phoneNumber: string;
+    fullName: string | null;
+  };
+  visits: Array<{
+    id: string;
+    date: string;
+    status: string;
+    totalCost: number;
+    clinic: string;
+    isOwnClinic: boolean;
+    treatedBy: string;
+    procedures: Array<{
+      name: string;
+      cost: number;
+      addedAt: string;
+    }>;
+    clinicalData?: {
+      chiefComplaint?: string;
+      medicalHistory?: string;
+      vitals?: any;
+      clinicalNotes?: string;
+    } | null;
+    questionnaire?: any;
+  }>;
+  totalVisits: number;
+  ownClinicVisits: number;
+  otherClinicVisits: number;
 }
 
 export const staffApi = new StaffApiClient();

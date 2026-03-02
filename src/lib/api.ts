@@ -135,6 +135,12 @@ class ApiClient {
     );
   }
 
+  async getMemberHistory(page = 1, limit = 20) {
+    return this.request<MemberHistoryResponse>(
+      `/members/history?page=${page}&limit=${limit}`,
+    );
+  }
+
   // Subscription endpoints
   async getPackages() {
     return this.request<Package[]>("/subscriptions/packages");
@@ -459,6 +465,37 @@ export interface SupportedChain {
   explorerUrl: string;
   isTestnet: boolean;
   isConfigured: boolean;
+}
+
+export interface MemberHistoryResponse {
+  visits: MemberVisit[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface MemberVisit {
+  id: string;
+  date: Date;
+  status: string;
+  totalCost: number;
+  clinic: string;
+  treatedBy: string;
+  procedures: {
+    name: string;
+    cost: number;
+    addedAt: Date;
+  }[];
+  clinicalData: {
+    chiefComplaint: string | null;
+    medicalHistory: string | null;
+    vitals: any | null;
+    clinicalNotes: string | null;
+  };
+  questionnaire: any | null;
 }
 
 export const api = new ApiClient(API_BASE_URL);

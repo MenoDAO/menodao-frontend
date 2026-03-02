@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { MemberSearchResult, CheckInDto } from "@/lib/staff-api";
+import { getTierColor, getTierDisplayName } from "@/lib/tier-utils";
+import QuestionnaireForm, { QuestionnaireData } from "./QuestionnaireForm";
 
 interface CheckInScreenProps {
   searchResult: MemberSearchResult | null;
@@ -16,6 +18,7 @@ export default function CheckInScreen({
 }: CheckInScreenProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false);
 
   // Clinical fields
   const [chiefComplaint, setChiefComplaint] = useState("");
@@ -33,9 +36,24 @@ export default function CheckInScreen({
     setLoading(true);
     try {
       await onSearch(phoneNumber);
+      // Reset questionnaire state when searching for new patient
+      setShowQuestionnaire(false);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQuestionnaireSubmit = (questionnaireData: QuestionnaireData) => {
+    // Merge questionnaire data with clinical intake
+    onCheckIn({
+      phoneNumber,
+      chiefComplaint: questionnaireData.chiefComplaint || chiefComplaint,
+      medicalHistory,
+      vitals: { bp, pulse, temp },
+      clinicalNotes,
+      hasConsent,
+      questionnaire: questionnaireData,
+    });
   };
 
   const handleCheckInSubmit = () => {
@@ -44,25 +62,22 @@ export default function CheckInScreen({
       return;
     }
 
-    onCheckIn({
-      phoneNumber,
-      chiefComplaint,
-      medicalHistory,
-      vitals: { bp, pulse, temp },
-      clinicalNotes,
-      hasConsent,
-    });
-  };
-
-  const getTierColor = (tier?: string) => {
-    if (tier === "GOLD") return "bg-yellow-500 text-yellow-900";
-    if (tier === "SILVER") return "bg-gray-400 text-gray-900";
-    if (tier === "BRONZE") return "bg-orange-600 text-orange-100";
-    return "bg-gray-500 text-white";
+    // Show questionnaire form
+    setShowQuestionnaire(true);
   };
 
   const showMemberFound =
     searchResult?.found && searchResult?.active && searchResult?.member;
+
+  // If questionnaire is being filled, show only the questionnaire
+  if (showQuestionnaire) {
+    return (
+      <QuestionnaireForm
+        onSubmit={handleQuestionnaireSubmit}
+        onCancel={() => setShowQuestionnaire(false)}
+      />
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
@@ -143,7 +158,7 @@ export default function CheckInScreen({
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-semibold ${getTierColor(searchResult.member.tier)}`}
                     >
-                      {searchResult.member.tier}
+                      {getTierDisplayName(searchResult.member.tier)}
                     </span>
                   )}
                 </div>
@@ -287,7 +302,7 @@ export default function CheckInScreen({
                   disabled={!hasConsent || !chiefComplaint}
                   className="w-full px-6 py-4 bg-emerald-600 text-white font-bold rounded-2xl transition-all shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
                 >
-                  COMPLETE CHECK-IN & SEND TO TREATMENT
+                  CONTINUE TO QUESTIONNAIRE
                 </button>
               </div>
             </div>
