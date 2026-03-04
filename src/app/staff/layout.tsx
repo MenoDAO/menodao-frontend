@@ -220,7 +220,7 @@ export default function StaffLayout({
                     {staff?.fullName}
                   </div>
                   <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {staff?.email}
+                    {staff?.username}
                   </div>
                 </div>
               </div>
