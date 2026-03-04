@@ -98,10 +98,15 @@ class AdminApiClient {
         timestamp: new Date().toISOString(),
       });
 
-      // Only handle 401 for authentication errors
-      if (response.status === 401 && typeof window !== "undefined") {
+      // Only handle 401 for /auth/me endpoint (token validation)
+      // Other 401s might be permission issues, not invalid tokens
+      if (
+        response.status === 401 &&
+        endpoint === "/admin/auth/me" &&
+        typeof window !== "undefined"
+      ) {
         console.warn(
-          "[AdminAPI] 401 Unauthorized - clearing auth and redirecting",
+          "[AdminAPI] 401 on auth check - clearing auth and redirecting",
         );
         // Clear auth and redirect to login
         localStorage.removeItem("admin-auth-storage");
