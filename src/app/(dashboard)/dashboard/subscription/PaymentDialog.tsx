@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { useMutation } from "@tantml:invoke>
+<invoke name="api";
 import { useAuthStore } from "@/lib/auth-store";
+import { PaymentFrequencySelector } from "@/app/payment/components/PaymentFrequencySelector";
 import {
   X,
   Phone,
@@ -14,13 +15,13 @@ import {
   Smartphone,
 } from "lucide-react";
 
-type PaymentStatus = "IDLE" | "STARTED" | "PENDING" | "COMPLETED" | "FAILED";
+type PaymentStatus = "IDLE" | "FREQUENCY_SELECT" | "STARTED" | "PENDING" | "COMPLETED" | "FAILED";
 
 interface PaymentDialogProps {
   isOpen: boolean;
   onClose: () => void;
   amount: number;
-  tier: string;
+  tier: "BRONZE" | "SILVER" | "GOLD";
   onPaymentComplete: () => void;
 }
 
@@ -33,23 +34,27 @@ export default function PaymentDialog({
 }: PaymentDialogProps) {
   const member = useAuthStore((state) => state.member);
   const [payerPhone, setPayerPhone] = useState("");
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("IDLE");
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("FREQUENCY_SELECT");
   const [statusMessage, setStatusMessage] = useState("");
   const [contributionId, setContributionId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [selectedFrequency, setSelectedFrequency] = useState<"MONTHLY" | "ANNUAL" | null>(null);
+  const [selectedAmount, setSelectedAmount] = useState<number>(amount);
 
   // Reset state when dialog opens
   useEffect(() => {
     if (isOpen) {
       setPayerPhone("");
-      setPaymentStatus("IDLE");
+      setPaymentStatus("FREQUENCY_SELECT");
       setStatusMessage("");
       setContributionId(null);
       setErrorMessage(null);
       setValidationError(null);
+      setSelectedFrequency(null);
+      setSelectedAmount(amount);
     }
-  }, [isOpen]);
+  }, [isOpen, amount]);
 
   // Payment initiation mutation
   const paymentMutation = useMutation({
@@ -150,18 +155,30 @@ export default function PaymentDialog({
     onClose();
   };
 
+  const handleFrequencySelect = (frequency: "MONTHLY" | "ANNUAL", amount: number) => {
+    setSelectedFrequency(frequency);
+    setSelectedAmount(amount);
+  };
+
+  const handleContinueToPayment = () => {
+    if (!selectedFrequency) return;
+    setPaymentStatus("IDLE");
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {paymentStatus === "COMPLETED"
               ? "Payment Complete"
               : paymentStatus === "FAILED"
               ? "Payment Failed"
+              : paymentStatus === "FREQUENCY_SELECT"
+              ? "Choose Payment Plan"
               : "Confirm Payment"}
           </h2>
           <button
@@ -174,6 +191,25 @@ export default function PaymentDialog({
 
         {/* Content */}
         <div className="p-6">
+          {/* Frequency Selection State */}
+          {paymentStatus === "FREQUENCY_SELECT" && (
+            <>
+              <PaymentFrequencySelector
+                tier={tier}
+                monthlyPrice={amount}
+                onSelect={handleFrequencySelect}
+              />
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={handleContinueToPayment}
+                  disabled={!selectedFrequency}
+                  className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Continue to Payment
+                </button>
+              </div>
+            </>
+          )}
           {/* Success State */}
           {paymentStatus === "COMPLETED" && (
             <div className="text-center py-8">
@@ -184,7 +220,7 @@ export default function PaymentDialog({
                 Payment Successful!
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Your {tier} membership payment of KES {amount.toLocaleString()} has been received.
+                Your {tier} membership payment of KES {selectedAmount.toLocaleString()} has been received.
               </p>
               <button
                 onClick={onClose}
@@ -213,7 +249,7 @@ export default function PaymentDialog({
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => {
-                    setPaymentStatus("IDLE");
+                    setPaymentStatus("FREQUENCY_SELECT");
                     setErrorMessage(null);
                   }}
                   className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
@@ -267,11 +303,17 @@ export default function PaymentDialog({
               <div className="text-center mb-6">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Amount to pay</p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                  KES {amount.toLocaleString()}
+                  KES {selectedAmount.toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {tier} Membership
+                  {tier} Membership - {selectedFrequency === "ANNUAL" ? "Annual" : "Monthly"} Payment
                 </p>
+                <button
+                  onClick={() => setPaymentStatus("FREQUENCY_SELECT")}
+                  className="text-sm text-emerald-600 hover:text-emerald-700 mt-2"
+                >
+                  Change payment plan
+                </button>
               </div>
 
               {/* Phone Input */}
@@ -342,7 +384,7 @@ export default function PaymentDialog({
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      Pay KES {amount.toLocaleString()}
+                      Pay KES {selectedAmount.toLocaleString()}
                     </>
                   )}
                 </button>

@@ -312,12 +312,12 @@ export default function LoginPage() {
           <div className="bg-white rounded-2xl shadow-2xl p-8 animate-fade-in">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 font-outfit">
-                {otpSent ? "Enter Verification Code" : "Welcome Back"}
+                {otpSent ? "Enter Verification Code" : "Welcome to MenoDAO"}
               </h2>
               <p className="text-gray-600 mt-2">
                 {otpSent
                   ? `We sent a code to ${phoneNumber}`
-                  : "Sign in with your phone number"}
+                  : "Sign in or create your account"}
               </p>
             </div>
 

@@ -4,25 +4,39 @@ const API_BASE_URL = getApiUrl();
 
 class AdminApiClient {
   private baseUrl: string;
-  private token: string | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("admin-auth-storage");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          this.token = parsed.state?.token || null;
-        } catch {
-          this.token = null;
-        }
-      }
+  }
+
+  private getToken(): string | null {
+    if (typeof window === "undefined") return null;
+
+    const stored = localStorage.getItem("admin-auth-storage");
+    if (!stored) return null;
+
+    try {
+      const parsed = JSON.parse(stored);
+      return parsed.state?.token || null;
+    } catch {
+      return null;
     }
   }
 
   setToken(token: string | null) {
-    this.token = token;
+    // This method is kept for backward compatibility but token is now read dynamically
+    if (typeof window !== "undefined" && token) {
+      const stored = localStorage.getItem("admin-auth-storage");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          parsed.state.token = token;
+          localStorage.setItem("admin-auth-storage", JSON.stringify(parsed));
+        } catch {
+          // Ignore
+        }
+      }
+    }
   }
 
   private async request<T>(
@@ -34,9 +48,10 @@ class AdminApiClient {
       ...options.headers,
     };
 
-    if (this.token) {
-      (headers as Record<string, string>)["Authorization"] =
-        `Bearer ${this.token}`;
+    // Always read fresh token from store
+    const token = this.getToken();
+    if (token) {
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -46,7 +61,14 @@ class AdminApiClient {
 
     if (!response.ok) {
       if (response.status === 401 && typeof window !== "undefined") {
-        this.setToken(null);
+        // Clear auth and redirect to login
+        localStorage.removeItem("admin-auth-storage");
+        if (
+          window.location.pathname.startsWith("/admin") &&
+          window.location.pathname !== "/admin/login"
+        ) {
+          window.location.href = "/admin/login";
+        }
       }
       const error = await response
         .json()
