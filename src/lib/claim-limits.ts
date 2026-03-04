@@ -42,12 +42,10 @@ export function getClaimLimit(tier: SubscriptionTier): number {
   const normalizedTier = tier.toUpperCase();
 
   if (!(normalizedTier in CLAIM_LIMITS)) {
-    console.error(`[ClaimLimits] Invalid tier: ${tier}`);
     throw new Error(`Invalid subscription tier: ${tier}`);
   }
 
   const limit = CLAIM_LIMITS[normalizedTier];
-  console.log(`[ClaimLimits] Claim limit for ${tier}:`, limit);
   return limit;
 }
 
@@ -70,12 +68,6 @@ export function getRemainingClaimLimit(
 ): number {
   const totalLimit = getClaimLimit(tier);
   const remaining = Math.max(0, totalLimit - usedAmount);
-
-  console.log(`[ClaimLimits] Remaining for ${tier}:`, {
-    total: totalLimit,
-    used: usedAmount,
-    remaining,
-  });
 
   return remaining;
 }

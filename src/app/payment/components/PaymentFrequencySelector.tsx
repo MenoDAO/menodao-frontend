@@ -45,13 +45,6 @@ export function PaymentFrequencySelector({
   const correctMonthlyPrice = getPaymentAmount(configTier, "monthly");
   const correctYearlyPrice = getPaymentAmount(configTier, "yearly");
 
-  console.log("[PaymentFrequencySelector] Using payment amounts:", {
-    tier: configTier,
-    monthly: correctMonthlyPrice,
-    yearly: correctYearlyPrice,
-    passedMonthlyPrice: monthlyPrice,
-  });
-
   const options: PaymentOption[] = [
     {
       frequency: "MONTHLY",

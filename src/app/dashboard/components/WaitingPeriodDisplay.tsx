@@ -226,10 +226,10 @@ export function WaitingPeriodDisplay({ memberId }: WaitingPeriodDisplayProps) {
                     <Clock className={`w-6 h-6 ${colors.icon}`} />
                   )}
                   <div>
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-lg font-bold text-white">
                       {procedure.category}
                     </h3>
-                    <p className={`text-sm ${colors.text} font-medium mt-1`}>
+                    <p className={`text-sm ${colors.text} font-bold mt-1`}>
                       {procedure.available
                         ? "Available Now"
                         : formatDaysRemaining(procedure.daysRemaining)}

@@ -79,19 +79,11 @@ export function getPaymentAmount(
 
   // Development environment always uses test amount
   if (env === "development") {
-    console.log(
-      "[PaymentConfig] Using development test amount:",
-      PAYMENT_CONFIG.amounts.development.test,
-    );
     return PAYMENT_CONFIG.amounts.development.test;
   }
 
   // Production environment uses tier-specific amounts
   const amount = PAYMENT_CONFIG.amounts.production[tier][frequency];
-  console.log(
-    `[PaymentConfig] Production amount for ${tier} ${frequency}:`,
-    amount,
-  );
   return amount;
 }
 
@@ -118,16 +110,6 @@ export function validatePaymentAmount(
 ): boolean {
   const expectedAmount = getPaymentAmount(tier, frequency, environment);
   const isValid = amount === expectedAmount;
-
-  if (!isValid) {
-    console.error("[PaymentConfig] Amount validation failed:", {
-      tier,
-      frequency,
-      expected: expectedAmount,
-      received: amount,
-      environment: environment || PAYMENT_CONFIG.environment,
-    });
-  }
 
   return isValid;
 }
