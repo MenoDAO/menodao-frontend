@@ -48,9 +48,9 @@ describe("LoginPage", () => {
     it("renders the phone number form initially", () => {
       render(<LoginPage />);
 
-      expect(screen.getByText("Welcome Back")).toBeInTheDocument();
+      expect(screen.getByText("Welcome to MenoDAO")).toBeInTheDocument();
       expect(
-        screen.getByText("Sign in with your phone number"),
+        screen.getByText("Sign in or create your account"),
       ).toBeInTheDocument();
       expect(screen.getByPlaceholderText("0712345678")).toBeInTheDocument();
       expect(
