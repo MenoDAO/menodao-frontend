@@ -263,6 +263,100 @@ class AdminApiClient {
       `/admin/stats/site-visits?days=${days}`,
     );
   }
+
+  // Payment Search and Management
+  async searchPayments(params: {
+    transactionId?: string;
+    phoneNumber?: string;
+    email?: string;
+    status?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params.transactionId)
+      searchParams.set("transactionId", params.transactionId);
+    if (params.phoneNumber) searchParams.set("phoneNumber", params.phoneNumber);
+    if (params.email) searchParams.set("email", params.email);
+    if (params.status) searchParams.set("status", params.status);
+    if (params.dateFrom) searchParams.set("dateFrom", params.dateFrom);
+    if (params.dateTo) searchParams.set("dateTo", params.dateTo);
+
+    return this.request<PaymentDetailResponse[]>(
+      `/admin/payments/search?${searchParams}`,
+    );
+  }
+
+  async getPaymentDetail(transactionId: string) {
+    return this.request<PaymentDetailResponse>(
+      `/admin/payments/${transactionId}`,
+    );
+  }
+
+  // Member Search and Management
+  async searchMembers(params: {
+    phoneNumber?: string;
+    email?: string;
+    memberId?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params.phoneNumber) searchParams.set("phoneNumber", params.phoneNumber);
+    if (params.email) searchParams.set("email", params.email);
+    if (params.memberId) searchParams.set("memberId", params.memberId);
+
+    return this.request<MemberDetailResponse[]>(
+      `/admin/members/search?${searchParams}`,
+    );
+  }
+
+  async getMemberDetail(memberId: string) {
+    return this.request<MemberDetailResponse>(`/admin/members/${memberId}`);
+  }
+
+  // Admin Actions
+  async suspendMember(targetId: string, reason: string) {
+    return this.request<AdminActionResponse>("/admin/actions/suspend-member", {
+      method: "POST",
+      body: JSON.stringify({ targetId, reason }),
+    });
+  }
+
+  async deactivateSubscription(targetId: string, reason: string) {
+    return this.request<AdminActionResponse>(
+      "/admin/actions/deactivate-subscription",
+      {
+        method: "POST",
+        body: JSON.stringify({ targetId, reason }),
+      },
+    );
+  }
+
+  async verifyPaymentManually(targetId: string, reason: string) {
+    return this.request<AdminActionResponse>("/admin/actions/verify-payment", {
+      method: "POST",
+      body: JSON.stringify({ targetId, reason }),
+    });
+  }
+
+  // Payment Reconciliation
+  async reconcilePayments(from: string, to: string) {
+    return this.request<ReconciliationReport>(
+      "/admin/reconciliation/payments",
+      {
+        method: "POST",
+        body: JSON.stringify({ from, to }),
+      },
+    );
+  }
+
+  async syncPaymentStatus(paymentId: string) {
+    return this.request<{ success: boolean; message: string }>(
+      `/admin/reconciliation/sync/${paymentId}`,
+      {
+        method: "POST",
+      },
+    );
+  }
 }
 
 // Types
@@ -517,4 +611,104 @@ export interface SendNotificationResponse {
   success: boolean;
   notificationId: string;
   recipientCount: number;
+}
+
+export interface PaymentDetailResponse {
+  id: string;
+  transactionId: string;
+  userId: string;
+  userPhone: string;
+  userEmail: string;
+  amount: number;
+  status: string;
+  subscriptionType: string;
+  paymentFrequency: "MONTHLY" | "ANNUAL";
+  createdAt: string;
+  updatedAt: string;
+  confirmedAt?: string;
+  claimLimitsAssigned: boolean;
+  claimLimitsAssignedAt?: string;
+  statusHistory: Array<{
+    status: string;
+    timestamp: string;
+    metadata?: any;
+  }>;
+  sasaPayData: {
+    merchantRequestId?: string;
+    checkoutRequestId?: string;
+    mpesaReceiptNumber?: string;
+  };
+  relatedLinks: {
+    userProfile: string;
+    subscription: string;
+    claims: string[];
+  };
+}
+
+export interface MemberDetailResponse {
+  id: string;
+  fullName: string;
+  phoneNumber: string;
+  email: string;
+  location: string;
+  registrationDate: string;
+  accountStatus: "ACTIVE" | "SUSPENDED" | "INACTIVE";
+  subscription: {
+    tier: "BRONZE" | "SILVER" | "GOLD";
+    status: "ACTIVE" | "INACTIVE";
+    startDate: string;
+    paymentFrequency: "MONTHLY" | "ANNUAL";
+    annualCapLimit: number;
+    annualCapUsed: number;
+    remainingLimit: number;
+  };
+  paymentHistory: Array<{
+    id: string;
+    transactionId: string;
+    amount: number;
+    status: string;
+    createdAt: string;
+  }>;
+  claimSummary: {
+    totalClaims: number;
+    totalAmountClaimed: number;
+    remainingLimit: number;
+  };
+  waitingPeriodStatus: {
+    consultationsExtractions: {
+      available: boolean;
+      daysRemaining: number;
+    };
+    restorativeProcedures: {
+      available: boolean;
+      daysRemaining: number;
+    };
+  };
+}
+
+export interface AdminActionResponse {
+  success: boolean;
+  message: string;
+  updatedRecord: any;
+  auditLogId: string;
+}
+
+export interface ReconciliationReport {
+  dateRange: {
+    from: string;
+    to: string;
+  };
+  summary: {
+    totalPayments: number;
+    matchedPayments: number;
+    discrepancies: number;
+  };
+  discrepancies: Array<{
+    paymentId: string;
+    transactionId: string;
+    localStatus: string;
+    sasaPayStatus: string;
+    amount: number;
+    createdAt: string;
+  }>;
 }

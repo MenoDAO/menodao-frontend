@@ -1,0 +1,277 @@
+# Implementation Plan: Payment Verification Fix
+
+## Overview
+
+This implementation plan addresses the critical payment verification issue by implementing a polling-based verification system. The approach prioritizes backend infrastructure first, building the payment state management, polling service, and SasaPay integration before updating the frontend. Each task builds incrementally with testing integrated throughout to ensure reliability and catch errors early.
+
+## Tasks
+
+- [ ] 1. Update database schema and payment models
+  - [ ] 1.1 Update Payment model in Prisma schema
+    - Add `claimLimitsAssigned` boolean field (default false)
+    - Add `confirmedAt` DateTime? field
+    - Add PaymentStatus enum with values: PENDING, SUCCESS, FAILED, CANCELLED, TIMEOUT
+    - Update status field to use PaymentStatus enum
+    - _Requirements: 4.1, 4.3_
+  - [ ] 1.2 Create PaymentStatusHistory model
+    - Add fields: id, paymentId, status, timestamp, metadata (JSON)
+    - Add relation to Payment model
+    - Add indexes on paymentId and timestamp
+    - _Requirements: 4.5_
+  - [ ] 1.3 Generate and run Prisma migrations
+    - Generate migration for schema changes
+    - Run migration on development database
+    - _Requirements: 4.1, 4.5_
+
+- [ ] 2. Implement SasaPay client integration
+  - [ ] 2.1 Create SasaPay client service
+    - Implement authentication method
+    - Implement `getTransactionStatus()` method
+    - Implement `validateWebhookSignature()` method
+    - Add proper error handling and logging
+    - _Requirements: 3.1, 3.2, 5.1_
+  - [ ]\* 2.2 Write property test for API request structure
+    - **Property 6: SasaPay API Request Structure**
+    - **Validates: Requirements 3.1, 3.2**
+  - [ ]\* 2.3 Write property test for response parsing
+    - **Property 7: API Response Parsing**
+    - **Validates: Requirements 3.3**
+  - [ ]\* 2.4 Write property test for retry logic
+    - **Property 8: API Retry Logic**
+    - **Validates: Requirements 3.4**
+  - [ ]\* 2.5 Write unit tests for SasaPay client
+    - Test authentication flow
+    - Test API error handling
+    - Test webhook signature validation
+    - _Requirements: 3.2, 5.1_
+
+- [ ] 3. Implement payment service with state management
+  - [ ] 3.1 Update payment service with new methods
+    - Implement `createPayment()` with status "pending"
+    - Implement `updatePaymentStatus()` with audit logging
+    - Implement `getPaymentByTransactionId()`
+    - Implement `getPendingPayments(olderThanMinutes)`
+    - Implement `markClaimLimitsAssigned()`
+    - _Requirements: 1.1, 4.1, 4.2, 7.1_
+  - [ ]\* 3.2 Write property test for payment initialization
+    - **Property 1: Payment Initialization State**
+    - **Validates: Requirements 1.1, 2.1**
+  - [ ]\* 3.3 Write property test for payment record completeness
+    - **Property 9: Payment Record Completeness**
+    - **Validates: Requirements 4.1, 4.2**
+  - [ ]\* 3.4 Write property test for status validity
+    - **Property 10: Payment Status Validity**
+    - **Validates: Requirements 4.3**
+  - [ ]\* 3.5 Write property test for audit trail
+    - **Property 11: Status Transition Audit Trail**
+    - **Validates: Requirements 4.5**
+  - [ ]\* 3.6 Write unit tests for payment service
+    - Test payment creation
+    - Test status updates
+    - Test pending payment queries
+    - _Requirements: 1.1, 4.2, 7.1_
+
+- [ ] 4. Checkpoint - Ensure payment service tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 5. Implement polling service
+  - [ ] 5.1 Create polling service with job queue
+    - Implement job queue (using Bull or similar)
+    - Implement `startPolling()` method
+    - Implement `stopPolling()` method
+    - Implement `pollTransactionStatus()` method
+    - Implement 5-second interval polling logic
+    - Implement 5-minute timeout logic
+    - _Requirements: 1.2, 1.4, 1.6_
+  - [ ] 5.2 Add polling termination logic
+    - Stop polling on "success", "failed", "cancelled" status
+    - Stop polling after 5 minutes (mark as "timeout")
+    - Clean up completed jobs after 24 hours
+    - _Requirements: 1.5, 1.6, 9.5_
+  - [ ]\* 5.3 Write property test for polling interval
+    - **Property 2: Polling Interval Consistency**
+    - **Validates: Requirements 1.2, 1.4**
+  - [ ]\* 5.4 Write property test for polling termination
+    - **Property 3: Polling Termination Conditions**
+    - **Validates: Requirements 1.6, 1.4**
+  - [ ]\* 5.5 Write property test for polling resilience
+    - **Property 18: Polling Resilience**
+    - **Validates: Requirements 8.1, 8.2**
+  - [ ]\* 5.6 Write property test for job cleanup
+    - **Property 22: Polling Job Cleanup**
+    - **Validates: Requirements 9.5**
+  - [ ]\* 5.7 Write unit tests for polling service
+    - Test timeout scenario (5 minutes)
+    - Test polling stops on terminal status
+    - Test job cleanup after 24 hours
+    - _Requirements: 1.5, 1.6, 9.5_
+
+- [ ] 6. Implement claim limit assignment logic
+  - [ ] 6.1 Update claim limit service integration
+    - Modify claim assignment to check payment status
+    - Only assign limits when payment status is "success"
+    - Add method to revoke claim limits
+    - _Requirements: 2.2, 2.3, 2.4_
+  - [ ]\* 6.2 Write property test for claim limit guard
+    - **Property 4: Claim Limit Assignment Guard**
+    - **Validates: Requirements 2.1, 2.2, 2.4**
+  - [ ]\* 6.3 Write property test for claim limit assignment
+    - **Property 5: Claim Limit Assignment on Success**
+    - **Validates: Requirements 2.3**
+  - [ ]\* 6.4 Write unit tests for claim limit logic
+    - Test no assignment on pending payment
+    - Test no assignment on failed payment
+    - Test assignment on successful payment
+    - Test claim limit revocation
+    - _Requirements: 2.2, 2.3, 2.4_
+
+- [ ] 7. Implement webhook handler
+  - [ ] 7.1 Create webhook handler endpoint
+    - Implement `POST /payments/webhook` endpoint
+    - Validate webhook signature
+    - Extract transaction ID and status
+    - Update payment record
+    - Trigger claim limit assignment on success
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+  - [ ]\* 7.2 Write property test for webhook validation
+    - **Property 12: Webhook Validation and Processing**
+    - **Validates: Requirements 5.1, 5.3, 5.4**
+  - [ ]\* 7.3 Write unit tests for webhook handler
+    - Test invalid signature rejection
+    - Test valid webhook processing
+    - Test claim limit trigger on success
+    - _Requirements: 5.2, 5.5_
+
+- [ ] 8. Implement payment notifications
+  - [ ] 8.1 Add notification service integration
+    - Send success notification on payment success
+    - Send failure notification on payment failure
+    - Send timeout notification on payment timeout
+    - Include transaction ID in all notifications
+    - Include claim limit details in success notifications
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+  - [ ]\* 8.2 Write property test for notification delivery
+    - **Property 13: Payment Notification Delivery**
+    - **Validates: Requirements 6.1, 6.2, 6.4**
+  - [ ]\* 8.3 Write property test for claim limit notification
+    - **Property 14: Claim Limit Notification Details**
+    - **Validates: Requirements 6.5**
+  - [ ]\* 8.4 Write unit tests for notifications
+    - Test success notification content
+    - Test failure notification content
+    - Test timeout notification content
+    - _Requirements: 6.1, 6.2, 6.3_
+
+- [ ] 9. Checkpoint - Ensure core payment flow tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 10. Implement reconciliation endpoints
+  - [ ] 10.1 Create reconciliation controller endpoints
+    - Implement `GET /payments/pending` endpoint
+    - Implement `POST /payments/reconcile` endpoint
+    - Implement `POST /payments/revoke-limits` endpoint
+    - Add audit logging for all reconciliation actions
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [ ]\* 10.2 Write property test for pending payment query
+    - **Property 15: Pending Payment Query Accuracy**
+    - **Validates: Requirements 7.1**
+  - [ ]\* 10.3 Write property test for manual verification
+    - **Property 16: Manual Verification Behavior**
+    - **Validates: Requirements 7.3**
+  - [ ]\* 10.4 Write property test for reconciliation audit
+    - **Property 17: Reconciliation Audit Logging**
+    - **Validates: Requirements 7.5**
+  - [ ]\* 10.5 Write unit tests for reconciliation endpoints
+    - Test pending payments query
+    - Test manual verification
+    - Test claim limit revocation
+    - _Requirements: 7.2, 7.4_
+
+- [ ] 11. Implement error handling and logging
+  - [ ] 11.1 Add comprehensive error logging
+    - Log all API errors with transaction context
+    - Log all network errors with retry information
+    - Log all webhook validation failures as security warnings
+    - Log all unexpected errors with full stack traces
+    - _Requirements: 8.2, 8.4_
+  - [ ]\* 11.2 Write property test for error logging
+    - **Property 19: Error Context Logging**
+    - **Validates: Requirements 8.2, 8.4**
+  - [ ] 11.3 Implement database failure resilience
+    - Queue status updates in memory when database unavailable
+    - Persist queued updates when database becomes available
+    - _Requirements: 8.3_
+  - [ ]\* 11.4 Write unit tests for error scenarios
+    - Test SasaPay API unavailable
+    - Test network error handling
+    - Test database unavailable scenario
+    - Test invalid webhook signature
+    - _Requirements: 8.1, 8.2, 8.3_
+
+- [ ] 12. Implement rate limiting and performance optimizations
+  - [ ] 12.1 Add API rate limiting
+    - Implement rate limiter for SasaPay API calls (10 requests/second)
+    - Distribute polling intervals evenly across pending payments
+    - _Requirements: 9.2, 9.3_
+  - [ ]\* 12.2 Write property test for rate limiting
+    - **Property 20: API Rate Limiting**
+    - **Validates: Requirements 9.2**
+  - [ ]\* 12.3 Write property test for polling distribution
+    - **Property 21: Polling Distribution**
+    - **Validates: Requirements 9.3**
+  - [ ]\* 12.4 Write unit tests for rate limiting
+    - Test rate limit enforcement
+    - Test polling distribution
+    - _Requirements: 9.2, 9.3_
+
+- [ ] 13. Add health check endpoints
+  - [ ] 13.1 Create health check endpoint
+    - Implement `GET /health/payments` endpoint
+    - Include payment service status
+    - Include polling service status
+    - Include SasaPay API connectivity status
+    - _Requirements: 8.5_
+  - [ ]\* 13.2 Write unit tests for health checks
+    - Test health check response format
+    - Test service status reporting
+    - _Requirements: 8.5_
+
+- [ ] 14. Update payment initiation flow
+  - [ ] 14.1 Modify payment initiation endpoint
+    - Remove immediate claim limit assignment
+    - Start polling job after payment initiation
+    - Return payment status to frontend
+    - _Requirements: 2.1_
+  - [ ]\* 14.2 Write integration tests for payment flow
+    - Test complete payment flow: initiate → poll → success → claim assignment
+    - Test timeout flow: initiate → poll → timeout → notification
+    - Test webhook flow: initiate → webhook → claim assignment
+    - _Requirements: 1.1-1.6, 2.1-2.5_
+
+- [ ] 15. Update frontend payment status display
+  - [ ] 15.1 Create PaymentStatusDisplay component
+    - Poll backend for payment status every 3 seconds
+    - Display current payment status to user
+    - Show loading state while payment is pending
+    - Show success state when payment confirmed
+    - Show error state on failure or timeout
+    - _Requirements: 6.1, 6.2, 6.3_
+  - [ ]\* 15.2 Write unit tests for PaymentStatusDisplay
+    - Test status polling behavior
+    - Test loading state display
+    - Test success state display
+    - Test error state display
+    - _Requirements: 6.1, 6.2, 6.3_
+
+- [ ] 16. Final checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for faster MVP
+- Backend implementation prioritizes payment state management and polling infrastructure
+- Property tests validate universal correctness across all payment scenarios
+- Unit tests validate specific error scenarios and edge cases
+- Integration tests ensure complete payment flows work end-to-end
+- Checkpoints ensure incremental validation at key milestones
+- Rate limiting and performance optimizations ensure scalability
