@@ -107,7 +107,9 @@ class AdminApiClient {
           errorMessage.includes("jwt expired") ||
           errorMessage.includes("invalid token") ||
           errorMessage.includes("jwt malformed") ||
-          errorMessage.includes("Missing or invalid authorization header");
+          errorMessage.includes("Missing or invalid authorization header") ||
+          errorMessage.includes("Admin not found") ||
+          errorMessage.includes("Invalid token type");
 
         if (isTokenInvalid) {
           console.warn(
