@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MemberSearchResult, CheckInDto } from "@/lib/staff-api";
 import { getTierColor, getTierDisplayName } from "@/lib/tier-utils";
+import { getRemainingClaimLimit, getClaimLimit } from "@/lib/claim-limits";
 import QuestionnaireForm, { QuestionnaireData } from "./QuestionnaireForm";
 
 interface CheckInScreenProps {
@@ -164,25 +165,51 @@ export default function CheckInScreen({
                 </div>
 
                 {/* Claim Limit */}
-                {searchResult.claimLimit && (
-                  <div className="p-4 bg-white rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1 font-semibold uppercase">
-                      Claim Allocation
-                    </p>
-                    <p className="text-2xl font-bold text-green-600">
-                      KES {searchResult.claimLimit.remaining.toLocaleString()}{" "}
-                      Remaining
-                    </p>
-                    <div className="w-full bg-gray-200 h-2 rounded-full mt-2 overflow-hidden">
-                      <div
-                        className="bg-green-500 h-full transition-all duration-500"
-                        style={{
-                          width: `${Math.min(100, Math.max(0, (searchResult.claimLimit.remaining / Math.max(1, searchResult.claimLimit.allocated)) * 100))}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
+                {searchResult.claimLimit &&
+                  searchResult.member?.tier &&
+                  (() => {
+                    // Calculate correct remaining limit using centralized utility
+                    const usedAmount = searchResult.claimLimit.used || 0;
+                    const correctTotalLimit = getClaimLimit(
+                      searchResult.member.tier as any,
+                    );
+                    const correctRemainingLimit = getRemainingClaimLimit(
+                      searchResult.member.tier as any,
+                      usedAmount,
+                    );
+
+                    console.log("[CheckInScreen] Claim limit calculation:", {
+                      tier: searchResult.member.tier,
+                      usedAmount,
+                      correctTotalLimit,
+                      correctRemainingLimit,
+                      backendAllocated: searchResult.claimLimit.allocated,
+                      backendRemaining: searchResult.claimLimit.remaining,
+                    });
+
+                    return (
+                      <div className="p-4 bg-white rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1 font-semibold uppercase">
+                          Claim Allocation
+                        </p>
+                        <p className="text-2xl font-bold text-green-600">
+                          KES {correctRemainingLimit.toLocaleString()} Remaining
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          of KES {correctTotalLimit.toLocaleString()} total
+                          limit
+                        </p>
+                        <div className="w-full bg-gray-200 h-2 rounded-full mt-2 overflow-hidden">
+                          <div
+                            className="bg-green-500 h-full transition-all duration-500"
+                            style={{
+                              width: `${Math.min(100, Math.max(0, (correctRemainingLimit / correctTotalLimit) * 100))}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
               </div>
 
               {/* Clinical Form */}

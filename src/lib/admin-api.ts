@@ -50,17 +50,59 @@ class AdminApiClient {
 
     // Always read fresh token from store
     const token = this.getToken();
+
+    // Log authentication state before request
+    console.log(`[AdminAPI] Request to ${endpoint}`, {
+      hasToken: !!token,
+      method: options.method || "GET",
+      timestamp: new Date().toISOString(),
+    });
+
     if (token) {
       (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers,
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    } catch (fetchError) {
+      console.error(`[AdminAPI] Network error on ${endpoint}:`, fetchError);
+      throw new Error("Network error. Please check your connection.");
+    }
+
+    // Log response status
+    console.log(`[AdminAPI] Response from ${endpoint}`, {
+      status: response.status,
+      ok: response.ok,
+      timestamp: new Date().toISOString(),
     });
 
     if (!response.ok) {
+      // Parse error response
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = "Request failed";
+      }
+
+      // Log error details without modifying auth state
+      console.error(`[AdminAPI] Error on ${endpoint}:`, {
+        status: response.status,
+        message: errorMessage,
+        endpoint,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Only handle 401 for authentication errors
       if (response.status === 401 && typeof window !== "undefined") {
+        console.warn(
+          "[AdminAPI] 401 Unauthorized - clearing auth and redirecting",
+        );
         // Clear auth and redirect to login
         localStorage.removeItem("admin-auth-storage");
         if (
@@ -70,13 +112,25 @@ class AdminApiClient {
           window.location.href = "/admin/login";
         }
       }
-      const error = await response
-        .json()
-        .catch(() => ({ message: "Request failed" }));
-      throw new Error(error.message || `HTTP ${response.status}`);
+
+      throw new Error(errorMessage);
     }
 
-    return response.json();
+    // Parse and return successful response
+    try {
+      const data = await response.json();
+      console.log(`[AdminAPI] Success on ${endpoint}`, {
+        hasData: !!data,
+        timestamp: new Date().toISOString(),
+      });
+      return data;
+    } catch (parseError) {
+      console.error(
+        `[AdminAPI] Failed to parse response from ${endpoint}:`,
+        parseError,
+      );
+      throw new Error("Failed to parse server response");
+    }
   }
 
   // Auth

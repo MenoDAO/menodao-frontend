@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Clock, Zap, TrendingDown } from "lucide-react";
+import { getPaymentAmount, type SubscriptionTier } from "@/lib/payment-config";
 
 interface PaymentFrequencySelectorProps {
   tier: "BRONZE" | "SILVER" | "GOLD";
@@ -18,6 +19,18 @@ interface PaymentOption {
   recommended?: boolean;
 }
 
+// Map tier names to payment config format
+const mapTierToConfigTier = (
+  tier: "BRONZE" | "SILVER" | "GOLD",
+): SubscriptionTier => {
+  const tierMap: Record<string, SubscriptionTier> = {
+    BRONZE: "MenoBronze",
+    SILVER: "MenoSilver",
+    GOLD: "MenoGold",
+  };
+  return tierMap[tier];
+};
+
 export function PaymentFrequencySelector({
   tier,
   monthlyPrice,
@@ -27,20 +40,30 @@ export function PaymentFrequencySelector({
     "MONTHLY" | "ANNUAL" | null
   >(null);
 
-  const yearlyPrice = monthlyPrice * 12;
+  // Get correct amounts from centralized config
+  const configTier = mapTierToConfigTier(tier);
+  const correctMonthlyPrice = getPaymentAmount(configTier, "monthly");
+  const correctYearlyPrice = getPaymentAmount(configTier, "yearly");
+
+  console.log("[PaymentFrequencySelector] Using payment amounts:", {
+    tier: configTier,
+    monthly: correctMonthlyPrice,
+    yearly: correctYearlyPrice,
+    passedMonthlyPrice: monthlyPrice,
+  });
 
   const options: PaymentOption[] = [
     {
       frequency: "MONTHLY",
-      amount: monthlyPrice,
-      totalAnnualCost: monthlyPrice * 12,
+      amount: correctMonthlyPrice,
+      totalAnnualCost: correctMonthlyPrice * 12,
       benefits: ["Pay as you go", "Lower upfront cost", "Flexible commitment"],
       waitingPeriod: "60-90 days",
     },
     {
       frequency: "ANNUAL",
-      amount: yearlyPrice,
-      totalAnnualCost: yearlyPrice,
+      amount: correctYearlyPrice,
+      totalAnnualCost: correctYearlyPrice,
       benefits: [
         "Immediate access to all procedures",
         "Only 14-day waiting period",
@@ -140,7 +163,7 @@ export function PaymentFrequencySelector({
                   <div className="mt-2 flex items-center gap-2 text-sm">
                     <TrendingDown className="w-4 h-4 text-emerald-500" />
                     <span className="text-emerald-400">
-                      Same as {monthlyPrice.toLocaleString()} KES/month
+                      Same as {correctMonthlyPrice.toLocaleString()} KES/month
                     </span>
                   </div>
                 )}

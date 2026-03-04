@@ -84,10 +84,20 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async requestOtp(phoneNumber: string) {
+  async checkPhoneExists(phoneNumber: string) {
+    return this.request<{ exists: boolean; phoneNumber: string }>(
+      "/auth/check-phone",
+      {
+        method: "POST",
+        body: JSON.stringify({ phoneNumber }),
+      },
+    );
+  }
+
+  async requestOtp(phoneNumber: string, createIfNotExists: boolean = false) {
     return this.request<{ message: string }>("/auth/request-otp", {
       method: "POST",
-      body: JSON.stringify({ phoneNumber }),
+      body: JSON.stringify({ phoneNumber, createIfNotExists }),
     });
   }
 

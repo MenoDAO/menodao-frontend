@@ -6,6 +6,12 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { PaymentFrequencySelector } from "@/app/payment/components/PaymentFrequencySelector";
 import {
+  getPaymentAmount,
+  validatePaymentAmount,
+  type SubscriptionTier,
+  type PaymentFrequency,
+} from "@/lib/payment-config";
+import {
   X,
   Phone,
   User,
@@ -30,6 +36,18 @@ interface PaymentDialogProps {
   tier: "BRONZE" | "SILVER" | "GOLD";
   onPaymentComplete: () => void;
 }
+
+// Map tier names to payment config format
+const mapTierToConfigTier = (
+  tier: "BRONZE" | "SILVER" | "GOLD",
+): SubscriptionTier => {
+  const tierMap: Record<string, SubscriptionTier> = {
+    BRONZE: "MenoBronze",
+    SILVER: "MenoSilver",
+    GOLD: "MenoGold",
+  };
+  return tierMap[tier];
+};
 
 export default function PaymentDialog({
   isOpen,
@@ -73,7 +91,30 @@ export default function PaymentDialog({
     }: {
       amount: number;
       phoneNumber?: string;
-    }) => api.initiatePayment(amount, "MPESA", phoneNumber),
+    }) => {
+      // Validate amount before initiating payment
+      const configTier = mapTierToConfigTier(tier);
+      const frequency: PaymentFrequency =
+        selectedFrequency === "ANNUAL" ? "yearly" : "monthly";
+
+      console.log("[PaymentDialog] Initiating payment:", {
+        tier: configTier,
+        frequency,
+        amount,
+        selectedFrequency,
+      });
+
+      // Validate the amount matches expected
+      const isValid = validatePaymentAmount(configTier, frequency, amount);
+      if (!isValid) {
+        const expectedAmount = getPaymentAmount(configTier, frequency);
+        throw new Error(
+          `Payment amount mismatch. Expected KES ${expectedAmount}, got KES ${amount}. Please refresh and try again.`,
+        );
+      }
+
+      return api.initiatePayment(amount, "MPESA", phoneNumber);
+    },
     onSuccess: (data) => {
       setContributionId(data.contributionId);
       setPaymentStatus("PENDING");
@@ -154,7 +195,7 @@ export default function PaymentDialog({
     setStatusMessage("Initiating payment...");
 
     paymentMutation.mutate({
-      amount,
+      amount: selectedAmount,
       phoneNumber: phoneToUse,
     });
   };
@@ -183,6 +224,20 @@ export default function PaymentDialog({
   ) => {
     setSelectedFrequency(frequency);
     setSelectedAmount(amount);
+
+    // Log the selected amount for verification
+    const configTier = mapTierToConfigTier(tier);
+    const freq: PaymentFrequency =
+      frequency === "ANNUAL" ? "yearly" : "monthly";
+    const expectedAmount = getPaymentAmount(configTier, freq);
+
+    console.log("[PaymentDialog] Frequency selected:", {
+      tier: configTier,
+      frequency: freq,
+      selectedAmount: amount,
+      expectedAmount,
+      matches: amount === expectedAmount,
+    });
   };
 
   const handleContinueToPayment = () => {

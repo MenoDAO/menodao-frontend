@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { api } from "@/lib/api";
+import { getRemainingClaimLimit, formatClaimLimit } from "@/lib/claim-limits";
 import Link from "next/link";
 import {
   CreditCard,
@@ -53,6 +54,19 @@ export default function DashboardPage() {
   const subscription = profile?.subscription;
   const tier = subscription?.tier || "BRONZE";
 
+  // Calculate correct remaining claim limit using centralized utility
+  const amountClaimed = claimsData?.summary?.amountClaimed || 0;
+  const correctRemainingLimit = subscription?.tier
+    ? getRemainingClaimLimit(subscription.tier, amountClaimed)
+    : 0;
+
+  console.log("[Dashboard] Claim limit calculation:", {
+    tier: subscription?.tier,
+    amountClaimed,
+    correctRemainingLimit,
+    backendRemainingLimit: claimsData?.summary?.amountRemaining,
+  });
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Welcome Header */}
@@ -102,7 +116,7 @@ export default function DashboardPage() {
         <StatCard
           icon={<Shield className="w-5 h-5 sm:w-6 sm:h-6" />}
           label="Claim Limit Left"
-          value={`KES ${(claimsData?.summary?.amountRemaining || 0).toLocaleString()}`}
+          value={`KES ${correctRemainingLimit.toLocaleString()}`}
           color="orange"
         />
       </div>
