@@ -90,31 +90,43 @@ class AdminApiClient {
         errorMessage = "Request failed";
       }
 
-      // Log error details without modifying auth state
+      // Log error details for debugging
       console.error(`[AdminAPI] Error on ${endpoint}:`, {
         status: response.status,
         message: errorMessage,
         endpoint,
+        hasToken: !!token,
         timestamp: new Date().toISOString(),
       });
 
-      // Only handle 401 for /auth/me endpoint (token validation)
-      // Other 401s might be permission issues, not invalid tokens
-      if (
-        response.status === 401 &&
-        endpoint === "/admin/auth/me" &&
-        typeof window !== "undefined"
-      ) {
-        console.warn(
-          "[AdminAPI] 401 on auth check - clearing auth and redirecting",
-        );
-        // Clear auth and redirect to login
-        localStorage.removeItem("admin-auth-storage");
-        if (
-          window.location.pathname.startsWith("/admin") &&
-          window.location.pathname !== "/admin/login"
-        ) {
-          window.location.href = "/admin/login";
+      // Handle 401 Unauthorized errors intelligently
+      if (response.status === 401 && typeof window !== "undefined") {
+        // Check if this is a token validation issue
+        const isTokenInvalid =
+          errorMessage.includes("Invalid or expired token") ||
+          errorMessage.includes("jwt expired") ||
+          errorMessage.includes("invalid token") ||
+          errorMessage.includes("jwt malformed") ||
+          errorMessage.includes("Missing or invalid authorization header");
+
+        if (isTokenInvalid) {
+          console.warn(
+            "[AdminAPI] Token is invalid/expired - clearing auth and redirecting",
+          );
+          // Clear auth and redirect to login
+          localStorage.removeItem("admin-auth-storage");
+          if (
+            window.location.pathname.startsWith("/admin") &&
+            window.location.pathname !== "/admin/login"
+          ) {
+            window.location.href = "/admin/login";
+          }
+        } else {
+          // Log but don't redirect - might be a permission issue
+          console.warn(
+            "[AdminAPI] 401 error but not a token issue - might be permissions:",
+            errorMessage,
+          );
         }
       }
 
