@@ -211,6 +211,23 @@ export function PaymentFrequencySelector({
         ))}
       </div>
 
+      {/* Selection Confirmation */}
+      {selectedFrequency && (
+        <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <Check className="w-5 h-5 text-emerald-500" />
+            <p className="text-emerald-300 font-medium">
+              You selected:{" "}
+              <span className="text-emerald-100 font-bold">
+                {selectedFrequency === "MONTHLY"
+                  ? "Monthly Plan"
+                  : "Annual Plan"}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Additional Information */}
       <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
         <div className="flex items-start gap-3">

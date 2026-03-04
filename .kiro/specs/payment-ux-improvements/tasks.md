@@ -6,17 +6,17 @@ This implementation plan addresses a critical security bug where claim limits ar
 
 ## Tasks
 
-- [ ] 1. Fix critical claim limit activation bug in backend
-  - [ ] 1.1 Add subscription active status validation to VisitsService
+- [x] 1. Fix critical claim limit activation bug in backend
+  - [x] 1.1 Add subscription active status validation to VisitsService
     - Modify `getRemainingClaimLimit()` to check `subscription.isActive`
     - Return zero or error for inactive subscriptions
     - _Requirements: 1.1, 1.2, 1.5_
-  - [ ] 1.2 Ensure SubscriptionsService only activates after payment
+  - [x] 1.2 Ensure SubscriptionsService only activates after payment
     - Verify `subscribe()` creates subscriptions with `isActive: false`
     - Verify `activateSubscription()` is only called from payment callback
     - Add logging to track activation events
     - _Requirements: 1.1, 1.2, 1.3_
-  - [ ] 1.3 Update PaymentService claim limit assignment
+  - [x] 1.3 Update PaymentService claim limit assignment
     - Ensure `assignClaimLimits()` only runs after payment confirmation
     - Add validation to check payment status before assignment
     - Add logging for claim limit assignment events
@@ -54,17 +54,17 @@ This implementation plan addresses a critical security bug where claim limits ar
     - Replace console.log with NestJS Logger in PaymentService
     - _Requirements: 2.3, 2.4_
 
-- [ ] 3. Standardize tier naming with "Meno" prefix
-  - [ ] 3.1 Update claim-limits.ts tier type definitions
+- [x] 3. Standardize tier naming with "Meno" prefix
+  - [x] 3.1 Update claim-limits.ts tier type definitions
     - Update SubscriptionTier type to use "MenoBronze", "MenoSilver", "MenoGold"
     - Update CLAIM_LIMITS object keys
     - Update all function implementations
     - _Requirements: 4.1, 4.6_
-  - [ ] 3.2 Update payment-config.ts tier definitions
+  - [x] 3.2 Update payment-config.ts tier definitions
     - Ensure SubscriptionTier type uses "Meno" prefix
     - Update PAYMENT_CONFIG tier keys
     - _Requirements: 4.1, 4.6_
-  - [ ] 3.3 Update backend SubscriptionsService tier displays
+  - [x] 3.3 Update backend SubscriptionsService tier displays
     - Update getPackages() to return tier names with "Meno" prefix
     - Update PACKAGE_BENEFITS keys to use "Meno" prefix
     - _Requirements: 4.1, 4.6_
@@ -72,17 +72,17 @@ This implementation plan addresses a critical security bug where claim limits ar
     - **Property 5: Tier names include Meno prefix**
     - **Validates: Requirements 4.1, 4.6**
 
-- [ ] 4. Improve payment frequency selection clarity
-  - [ ] 4.1 Enhance visual highlighting in PaymentFrequencySelector
+- [x] 4. Improve payment frequency selection clarity
+  - [x] 4.1 Enhance visual highlighting in PaymentFrequencySelector
     - Add stronger border color for selected option
     - Add background color change for selected option
     - Add checkmark icon for selected option (already present, ensure visible)
     - _Requirements: 5.1, 5.2_
-  - [ ] 4.2 Add explicit confirmation text for selected frequency
+  - [x] 4.2 Add explicit confirmation text for selected frequency
     - Display "You selected: Monthly Plan" or "You selected: Annual Plan"
     - Show text below the selection cards
     - _Requirements: 5.3_
-  - [ ] 4.3 Persist selection state through payment flow
+  - [x] 4.3 Persist selection state through payment flow
     - Ensure selectedFrequency state is maintained
     - Pass selection to next screen via props or state management
     - _Requirements: 5.4_
@@ -96,18 +96,18 @@ This implementation plan addresses a critical security bug where claim limits ar
     - **Property 8: Selection state persists through flow**
     - **Validates: Requirements 5.4**
 
-- [ ] 5. Add expected checkout amount display to phone entry screen
-  - [ ] 5.1 Create or modify phone number entry component
+- [x] 5. Add expected checkout amount display to phone entry screen
+  - [x] 5.1 Create or modify phone number entry component
     - Identify the phone number entry screen component
     - Add amount display section above phone input
     - _Requirements: 6.1_
-  - [ ] 5.2 Implement payment information display component
+  - [x] 5.2 Implement payment information display component
     - Display tier name with "Meno" prefix
     - Display payment frequency (Monthly/Yearly)
     - Display amount in KES format with proper formatting
     - Use prominent styling (large font, bold)
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
-  - [ ] 5.3 Calculate and validate displayed amount
+  - [x] 5.3 Calculate and validate displayed amount
     - Get amount from payment-config based on tier and frequency
     - Validate amount matches expected calculation
     - _Requirements: 6.5_
