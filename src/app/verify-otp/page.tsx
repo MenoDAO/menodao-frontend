@@ -40,7 +40,7 @@ function VerifyOTPContent() {
       const { accessToken, member } = await api.verifyOtp(phone!, otp);
       api.setToken(accessToken);
 
-      // If this is a signup flow, create the account with additional details
+      // If this is a signup flow, update the account with additional details
       if (flow === "signup") {
         const signupDataStr = sessionStorage.getItem("signup-data");
         if (signupDataStr) {
@@ -56,14 +56,17 @@ function VerifyOTPContent() {
 
           // Clear signup data from session storage
           sessionStorage.removeItem("signup-data");
+        } else {
+          // No signup data found, just update with member from OTP verification
+          updateMember(member);
         }
       } else {
         // Login flow - just update the member state
         updateMember(member);
       }
 
-      // Navigate to dashboard
-      router.push("/dashboard");
+      // Navigate to dashboard - use window.location for a hard navigation
+      window.location.href = "/dashboard";
     } catch (err) {
       console.error("OTP verification error:", err);
       const errorMessage =
@@ -79,7 +82,9 @@ function VerifyOTPContent() {
 
     setError(null);
     try {
-      await api.requestOtp(phone);
+      // Use the same createIfNotExists value based on flow
+      const createIfNotExists = flow === "signup";
+      await api.requestOtp(phone, createIfNotExists);
       setError("OTP resent successfully");
       setTimeout(() => setError(null), 3000);
     } catch (err) {

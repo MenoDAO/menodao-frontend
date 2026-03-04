@@ -25,7 +25,7 @@ This plan addresses four critical production issues through targeted bug fixes a
     - Test that auth errors are logged without triggering logout
     - **Validates: Requirements 1.4**
 
-- [-] 2. Verify and fix production payment amounts
+- [x] 2. Verify and fix production payment amounts
   - [x] 2.1 Create centralized payment configuration
     - Create payment amount constants for all tiers and frequencies
     - Implement environment-based amount selection
@@ -78,7 +78,7 @@ This plan addresses four critical production issues through targeted bug fixes a
     - Test invalid tier handling
     - **Validates: Requirements 3.1, 3.2, 3.3**
 
-- [-] 5. Implement separate signup page
+- [x] 5. Implement separate signup page
   - [x] 5.1 Create signup page component at /sign-up
     - Create new page route at /sign-up
     - Implement signup form with Full Name, Location, Phone Number fields
@@ -112,7 +112,7 @@ This plan addresses four critical production issues through targeted bug fixes a
     - **Property 7: Signup account creation**
     - **Validates: Requirements 4.5, 4.7**
 
-- [ ] 6. Update login page for returning users
+- [x] 6. Update login page for returning users
   - [x] 6.1 Update login page component at /login
     - Simplify to phone number entry only
     - Remove any signup-related fields
@@ -148,7 +148,7 @@ This plan addresses four critical production issues through targeted bug fixes a
     - **Property 11: Incorrect OTP handling**
     - **Validates: Requirements 5.7**
 
-- [ ] 7. Update shared OTP verification component
+- [x] 7. Update shared OTP verification component
   - [x] 7.1 Enhance OTP verification to handle both flows
     - Accept flow type parameter ('signup' or 'login')
     - Accept optional signup data for signup flow

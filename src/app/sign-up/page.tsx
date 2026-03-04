@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, MapPin, Phone, Loader2 } from "lucide-react";
+import { User, MapPin, Phone, Loader2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { KENYAN_COUNTIES } from "@/lib/counties";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function SignUpPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -57,6 +59,19 @@ export default function SignUpPage() {
       // Normalize phone number
       const normalizedPhone = formData.phoneNumber.trim().replace(/^0/, "+254");
 
+      // Check if phone number already exists
+      const { exists } = await api.checkPhoneExists(normalizedPhone);
+
+      if (exists) {
+        // Phone number already exists - show error and login button
+        setErrors({
+          submit: "Phone number already exists. Please login instead",
+        });
+        setShowLoginPrompt(true);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Store signup data in session storage for OTP verification
       sessionStorage.setItem(
         "signup-data",
@@ -95,29 +110,47 @@ export default function SignUpPage() {
         return newErrors;
       });
     }
+    // Clear login prompt when user changes input
+    if (showLoginPrompt) {
+      setShowLoginPrompt(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 p-4">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative w-full max-w-md">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Welcome to MenoDAO
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Please provide the details below to continue
-          </p>
+          <div className="w-20 h-20 mx-auto mb-4 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+            <img src="/logo.png" alt="MenoDAO" className="w-12 h-12" />
+          </div>
+          <h1 className="text-3xl font-bold text-white font-outfit">MenoDAO</h1>
+          <p className="text-emerald-200 mt-2">Member Portal</p>
         </div>
 
         {/* Signup Form Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 animate-fade-in">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 font-outfit">
+              Welcome to MenoDAO
+            </h2>
+            <p className="text-gray-600 mt-2">
+              Please provide the details below to continue
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Full Name */}
             <div>
               <label
                 htmlFor="fullName"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Full Name <span className="text-red-500">*</span>
               </label>
@@ -131,11 +164,11 @@ export default function SignUpPage() {
                     handleInputChange("fullName", e.target.value)
                   }
                   placeholder="Enter your full name"
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-emerald-500 outline-none transition-all text-gray-900 placeholder-gray-400 ${
                     errors.fullName
                       ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 dark:border-gray-600 focus:ring-emerald-500"
-                  } bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent`}
+                      : "border-gray-300 focus:ring-emerald-500"
+                  }`}
                   required
                 />
               </div>
@@ -144,31 +177,36 @@ export default function SignUpPage() {
               )}
             </div>
 
-            {/* Location */}
+            {/* County */}
             <div>
               <label
                 htmlFor="location"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Location <span className="text-red-500">*</span>
+                County <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                <select
                   id="location"
-                  type="text"
                   value={formData.location}
                   onChange={(e) =>
                     handleInputChange("location", e.target.value)
                   }
-                  placeholder="Enter your location"
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-emerald-500 outline-none transition-all text-gray-900 appearance-none bg-white ${
                     errors.location
                       ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 dark:border-gray-600 focus:ring-emerald-500"
-                  } bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent`}
+                      : "border-gray-300 focus:ring-emerald-500"
+                  }`}
                   required
-                />
+                >
+                  <option value="">Select your county</option>
+                  {KENYAN_COUNTIES.map((county) => (
+                    <option key={county} value={county}>
+                      {county}
+                    </option>
+                  ))}
+                </select>
               </div>
               {errors.location && (
                 <p className="mt-1 text-sm text-red-500">{errors.location}</p>
@@ -179,7 +217,7 @@ export default function SignUpPage() {
             <div>
               <label
                 htmlFor="phoneNumber"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Phone Number <span className="text-red-500">*</span>
               </label>
@@ -192,12 +230,12 @@ export default function SignUpPage() {
                   onChange={(e) =>
                     handleInputChange("phoneNumber", e.target.value)
                   }
-                  placeholder="e.g., 0712345678"
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
+                  placeholder="0712345678"
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-emerald-500 outline-none transition-all text-gray-900 placeholder-gray-400 ${
                     errors.phoneNumber
                       ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 dark:border-gray-600 focus:ring-emerald-500"
-                  } bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent`}
+                      : "border-gray-300 focus:ring-emerald-500"
+                  }`}
                   required
                 />
               </div>
@@ -221,7 +259,7 @@ export default function SignUpPage() {
                     className="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                   />
                 </div>
-                <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200">
+                <span className="text-sm text-gray-600 group-hover:text-gray-900">
                   I accept the{" "}
                   <Link
                     href="/terms"
@@ -242,46 +280,59 @@ export default function SignUpPage() {
 
             {/* Submit Error */}
             {errors.submit && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                 {errors.submit}
               </div>
+            )}
+
+            {/* Login Button (shown when phone already exists) */}
+            {showLoginPrompt && (
+              <Link href="/login">
+                <button
+                  type="button"
+                  className="w-full py-3 px-4 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  Login
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </Link>
             )}
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Processing...
+                  Checking...
                 </>
               ) : (
-                "Continue"
+                <>
+                  Continue
+                  <ArrowRight className="w-5 h-5" />
+                </>
               )}
             </button>
           </form>
 
-          {/* Login Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <p className="text-sm text-gray-600">
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="text-emerald-600 hover:text-emerald-700 font-semibold"
+                className="text-emerald-600 hover:text-emerald-700 font-medium"
               >
-                Log in
+                Login
               </Link>
             </p>
           </div>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
-          By signing up, you agree to receive SMS notifications for your dental
-          care.
+        <p className="text-center text-emerald-200/60 text-sm mt-8">
+          🔒 Secure. Transparent. Community Owned.
         </p>
       </div>
     </div>
