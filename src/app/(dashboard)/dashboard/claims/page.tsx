@@ -118,9 +118,22 @@ export default function ClaimsPage() {
     waitingPeriodStatus?.consultationsExtractions?.available ||
     waitingPeriodStatus?.restorativeProcedures?.available;
 
+  // Calculate projected eligibility date
+  const getProjectedDate = () => {
+    if (!waitingPeriodStatus || canSubmitClaims) return null;
+
+    const daysRemaining =
+      waitingPeriodStatus.consultationsExtractions?.daysRemaining || 0;
+    const projectedDate = new Date();
+    projectedDate.setDate(projectedDate.getDate() + daysRemaining);
+    return projectedDate;
+  };
+
+  const projectedDate = getProjectedDate();
+
   const waitingPeriodMessage = !canSubmitClaims
     ? waitingPeriodStatus?.consultationsExtractions?.daysRemaining
-      ? `Claims available in ${waitingPeriodStatus.consultationsExtractions.daysRemaining} days`
+      ? `Claims available in ${waitingPeriodStatus.consultationsExtractions.daysRemaining} days (${projectedDate?.toLocaleDateString("en-KE", { year: "numeric", month: "long", day: "numeric" })})`
       : "Waiting period in effect"
     : null;
 

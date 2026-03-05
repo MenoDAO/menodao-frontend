@@ -365,11 +365,12 @@ export default function PaymentDialog({
                 <CheckCircle2 className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                Payment Successful!
+                {isUpgrade ? "Upgrade Successful!" : "Payment Successful!"}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Your {tier} membership payment of KES{" "}
-                {selectedAmount.toLocaleString()} has been received.
+                {isUpgrade
+                  ? `You've been upgraded to ${tier}! Your new claim limit is now active.`
+                  : `Your ${tier} membership payment of KES ${selectedAmount.toLocaleString()} has been received.`}
               </p>
               <button
                 onClick={onClose}
