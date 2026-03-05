@@ -245,15 +245,6 @@ export function PaymentFrequencySelector({
           </div>
         </div>
       </div>
-
-      {/* Tier Badge */}
-      <div className="flex justify-center">
-        <div
-          className={`bg-gradient-to-r ${getTierColor(tier)} text-white px-6 py-2 rounded-full font-semibold`}
-        >
-          {tier} TIER
-        </div>
-      </div>
     </div>
   );
 }
