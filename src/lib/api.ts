@@ -187,12 +187,16 @@ class ApiClient {
         available: boolean;
         daysRemaining: number;
         requiredDays: number;
+        eligibleDate: string;
       };
       restorativeProcedures: {
         available: boolean;
         daysRemaining: number;
         requiredDays: number;
+        eligibleDate: string;
       };
+      paymentFrequency: string;
+      subscriptionStartDate: string;
     }>("/subscriptions/waiting-period-status");
   }
 

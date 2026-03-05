@@ -42,25 +42,9 @@ export function WaitingPeriodDisplay({ memberId }: WaitingPeriodDisplayProps) {
       setIsLoading(true);
       setError("");
 
-      // TODO: Replace with actual API call
-      // const data = await api.getWaitingPeriodStatus(memberId);
-      // setStatus(data);
-
-      // Mock data for now
-      setStatus({
-        consultationsExtractions: {
-          available: true,
-          daysRemaining: 0,
-        },
-        restorativeProcedures: {
-          available: false,
-          daysRemaining: 15,
-        },
-        paymentFrequency: "MONTHLY",
-        subscriptionStartDate: new Date(
-          Date.now() - 75 * 24 * 60 * 60 * 1000,
-        ).toISOString(),
-      });
+      const api = (await import("@/lib/api")).default;
+      const data = await api.subscriptions.getWaitingPeriodStatus();
+      setStatus(data);
     } catch (err) {
       setError(
         err instanceof Error
@@ -264,6 +248,19 @@ export function WaitingPeriodDisplay({ memberId }: WaitingPeriodDisplayProps) {
                     </span>
                     <span>{procedure.requiredDays} days required</span>
                   </div>
+                  <p className="text-xs text-gray-400 mt-2 text-center">
+                    Eligible on:{" "}
+                    <span className="text-white font-medium">
+                      {new Date(
+                        status.consultationsExtractions.eligibleDate ||
+                          status.restorativeProcedures.eligibleDate,
+                      ).toLocaleDateString("en-KE", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </p>
                 </div>
               )}
 
