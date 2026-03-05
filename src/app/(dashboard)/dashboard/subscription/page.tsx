@@ -62,12 +62,16 @@ export default function SubscriptionPage() {
   });
 
   const subscribeMutation = useMutation({
-    mutationFn: (tier: "BRONZE" | "SILVER" | "GOLD") => api.subscribe(tier),
+    mutationFn: ({
+      tier,
+      paymentFrequency,
+    }: {
+      tier: "BRONZE" | "SILVER" | "GOLD";
+      paymentFrequency?: "MONTHLY" | "ANNUAL";
+    }) => api.subscribe(tier, paymentFrequency),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscription"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      // Open payment dialog after subscription is created
-      setIsPaymentDialogOpen(true);
     },
   });
 
@@ -100,16 +104,20 @@ export default function SubscriptionPage() {
       window.location.hostname === "127.0.0.1");
 
   const handleSubscribe = async (tier: "BRONZE" | "SILVER" | "GOLD") => {
-    // Check if this is truly an upgrade (user has active subscription AND is selecting a higher tier)
-    const isUpgrade =
-      subscription?.isActive && tierOrder[tier] > tierOrder[subscription.tier];
+    // Only call upgrade endpoint if:
+    // 1. User has an ACTIVE subscription (not just any subscription)
+    // 2. AND is selecting a HIGHER tier
+    const hasActiveSubscription = subscription?.isActive === true;
+    const isSelectingHigherTier =
+      subscription && tierOrder[tier] > tierOrder[subscription.tier];
+    const isUpgrade = hasActiveSubscription && isSelectingHigherTier;
 
     if (isUpgrade) {
       try {
-        // Call upgrade endpoint to check if upgrade is allowed and get upgrade cost
-        const upgradeInfo = await api.upgrade(tier);
+        // This is a true upgrade - call upgrade endpoint to validate
+        await api.upgrade(tier);
 
-        // Set the selected tier and amount, then open payment dialog
+        // Set the selected tier and open payment dialog
         setSelectedTier(tier);
         setIsPaymentDialogOpen(true);
       } catch (error) {
@@ -117,11 +125,10 @@ export default function SubscriptionPage() {
         alert((error as Error).message);
       }
     } else {
-      // No active subscription, inactive subscription, or selecting same/lower tier
-      // Create/update subscription and open payment
-      subscribeMutation.mutate(tier);
-      // After subscription is created, we need to open payment dialog
+      // First subscription, inactive subscription, or selecting same/lower tier
+      // Just open the payment dialog - subscription will be created after frequency selection
       setSelectedTier(tier);
+      setIsPaymentDialogOpen(true);
     }
   };
 
@@ -361,6 +368,12 @@ export default function SubscriptionPage() {
           onPaymentComplete={handlePaymentComplete}
           isUpgrade={subscription?.isActive === true}
           currentTier={subscription?.tier}
+          onSubscribe={async (tier, frequency) => {
+            await subscribeMutation.mutateAsync({
+              tier,
+              paymentFrequency: frequency,
+            });
+          }}
         />
       )}
     </div>
