@@ -66,7 +66,8 @@ export default function SubscriptionPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscription"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      setSelectedTier(null);
+      // Open payment dialog after subscription is created
+      setIsPaymentDialogOpen(true);
     },
   });
 
@@ -105,8 +106,10 @@ export default function SubscriptionPage() {
       setSelectedTier(tier);
       setIsPaymentDialogOpen(true);
     } else {
-      // No active subscription, create new subscription
+      // No active subscription (or inactive subscription), create/update subscription and open payment
       subscribeMutation.mutate(tier);
+      // After subscription is created, we need to open payment dialog
+      setSelectedTier(tier);
     }
   };
 
@@ -322,8 +325,8 @@ export default function SubscriptionPage() {
         </div>
       </div>
 
-      {/* Payment Dialog */}
-      {subscription?.isActive && (
+      {/* Payment Dialog for Active Subscription */}
+      {subscription?.isActive && !selectedTier && (
         <PaymentDialog
           isOpen={isPaymentDialogOpen}
           onClose={() => setIsPaymentDialogOpen(false)}
@@ -333,19 +336,19 @@ export default function SubscriptionPage() {
         />
       )}
 
-      {/* Upgrade Payment Dialog */}
-      {selectedTier && subscription?.isActive && (
+      {/* Payment Dialog for New/Inactive Subscription or Upgrade */}
+      {selectedTier && (
         <PaymentDialog
-          isOpen={isPaymentDialogOpen && selectedTier !== subscription.tier}
+          isOpen={isPaymentDialogOpen}
           onClose={() => {
             setIsPaymentDialogOpen(false);
             setSelectedTier(null);
           }}
-          amount={0} // Will be calculated based on tier difference
+          amount={0} // Will be calculated based on tier
           tier={selectedTier}
           onPaymentComplete={handlePaymentComplete}
-          isUpgrade={true}
-          currentTier={subscription.tier}
+          isUpgrade={subscription?.isActive === true}
+          currentTier={subscription?.tier}
         />
       )}
     </div>
