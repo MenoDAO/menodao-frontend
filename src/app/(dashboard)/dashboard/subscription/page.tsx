@@ -100,8 +100,11 @@ export default function SubscriptionPage() {
       window.location.hostname === "127.0.0.1");
 
   const handleSubscribe = async (tier: "BRONZE" | "SILVER" | "GOLD") => {
-    // If user has an active subscription and is upgrading
-    if (subscription?.isActive) {
+    // Check if this is truly an upgrade (user has active subscription AND is selecting a higher tier)
+    const isUpgrade =
+      subscription?.isActive && tierOrder[tier] > tierOrder[subscription.tier];
+
+    if (isUpgrade) {
       try {
         // Call upgrade endpoint to check if upgrade is allowed and get upgrade cost
         const upgradeInfo = await api.upgrade(tier);
@@ -114,7 +117,8 @@ export default function SubscriptionPage() {
         alert((error as Error).message);
       }
     } else {
-      // No active subscription (or inactive subscription), create/update subscription and open payment
+      // No active subscription, inactive subscription, or selecting same/lower tier
+      // Create/update subscription and open payment
       subscribeMutation.mutate(tier);
       // After subscription is created, we need to open payment dialog
       setSelectedTier(tier);

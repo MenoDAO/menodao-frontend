@@ -19,12 +19,14 @@ interface WaitingPeriodStatus {
   consultationsExtractions: {
     available: boolean;
     daysRemaining: number;
+    eligibleDate?: string;
   };
   restorativeProcedures: {
     available: boolean;
     daysRemaining: number;
+    eligibleDate?: string;
   };
-  paymentFrequency: "MONTHLY" | "ANNUAL";
+  paymentFrequency: string;
   subscriptionStartDate: string;
 }
 
@@ -42,8 +44,8 @@ export function WaitingPeriodDisplay({ memberId }: WaitingPeriodDisplayProps) {
       setIsLoading(true);
       setError("");
 
-      const api = (await import("@/lib/api")).default;
-      const data = await api.subscriptions.getWaitingPeriodStatus();
+      const { api } = await import("@/lib/api");
+      const data = await api.getWaitingPeriodStatus();
       setStatus(data);
     } catch (err) {
       setError(
@@ -252,8 +254,9 @@ export function WaitingPeriodDisplay({ memberId }: WaitingPeriodDisplayProps) {
                     Eligible on:{" "}
                     <span className="text-white font-medium">
                       {new Date(
-                        status.consultationsExtractions.eligibleDate ||
-                          status.restorativeProcedures.eligibleDate,
+                        (index === 0
+                          ? status.consultationsExtractions.eligibleDate
+                          : status.restorativeProcedures.eligibleDate) || "",
                       ).toLocaleDateString("en-KE", {
                         year: "numeric",
                         month: "long",
