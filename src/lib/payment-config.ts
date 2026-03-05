@@ -41,16 +41,16 @@ export const PAYMENT_CONFIG: PaymentConfig = {
     },
     production: {
       MenoBronze: {
+        monthly: 350,
+        yearly: 4200, // 350 * 12
+      },
+      MenoSilver: {
         monthly: 550,
         yearly: 6600, // 550 * 12
       },
-      MenoSilver: {
-        monthly: 1100,
-        yearly: 13200, // 1100 * 12
-      },
       MenoGold: {
-        monthly: 2200,
-        yearly: 26400, // 2200 * 12
+        monthly: 700,
+        yearly: 8400, // 700 * 12
       },
     },
   },

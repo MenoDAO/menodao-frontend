@@ -139,7 +139,7 @@ This implementation plan addresses a critical security bug where claim limits ar
     - Test on various screen sizes
     - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 8. Integration testing and validation
+- [x] 8. Integration testing and validation
   - [ ]\* 8.1 Write integration test for full payment flow
     - Test complete flow: select tier → select frequency → enter phone → payment → activation
     - Verify claim limits only accessible after confirmation
@@ -152,8 +152,23 @@ This implementation plan addresses a critical security bug where claim limits ar
     - Test specific examples: Bronze → MenoBronze, Silver → MenoSilver, Gold → MenoGold
     - _Requirements: 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 9. Checkpoint - Ensure all tests pass
+- [x] 9. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 10. Fix critical frontend bugs
+  - [x] 10.1 Fix payment amounts in payment-config.ts
+    - Update production amounts to correct values: Bronze (350/4200), Silver (550/6600), Gold (700/8400)
+    - _Requirements: 6.5_
+  - [x] 10.2 Fix dashboard showing inactive subscriptions
+    - Update dashboard page to only display subscription card when isActive is true
+    - Update subscription page to only show "Current Package" when isActive is true
+    - Update package selection logic to check isActive status
+    - _Requirements: 1.1, 1.2_
+  - [x] 10.3 Fix upgrade button functionality
+    - Change upgrade button to open payment dialog instead of calling API directly
+    - Add support for upgrade mode in PaymentDialog component
+    - Ensure proper tier selection and payment flow for upgrades
+    - _Requirements: 5.4_
 
 ## Notes
 

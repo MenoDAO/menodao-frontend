@@ -55,17 +55,13 @@ export default function DashboardPage() {
   const tier = subscription?.tier || "BRONZE";
 
   // Calculate correct remaining claim limit using centralized utility
+  // CRITICAL: Only show claim limits for ACTIVE subscriptions
   const amountClaimed = claimsData?.summary?.amountClaimed || 0;
-  const correctRemainingLimit = subscription?.tier
-    ? getRemainingClaimLimit(subscription.tier, amountClaimed)
-    : 0;
-
-  console.log("[Dashboard] Claim limit calculation:", {
-    tier: subscription?.tier,
-    amountClaimed,
-    correctRemainingLimit,
-    backendRemainingLimit: claimsData?.summary?.amountRemaining,
-  });
+  const isSubscriptionActive = subscription?.isActive === true;
+  const correctRemainingLimit =
+    subscription?.tier && isSubscriptionActive
+      ? getRemainingClaimLimit(subscription.tier, amountClaimed)
+      : 0;
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -79,7 +75,7 @@ export default function DashboardPage() {
             Here&apos;s what&apos;s happening with your membership
           </p>
         </div>
-        {subscription && (
+        {subscription && subscription.isActive && (
           <div
             className={`px-4 py-2 rounded-full border ${tierBg[tier]} dark:bg-gray-800 dark:border-gray-700 flex items-center gap-2`}
           >
@@ -116,7 +112,11 @@ export default function DashboardPage() {
         <StatCard
           icon={<Shield className="w-5 h-5 sm:w-6 sm:h-6" />}
           label="Claim Limit Left"
-          value={`KES ${correctRemainingLimit.toLocaleString()}`}
+          value={
+            isSubscriptionActive
+              ? `KES ${correctRemainingLimit.toLocaleString()}`
+              : "Pending Payment"
+          }
           color="orange"
         />
       </div>
@@ -125,7 +125,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Package Card */}
         <div className="lg:col-span-2">
-          {subscription ? (
+          {subscription && subscription.isActive ? (
             <div
               className={`rounded-2xl p-6 bg-gradient-to-r ${tierColors[tier]} text-white shadow-lg`}
             >

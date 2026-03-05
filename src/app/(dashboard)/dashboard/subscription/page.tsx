@@ -99,9 +99,13 @@ export default function SubscriptionPage() {
       window.location.hostname === "127.0.0.1");
 
   const handleSubscribe = (tier: "BRONZE" | "SILVER" | "GOLD") => {
-    if (subscription) {
-      upgradeMutation.mutate(tier);
+    // If user has an active subscription and is upgrading
+    if (subscription?.isActive) {
+      // Set the selected tier and open payment dialog for upgrade
+      setSelectedTier(tier);
+      setIsPaymentDialogOpen(true);
     } else {
+      // No active subscription, create new subscription
       subscribeMutation.mutate(tier);
     }
   };
@@ -143,7 +147,7 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Current Subscription Card */}
-      {subscription && (
+      {subscription && subscription.isActive && (
         <div
           className={`rounded-2xl p-6 bg-gradient-to-r ${tierColors[subscription.tier].gradient} text-white shadow-lg`}
         >
@@ -195,15 +199,19 @@ export default function SubscriptionPage() {
       {/* Package Selection */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          {subscription ? "Upgrade Your Package" : "Choose Your Package"}
+          {subscription?.isActive
+            ? "Upgrade Your Package"
+            : "Choose Your Package"}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {packages?.map((pkg: Package) => {
             const Icon = tierIcons[pkg.tier];
             const colors = tierColors[pkg.tier];
-            const isCurrentTier = subscription?.tier === pkg.tier;
-            const canUpgrade = tierOrder[pkg.tier] > currentTierLevel;
-            const isDisabled = subscription && !canUpgrade;
+            const isCurrentTier =
+              subscription?.isActive && subscription?.tier === pkg.tier;
+            const canUpgrade =
+              subscription?.isActive && tierOrder[pkg.tier] > currentTierLevel;
+            const isDisabled = subscription?.isActive && !canUpgrade;
 
             return (
               <div
@@ -282,7 +290,7 @@ export default function SubscriptionPage() {
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : isCurrentTier ? (
                       "Current Plan"
-                    ) : subscription ? (
+                    ) : subscription?.isActive ? (
                       canUpgrade ? (
                         "Upgrade"
                       ) : (
@@ -315,13 +323,29 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Payment Dialog */}
-      {subscription && (
+      {subscription?.isActive && (
         <PaymentDialog
           isOpen={isPaymentDialogOpen}
           onClose={() => setIsPaymentDialogOpen(false)}
           amount={subscription.monthlyAmount}
           tier={subscription.tier}
           onPaymentComplete={handlePaymentComplete}
+        />
+      )}
+
+      {/* Upgrade Payment Dialog */}
+      {selectedTier && subscription?.isActive && (
+        <PaymentDialog
+          isOpen={isPaymentDialogOpen && selectedTier !== subscription.tier}
+          onClose={() => {
+            setIsPaymentDialogOpen(false);
+            setSelectedTier(null);
+          }}
+          amount={0} // Will be calculated based on tier difference
+          tier={selectedTier}
+          onPaymentComplete={handlePaymentComplete}
+          isUpgrade={true}
+          currentTier={subscription.tier}
         />
       )}
     </div>

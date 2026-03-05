@@ -35,6 +35,8 @@ interface PaymentDialogProps {
   amount: number;
   tier: "BRONZE" | "SILVER" | "GOLD";
   onPaymentComplete: () => void;
+  isUpgrade?: boolean;
+  currentTier?: "BRONZE" | "SILVER" | "GOLD";
 }
 
 // Map tier names to payment config format
@@ -55,6 +57,8 @@ export default function PaymentDialog({
   amount,
   tier,
   onPaymentComplete,
+  isUpgrade = false,
+  currentTier,
 }: PaymentDialogProps) {
   const member = useAuthStore((state) => state.member);
   const [payerPhone, setPayerPhone] = useState("");
