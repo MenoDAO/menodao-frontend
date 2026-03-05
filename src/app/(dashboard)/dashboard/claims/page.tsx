@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api, Claim } from "@/lib/api";
+import { getRemainingClaimLimit } from "@/lib/claim-limits";
 import {
   FileText,
   Plus,
@@ -58,6 +59,11 @@ export default function ClaimsPage() {
     queryFn: () => api.getMyClaims(),
   });
 
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => api.getProfile(),
+  });
+
   const createClaimMutation = useMutation({
     mutationFn: (data: ClaimFormData) =>
       api.createClaim({
@@ -91,6 +97,15 @@ export default function ClaimsPage() {
   };
 
   const summary = claimsData?.summary;
+  const subscription = profile?.subscription;
+
+  // Calculate correct remaining claim limit using centralized utility (same as dashboard)
+  const amountClaimed = summary?.amountClaimed || 0;
+  const isSubscriptionActive = subscription?.isActive === true;
+  const correctRemainingLimit =
+    subscription?.tier && isSubscriptionActive
+      ? getRemainingClaimLimit(subscription.tier, amountClaimed)
+      : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -144,7 +159,9 @@ export default function ClaimsPage() {
               Limit Left
             </p>
             <p className="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 truncate">
-              KES {summary.amountRemaining.toLocaleString()}
+              {isSubscriptionActive
+                ? `KES ${correctRemainingLimit.toLocaleString()}`
+                : "Pending Payment"}
             </p>
           </div>
         </div>
