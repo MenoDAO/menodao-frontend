@@ -64,6 +64,12 @@ export default function ClaimsPage() {
     queryFn: () => api.getProfile(),
   });
 
+  const { data: waitingPeriodStatus } = useQuery({
+    queryKey: ["waitingPeriodStatus"],
+    queryFn: () => api.getWaitingPeriodStatus(),
+    enabled: !!profile?.subscription?.isActive,
+  });
+
   const createClaimMutation = useMutation({
     mutationFn: (data: ClaimFormData) =>
       api.createClaim({
@@ -107,6 +113,17 @@ export default function ClaimsPage() {
       ? getRemainingClaimLimit(subscription.tier, amountClaimed)
       : 0;
 
+  // Check if claims are available based on waiting period
+  const canSubmitClaims =
+    waitingPeriodStatus?.consultationsExtractions?.available ||
+    waitingPeriodStatus?.restorativeProcedures?.available;
+
+  const waitingPeriodMessage = !canSubmitClaims
+    ? waitingPeriodStatus?.consultationsExtractions?.daysRemaining
+      ? `Claims available in ${waitingPeriodStatus.consultationsExtractions.daysRemaining} days`
+      : "Waiting period in effect"
+    : null;
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -118,13 +135,22 @@ export default function ClaimsPage() {
             Submit and track your benefit claims
           </p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          New Claim
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            disabled={!canSubmitClaims}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-5 h-5" />
+            New Claim
+          </button>
+          {waitingPeriodMessage && (
+            <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {waitingPeriodMessage}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}

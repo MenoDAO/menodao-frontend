@@ -168,10 +168,32 @@ class ApiClient {
   }
 
   async upgrade(newTier: "BRONZE" | "SILVER" | "GOLD") {
-    return this.request<Subscription>("/subscriptions/upgrade", {
+    return this.request<{
+      currentTier: string;
+      newTier: string;
+      paymentRequired: boolean;
+      paymentAmount: number;
+      displayAmount: number;
+      message: string;
+    }>("/subscriptions/upgrade", {
       method: "POST",
       body: JSON.stringify({ newTier }),
     });
+  }
+
+  async getWaitingPeriodStatus() {
+    return this.request<{
+      consultationsExtractions: {
+        available: boolean;
+        daysRemaining: number;
+        requiredDays: number;
+      };
+      restorativeProcedures: {
+        available: boolean;
+        daysRemaining: number;
+        requiredDays: number;
+      };
+    }>("/subscriptions/waiting-period-status");
   }
 
   // [DEV ONLY] Mock payment for testing without real payment provider
@@ -196,10 +218,18 @@ class ApiClient {
     amount: number,
     paymentMethod: string,
     phoneNumber?: string,
+    isUpgrade?: boolean,
+    newTier?: "BRONZE" | "SILVER" | "GOLD",
   ) {
     return this.request<PaymentInitiation>("/contributions/pay", {
       method: "POST",
-      body: JSON.stringify({ amount, paymentMethod, phoneNumber }),
+      body: JSON.stringify({
+        amount,
+        paymentMethod,
+        phoneNumber,
+        isUpgrade,
+        newTier,
+      }),
     });
   }
 

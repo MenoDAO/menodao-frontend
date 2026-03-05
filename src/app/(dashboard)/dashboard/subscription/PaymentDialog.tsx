@@ -72,6 +72,29 @@ export default function PaymentDialog({
     "MONTHLY" | "ANNUAL" | null
   >(null);
   const [selectedAmount, setSelectedAmount] = useState<number>(amount);
+  const [upgradeInfo, setUpgradeInfo] = useState<{
+    displayAmount: number;
+    message: string;
+  } | null>(null);
+
+  // Fetch upgrade info when dialog opens for upgrade
+  useEffect(() => {
+    if (isOpen && isUpgrade && tier) {
+      api
+        .upgrade(tier)
+        .then((info) => {
+          setUpgradeInfo({
+            displayAmount: info.displayAmount,
+            message: info.message,
+          });
+          setSelectedAmount(info.displayAmount);
+        })
+        .catch((error) => {
+          setErrorMessage((error as Error).message);
+          setPaymentStatus("FAILED");
+        });
+    }
+  }, [isOpen, isUpgrade, tier]);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -106,18 +129,27 @@ export default function PaymentDialog({
         frequency,
         amount,
         selectedFrequency,
+        isUpgrade,
       });
 
-      // Validate the amount matches expected
-      const isValid = validatePaymentAmount(configTier, frequency, amount);
-      if (!isValid) {
-        const expectedAmount = getPaymentAmount(configTier, frequency);
-        throw new Error(
-          `Payment amount mismatch. Expected KES ${expectedAmount}, got KES ${amount}. Please refresh and try again.`,
-        );
+      // Validate the amount matches expected (skip validation for upgrades)
+      if (!isUpgrade) {
+        const isValid = validatePaymentAmount(configTier, frequency, amount);
+        if (!isValid) {
+          const expectedAmount = getPaymentAmount(configTier, frequency);
+          throw new Error(
+            `Payment amount mismatch. Expected KES ${expectedAmount}, got KES ${amount}. Please refresh and try again.`,
+          );
+        }
       }
 
-      return api.initiatePayment(amount, "MPESA", phoneNumber);
+      return api.initiatePayment(
+        amount,
+        "MPESA",
+        phoneNumber,
+        isUpgrade,
+        isUpgrade ? tier : undefined,
+      );
     },
     onSuccess: (data) => {
       setContributionId(data.contributionId);
@@ -276,7 +308,7 @@ export default function PaymentDialog({
         {/* Content */}
         <div className="p-6">
           {/* Frequency Selection State */}
-          {paymentStatus === "FREQUENCY_SELECT" && (
+          {paymentStatus === "FREQUENCY_SELECT" && !isUpgrade && (
             <>
               <PaymentFrequencySelector
                 tier={tier}
@@ -293,6 +325,38 @@ export default function PaymentDialog({
                 </button>
               </div>
             </>
+          )}
+
+          {/* Upgrade - Skip frequency selection */}
+          {paymentStatus === "FREQUENCY_SELECT" && isUpgrade && (
+            <div className="text-center py-8">
+              {upgradeInfo ? (
+                <>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                    Upgrade to {tier}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    {upgradeInfo.message}
+                  </p>
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                      Upgrade Cost
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                      KES {upgradeInfo.displayAmount.toLocaleString()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setPaymentStatus("IDLE")}
+                    className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+                  >
+                    Continue to Payment
+                  </button>
+                </>
+              ) : (
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
+              )}
+            </div>
           )}
           {/* Success State */}
           {paymentStatus === "COMPLETED" && (
@@ -406,22 +470,24 @@ export default function PaymentDialog({
               {/* Amount Display */}
               <div className="text-center mb-6">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                  Amount to pay
+                  {isUpgrade ? "Upgrade Cost" : "Amount to pay"}
                 </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white">
                   KES {selectedAmount.toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {tier} Membership -{" "}
-                  {selectedFrequency === "ANNUAL" ? "Annual" : "Monthly"}{" "}
-                  Payment
+                  {isUpgrade
+                    ? `Upgrade to ${tier}`
+                    : `${tier} Membership - ${selectedFrequency === "ANNUAL" ? "Annual" : "Monthly"} Payment`}
                 </p>
-                <button
-                  onClick={() => setPaymentStatus("FREQUENCY_SELECT")}
-                  className="text-sm text-emerald-600 hover:text-emerald-700 mt-2"
-                >
-                  Change payment plan
-                </button>
+                {!isUpgrade && (
+                  <button
+                    onClick={() => setPaymentStatus("FREQUENCY_SELECT")}
+                    className="text-sm text-emerald-600 hover:text-emerald-700 mt-2"
+                  >
+                    Change payment plan
+                  </button>
+                )}
               </div>
 
               {/* Phone Input */}
