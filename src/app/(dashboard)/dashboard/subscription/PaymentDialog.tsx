@@ -77,6 +77,7 @@ export default function PaymentDialog({
     "MONTHLY" | "ANNUAL" | null
   >(null);
   const [selectedAmount, setSelectedAmount] = useState<number>(amount);
+  const [displayAmount, setDisplayAmount] = useState<number>(amount);
   const [upgradeInfo, setUpgradeInfo] = useState<{
     paymentAmount: number;
     displayAmount: number;
@@ -104,6 +105,8 @@ export default function PaymentDialog({
           });
           // Use paymentAmount for actual payment (respects dev/prod pricing)
           setSelectedAmount(info.paymentAmount);
+          // Use displayAmount for UI display (always production pricing)
+          setDisplayAmount(info.displayAmount);
         })
         .catch((error) => {
           setErrorMessage((error as Error).message);
@@ -127,6 +130,7 @@ export default function PaymentDialog({
       setValidationError(null);
       setSelectedFrequency(null);
       setSelectedAmount(amount);
+      setDisplayAmount(amount);
     }
     prevIsOpenRef.current = isOpen;
   }, [isOpen, amount, isUpgrade, onSubscribe]);
@@ -384,7 +388,7 @@ export default function PaymentDialog({
                       Upgrade Cost
                     </p>
                     <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                      KES {upgradeInfo.displayAmount.toLocaleString()}
+                      KES {displayAmount.toLocaleString()}
                     </p>
                     {upgradeInfo.paymentAmount !==
                       upgradeInfo.displayAmount && (
@@ -418,7 +422,7 @@ export default function PaymentDialog({
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {isUpgrade
                   ? `You've been upgraded to ${tier}! Your new claim limit is now active.`
-                  : `Your ${tier} membership payment of KES ${selectedAmount.toLocaleString()} has been received.`}
+                  : `Your ${tier} membership payment of KES ${displayAmount.toLocaleString()} has been received.`}
               </p>
               <button
                 onClick={onClose}
@@ -522,7 +526,7 @@ export default function PaymentDialog({
                   {isUpgrade ? "Upgrade Cost" : "Amount to pay"}
                 </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                  KES {selectedAmount.toLocaleString()}
+                  KES {displayAmount.toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {isUpgrade
@@ -608,7 +612,7 @@ export default function PaymentDialog({
                   {paymentMutation.isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <>Pay KES {selectedAmount.toLocaleString()}</>
+                    <>Pay KES {displayAmount.toLocaleString()}</>
                   )}
                 </button>
               </div>
