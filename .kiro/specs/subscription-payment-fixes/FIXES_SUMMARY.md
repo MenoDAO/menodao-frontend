@@ -2,21 +2,37 @@
 
 ## Issues Fixed
 
-### 1. ✅ Upgrade Endpoint Called on First Subscription (400 Error)
+### 1. ✅ Upgrade Endpoint Called on First Subscription (400 Error) - FULLY FIXED
 
-**Problem:** When a member subscribed for the first time, the frontend was calling the upgrade endpoint, which threw a 400 error because the user didn't have an active subscription to upgrade from.
+**Problem:** When a member subscribed for the first time and completed payment, the system would call the upgrade endpoint, which threw a 400 error "Can only upgrade to a higher tier" because the user was trying to "upgrade" to the same tier they just subscribed to.
 
-**Root Cause:** The `handleSubscribe` function checked `subscription?.isActive` which is truthy for inactive subscriptions, causing it to call the upgrade endpoint incorrectly.
+**Root Causes:**
 
-**Fix Applied:**
+1. The `handleSubscribe` function checked `subscription?.isActive` which is truthy for inactive subscriptions, causing it to call the upgrade endpoint incorrectly (FIXED in previous iteration)
+2. After payment completion, the subscription becomes active and the PaymentDialog's upgrade effect would trigger, calling the upgrade endpoint even when the user just completed their first subscription to that tier (FIXED in this iteration)
+
+**Fixes Applied:**
+
+**Fix 1 - Frontend subscription page (page.tsx):**
 
 - Changed condition to explicitly check `subscription?.isActive === true`
 - Added separate variables for clarity: `hasActiveSubscription` and `isSelectingHigherTier`
 - Only call upgrade endpoint when BOTH conditions are true
 
-**File Changed:** `🖥️ menodao-frontend/src/app/(dashboard)/dashboard/subscription/page.tsx`
+**Fix 2 - Frontend PaymentDialog (PaymentDialog.tsx):**
 
-**Code Change:**
+- Added check to prevent calling upgrade endpoint when `tier === currentTier` (same tier)
+- Added payment status check to only fetch upgrade info during initial states (`FREQUENCY_SELECT` or `IDLE`)
+- This prevents the upgrade endpoint from being called after payment completes and subscription becomes active
+
+**Files Changed:**
+
+- `🖥️ menodao-frontend/src/app/(dashboard)/dashboard/subscription/page.tsx`
+- `🖥️ menodao-frontend/src/app/(dashboard)/dashboard/subscription/PaymentDialog.tsx`
+
+**Code Changes:**
+
+**page.tsx:**
 
 ```typescript
 // Before:
@@ -28,6 +44,31 @@ const hasActiveSubscription = subscription?.isActive === true;
 const isSelectingHigherTier =
   subscription && tierOrder[tier] > tierOrder[subscription.tier];
 const isUpgrade = hasActiveSubscription && isSelectingHigherTier;
+```
+
+**PaymentDialog.tsx:**
+
+```typescript
+// Before:
+useEffect(() => {
+  if (isOpen && isUpgrade && tier) {
+    api.upgrade(tier)...
+  }
+}, [isOpen, isUpgrade, tier]);
+
+// After:
+useEffect(() => {
+  if (
+    isOpen &&
+    isUpgrade &&
+    tier &&
+    currentTier &&
+    tier !== currentTier &&  // Don't call upgrade for same tier
+    (paymentStatus === "FREQUENCY_SELECT" || paymentStatus === "IDLE")  // Only in initial states
+  ) {
+    api.upgrade(tier)...
+  }
+}, [isOpen, isUpgrade, tier, currentTier, paymentStatus]);
 ```
 
 ### 2. ✅ SMS Notifications Already Implemented

@@ -84,8 +84,16 @@ export default function PaymentDialog({
   } | null>(null);
 
   // Fetch upgrade info when dialog opens for upgrade
+  // Only fetch if this is truly an upgrade (not same tier) and we're in the right state
   useEffect(() => {
-    if (isOpen && isUpgrade && tier) {
+    if (
+      isOpen &&
+      isUpgrade &&
+      tier &&
+      currentTier &&
+      tier !== currentTier &&
+      (paymentStatus === "FREQUENCY_SELECT" || paymentStatus === "IDLE")
+    ) {
       api
         .upgrade(tier)
         .then((info) => {
@@ -102,7 +110,7 @@ export default function PaymentDialog({
           setPaymentStatus("FAILED");
         });
     }
-  }, [isOpen, isUpgrade, tier]);
+  }, [isOpen, isUpgrade, tier, currentTier, paymentStatus]);
 
   // Reset state when dialog opens (only when transitioning from closed to open)
   const prevIsOpenRef = useRef(false);
