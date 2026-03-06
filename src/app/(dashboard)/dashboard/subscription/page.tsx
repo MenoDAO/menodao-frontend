@@ -363,7 +363,9 @@ export default function SubscriptionPage() {
             setIsPaymentDialogOpen(false);
             setSelectedTier(null);
           }}
-          amount={0} // Will be calculated based on tier
+          amount={
+            packages?.find((p) => p.tier === selectedTier)?.monthlyPrice || 0
+          }
           tier={selectedTier}
           onPaymentComplete={handlePaymentComplete}
           isUpgrade={subscription?.isActive === true}

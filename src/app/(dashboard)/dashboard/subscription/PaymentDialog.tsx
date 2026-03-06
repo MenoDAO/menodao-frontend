@@ -131,6 +131,7 @@ export default function PaymentDialog({
       setSelectedFrequency(null);
       setSelectedAmount(amount);
       setDisplayAmount(amount);
+      setUpgradeInfo(null);
     }
     prevIsOpenRef.current = isOpen;
   }, [isOpen, amount, isUpgrade, onSubscribe]);
@@ -293,6 +294,8 @@ export default function PaymentDialog({
   ) => {
     setSelectedFrequency(frequency);
     setSelectedAmount(amount);
+    // Update displayAmount as well so it shows in the UI
+    setDisplayAmount(amount);
 
     // Log the selected amount for verification
     const configTier = mapTierToConfigTier(tier);
