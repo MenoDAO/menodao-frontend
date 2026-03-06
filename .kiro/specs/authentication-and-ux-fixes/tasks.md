@@ -1,0 +1,271 @@
+# Implementation Plan: Authentication and UX Fixes
+
+## Overview
+
+This implementation plan addresses three critical areas: cookie-based user tracking with GDPR compliance, payment frequency selector integration, and admin authentication token persistence. The tasks are organized to build incrementally, starting with core infrastructure (cookie service), then UI components (banner, login updates), payment integration, and finally admin authentication fixes.
+
+## Tasks
+
+- [ ] 1. Create Cookie Service infrastructure
+  - [ ] 1.1 Implement CookieService class with core operations
+    - Create `🖥️ menodao-frontend/src/lib/cookie-service.ts`
+    - Implement `set()`, `get()`, `remove()`, `exists()` methods
+    - Handle cookie encoding/decoding with `encodeURIComponent`/`decodeURIComponent`
+    - Support cookie options (expires, path, secure, sameSite)
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [ ]\* 1.2 Write property test for cookie encoding round-trip
+    - **Property 22: Cookie encoding round-trip**
+    - **Validates: Requirements 7.5**
+    - Test that encoding then decoding returns original value
+    - Use fast-check to generate random cookie values
+    - _Requirements: 7.5_
+  - [ ] 1.3 Implement tracking data operations
+    - Add `getTrackingData()`, `setTrackingData()`, `updateLastVisit()` methods
+    - Add `markAsRegistered()`, `markAccountDeleted()` methods
+    - Use cookie name `menodao_tracking` with 365-day expiration
+    - _Requirements: 1.1, 1.3, 1.4, 1.5, 1.6_
+  - [ ]\* 1.4 Write property tests for tracking operations
+    - **Property 1: Cookie reading consistency**
+    - **Validates: Requirements 1.2**
+    - **Property 2: Registration state transition**
+    - **Validates: Requirements 1.3**
+    - **Property 3: Account deletion preserves tracking**
+    - **Validates: Requirements 1.4**
+    - **Property 4: Tracking cookie structure completeness**
+    - **Validates: Requirements 1.5**
+    - _Requirements: 1.2, 1.3, 1.4, 1.5_
+  - [ ] 1.5 Implement consent operations
+    - Add `getConsent()`, `setConsent()`, `hasConsent()` methods
+    - Use cookie name `menodao_consent` with 365-day expiration
+    - _Requirements: 2.5, 2.6, 2.8, 2.9_
+  - [ ]\* 1.6 Write unit tests for CookieService
+    - Test cookie expiration configuration
+    - Test secure and sameSite flags
+    - Test cross-context consistency
+    - Test error handling for malformed data
+    - _Requirements: 7.2, 7.3, 7.6_
+
+- [ ] 2. Create Cookie Banner component
+  - [ ] 2.1 Implement CookieBanner component
+    - Create `🖥️ menodao-frontend/src/components/CookieBanner.tsx`
+    - Fixed position at bottom of screen
+    - Two buttons: "Accept All" and "Essential Only"
+    - Link to privacy policy
+    - ARIA labels for accessibility
+    - _Requirements: 2.1, 2.2, 2.4, 2.7_
+  - [ ] 2.2 Implement banner logic
+    - Check for existing consent cookie on mount
+    - Hide banner if consent exists
+    - On "Accept All": set all consent flags to true, hide banner
+    - On "Essential Only": set only essential to true, hide banner
+    - Call optional onAccept/onDecline callbacks
+    - _Requirements: 2.5, 2.6, 2.9_
+  - [ ]\* 2.3 Write property tests for consent behavior
+    - **Property 7: Consent acceptance stores decision**
+    - **Validates: Requirements 2.5**
+    - **Property 8: Consent decline limits cookies**
+    - **Validates: Requirements 2.6**
+    - **Property 10: Consent prevents banner redisplay**
+    - **Validates: Requirements 2.9**
+    - _Requirements: 2.5, 2.6, 2.9_
+  - [ ]\* 2.4 Write unit tests for CookieBanner
+    - Test banner renders with accept and decline buttons
+    - Test banner includes privacy policy link
+    - Test banner hides after accept
+    - Test banner hides after decline
+    - Test keyboard navigation
+    - _Requirements: 2.4, 2.7_
+
+- [ ] 3. Update Login Page with cookie tracking
+  - [ ] 3.1 Integrate CookieService into login page
+    - Import CookieService in `🖥️ menodao-frontend/src/app/login/page.tsx`
+    - Check tracking cookie on component mount
+    - Implement `getWelcomeMessage()` function based on tracking data
+    - Update welcome message display to use contextual messaging
+    - _Requirements: 3.1, 3.2, 3.3, 3.5_
+  - [ ] 3.2 Update tracking cookie on login events
+    - Call `markAsRegistered()` after successful OTP verification
+    - Update `lastVisit` timestamp on page load
+    - Handle missing/expired cookies gracefully
+    - _Requirements: 1.3, 1.7_
+  - [ ] 3.3 Add CookieBanner to login page
+    - Import and render CookieBanner component
+    - Position at bottom of page
+    - _Requirements: 2.1_
+  - [ ]\* 3.4 Write unit tests for login page updates
+    - Test welcome message for new users
+    - Test "Welcome Back" for returning users
+    - Test re-registration message for deleted accounts
+    - Test tracking cookie update after login
+    - Test fallback behavior for missing cookies
+    - _Requirements: 3.1, 3.2, 3.3, 3.5_
+
+- [ ] 4. Add CookieBanner to Landing Page
+  - [ ] 4.1 Integrate CookieBanner into landing page
+    - Import CookieBanner in `🦷 menodao-landing/app/page.tsx`
+    - Render at bottom of page
+    - Ensure CookieService is available in landing page context
+    - _Requirements: 2.2_
+  - [ ]\* 4.2 Write unit test for landing page banner
+    - Test banner appears on first visit
+    - Test banner respects existing consent
+    - _Requirements: 2.2, 2.9_
+
+- [ ] 5. Checkpoint - Cookie tracking and consent complete
+  - Ensure all cookie-related tests pass
+  - Verify banner appears correctly on both landing and frontend app
+  - Test welcome messages display correctly
+  - Ask the user if questions arise
+
+- [ ] 6. Integrate Payment Frequency Selector
+  - [ ] 6.1 Update payment page to include frequency selector
+    - Modify `🖥️ menodao-frontend/src/app/payment/page.tsx`
+    - Add state for `selectedFrequency` and `selectedAmount`
+    - Render PaymentFrequencySelector component
+    - Implement `handleFrequencySelect` callback
+    - _Requirements: 4.1, 4.5_
+  - [ ] 6.2 Display frequency selection in checkout flow
+    - Show selected frequency in payment confirmation
+    - Display waiting period information
+    - Show cost breakdown for annual option
+    - _Requirements: 4.2, 4.3, 4.4_
+  - [ ] 6.3 Persist frequency selection through checkout
+    - Store selected frequency in component state
+    - Pass frequency to payment initiation API
+    - Store in localStorage as backup
+    - _Requirements: 4.6_
+  - [ ]\* 6.4 Write property test for frequency persistence
+    - **Property 13: Payment frequency persistence**
+    - **Validates: Requirements 4.6**
+    - Test that selected frequency remains accessible throughout flow
+    - _Requirements: 4.6_
+  - [ ]\* 6.5 Write unit tests for payment page
+    - Test both options are displayed
+    - Test waiting period information is shown
+    - Test benefits comparison is rendered
+    - Test annual cost breakdown display
+    - Test frequency selector is visible and functional
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
+
+- [ ] 7. Update backend subscription model (if needed)
+  - [ ] 7.1 Add paymentFrequency field to Subscription model
+    - Update Prisma schema if not already present
+    - Add migration for new field
+    - Update subscription creation to accept frequency
+    - _Requirements: 4.6_
+  - [ ] 7.2 Update subscription API endpoints
+    - Modify subscribe endpoint to accept paymentFrequency
+    - Return frequency in subscription responses
+    - _Requirements: 4.6_
+
+- [ ] 8. Checkpoint - Payment frequency integration complete
+  - Ensure payment page displays both options
+  - Verify frequency persists through checkout
+  - Test subscription creation with frequency
+  - Ask the user if questions arise
+
+- [ ] 9. Fix Admin Store token management
+  - [ ] 9.1 Enhance AdminAuthState interface
+    - Update `🖥️ menodao-frontend/src/lib/admin-store.ts`
+    - Add `getToken()` method to return current token
+    - Add `refreshToken()` method for token refresh
+    - Verify persist middleware is correctly configured
+    - _Requirements: 5.1, 5.3, 5.6_
+  - [ ]\* 9.2 Write property tests for admin store
+    - **Property 14: Admin login persists token**
+    - **Validates: Requirements 5.1**
+    - **Property 18: Session restoration from storage**
+    - **Validates: Requirements 5.6**
+    - Test token persistence across browser sessions
+    - _Requirements: 5.1, 5.6_
+  - [ ]\* 9.3 Write unit tests for admin store
+    - Test login stores token
+    - Test logout clears token
+    - Test getToken returns current token
+    - Test token persists to localStorage
+    - _Requirements: 5.1_
+
+- [ ] 10. Fix Admin API Client authentication
+  - [ ] 10.1 Update AdminApiClient request method
+    - Modify `🖥️ menodao-frontend/src/lib/admin-api.ts`
+    - Read token from admin store using `getToken()`
+    - Include token in Authorization header for all requests
+    - _Requirements: 5.2, 5.5_
+  - [ ] 10.2 Implement token refresh on 401 errors
+    - Detect 401 responses
+    - Call `refreshToken()` from admin store
+    - Retry original request with new token
+    - Redirect to login if refresh fails
+    - _Requirements: 5.3, 5.4_
+  - [ ]\* 10.3 Write property tests for admin API client
+    - **Property 15: API requests include token**
+    - **Validates: Requirements 5.2, 5.5**
+    - **Property 16: Token expiration triggers refresh**
+    - **Validates: Requirements 5.3**
+    - **Property 17: Failed refresh redirects to login**
+    - **Validates: Requirements 5.4**
+    - **Property 19: Authenticated requests succeed**
+    - **Validates: Requirements 6.1, 6.2, 6.3, 6.4**
+    - _Requirements: 5.2, 5.3, 5.4, 6.1, 6.2, 6.3, 6.4_
+  - [ ]\* 10.4 Write unit tests for admin API client
+    - Test token is included in request headers
+    - Test 401 triggers refresh attempt
+    - Test failed refresh redirects to login
+    - Test successful requests return data
+    - _Requirements: 5.2, 5.3, 5.4_
+
+- [ ] 11. Verify backend AdminAuthGuard configuration
+  - [ ] 11.1 Check AdminAuthGuard implementation
+    - Review `⚙️ menodao-backend/src/admin/guards/admin-auth.guard.ts`
+    - Verify JWT_SECRET is set in environment
+    - Confirm token payload structure matches expectations
+    - Test AdminService.validateAdminToken works correctly
+    - _Requirements: 6.5, 6.6, 6.7_
+  - [ ] 11.2 Add authentication failure logging
+    - Ensure auth failures are logged with details
+    - Include timestamp, IP, and error reason
+    - _Requirements: 6.7_
+  - [ ]\* 11.3 Write property test for invalid token handling
+    - **Property 20: Invalid token returns 401**
+    - **Validates: Requirements 6.6**
+    - **Property 21: Authentication failures are logged**
+    - **Validates: Requirements 6.7**
+    - Test invalid/missing tokens return 401 with message
+    - Test failures are logged
+    - _Requirements: 6.6, 6.7_
+
+- [ ] 12. Final checkpoint - Admin authentication complete
+  - Test admin login stores token correctly
+  - Test admin dashboard tabs load without 401 errors
+  - Test token persists after browser close/reopen
+  - Test expired token triggers refresh
+  - Test failed refresh redirects to login
+  - Ensure all tests pass
+  - Ask the user if questions arise
+
+- [ ] 13. Integration testing and verification
+  - [ ]\* 13.1 Write end-to-end integration tests
+    - Test first-time user journey (no cookies → consent → login → tracking)
+    - Test returning user journey (existing cookies → personalized welcome)
+    - Test payment flow (frequency selection → checkout → confirmation)
+    - Test admin dashboard (login → navigate tabs → data loads)
+    - _Requirements: All_
+  - [ ] 13.2 Cross-browser testing
+    - Test cookie operations in Chrome, Firefox, Safari, Edge
+    - Verify localStorage persistence
+    - Check third-party cookie blocking scenarios
+    - _Requirements: 7.6_
+  - [ ] 13.3 Manual testing checklist
+    - Complete all items in manual testing checklist from design
+    - Document any issues found
+    - _Requirements: All_
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for faster MVP
+- Each task references specific requirements for traceability
+- Checkpoints ensure incremental validation
+- Property tests validate universal correctness properties
+- Unit tests validate specific examples and edge cases
+- The cookie service is foundational and must be completed first
+- Admin authentication fixes are independent and can be worked on in parallel with cookie/payment work

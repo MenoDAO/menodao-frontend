@@ -1,8 +1,14 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { adminApi, OverviewStats, RecentSignup, RecentPayment } from "@/lib/admin-api";
+import {
+  adminApi,
+  OverviewStats,
+  RecentSignup,
+  RecentPayment,
+} from "@/lib/admin-api";
 import { useAdminStore } from "@/lib/admin-store";
+import { SMSMetrics } from "./components/SMSMetrics";
 import {
   Users,
   CreditCard,
@@ -50,7 +56,9 @@ function StatCard({
           ) : (
             <ArrowDownRight className="w-4 h-4 text-red-500" />
           )}
-          <span className={trend === "up" ? "text-emerald-500" : "text-red-500"}>
+          <span
+            className={trend === "up" ? "text-emerald-500" : "text-red-500"}
+          >
             {trendValue}
           </span>
           <span className="text-gray-500">vs last week</span>
@@ -72,9 +80,11 @@ function TierBadge({ tier }: { tier: string }) {
     GOLD: Crown,
   };
   const Icon = icons[tier as keyof typeof icons] || Shield;
-  
+
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${colors[tier as keyof typeof colors] || "bg-gray-500/20 text-gray-400"}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${colors[tier as keyof typeof colors] || "bg-gray-500/20 text-gray-400"}`}
+    >
       <Icon className="w-3 h-3" />
       {tier}
     </span>
@@ -87,9 +97,11 @@ function StatusBadge({ status }: { status: string }) {
     PENDING: "bg-yellow-500/20 text-yellow-400",
     FAILED: "bg-red-500/20 text-red-400",
   };
-  
+
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] || "bg-gray-500/20 text-gray-400"}`}>
+    <span
+      className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] || "bg-gray-500/20 text-gray-400"}`}
+    >
       {status}
     </span>
   );
@@ -160,9 +172,14 @@ export default function AdminDashboard() {
         />
       </div>
 
+      {/* SMS Metrics */}
+      <SMSMetrics />
+
       {/* Subscription Tiers */}
       <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h2 className="text-lg font-semibold text-white mb-4">Subscription Distribution</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">
+          Subscription Distribution
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -203,7 +220,10 @@ export default function AdminDashboard() {
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Recent Signups</h2>
-            <a href="/admin/users" className="text-emerald-500 text-sm hover:underline">
+            <a
+              href="/admin/users"
+              className="text-emerald-500 text-sm hover:underline"
+            >
               View all
             </a>
           </div>
@@ -228,7 +248,9 @@ export default function AdminDashboard() {
                     {user.subscription ? (
                       <TierBadge tier={user.subscription.tier} />
                     ) : (
-                      <span className="text-gray-500 text-xs">No subscription</span>
+                      <span className="text-gray-500 text-xs">
+                        No subscription
+                      </span>
                     )}
                     <p className="text-gray-500 text-xs mt-1">
                       {new Date(user.createdAt).toLocaleDateString()}
@@ -237,7 +259,9 @@ export default function AdminDashboard() {
                 </div>
               ))}
               {(!recentSignups || recentSignups.length === 0) && (
-                <p className="text-gray-500 text-center py-4">No recent signups</p>
+                <p className="text-gray-500 text-center py-4">
+                  No recent signups
+                </p>
               )}
             </div>
           )}
@@ -246,8 +270,13 @@ export default function AdminDashboard() {
         {/* Recent Payments */}
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Recent Payments</h2>
-            <a href="/admin/payments" className="text-emerald-500 text-sm hover:underline">
+            <h2 className="text-lg font-semibold text-white">
+              Recent Payments
+            </h2>
+            <a
+              href="/admin/payments"
+              className="text-emerald-500 text-sm hover:underline"
+            >
               View all
             </a>
           </div>
@@ -279,7 +308,9 @@ export default function AdminDashboard() {
                 </div>
               ))}
               {(!recentPayments || recentPayments.length === 0) && (
-                <p className="text-gray-500 text-center py-4">No recent payments</p>
+                <p className="text-gray-500 text-center py-4">
+                  No recent payments
+                </p>
               )}
             </div>
           )}
@@ -288,7 +319,9 @@ export default function AdminDashboard() {
 
       {/* Payment Summary */}
       <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h2 className="text-lg font-semibold text-white mb-4">Payment Status This Month</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">
+          Payment Status This Month
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="text-center p-4 bg-emerald-500/10 rounded-lg">
             <p className="text-3xl font-bold text-emerald-400">

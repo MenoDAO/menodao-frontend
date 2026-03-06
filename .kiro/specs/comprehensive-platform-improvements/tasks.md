@@ -1,0 +1,388 @@
+# Implementation Plan: Comprehensive Platform Improvements
+
+## Overview
+
+This implementation plan breaks down the comprehensive platform improvements into discrete, manageable tasks. The plan follows a logical progression: database schema updates, backend services, admin panel, frontend payment options, and integration. Each task builds on previous work and includes testing to ensure correctness.
+
+## Tasks
+
+- [x] 1. Database Schema Updates and Migrations
+  - [x] 1.1 Add payment frequency and enhanced fields to Payment model
+    - Add paymentFrequency enum (MONTHLY, ANNUAL)
+    - Add claimLimitsAssignedAt timestamp
+    - Add SasaPay fields (merchantRequestId, checkoutRequestId, mpesaReceiptNumber)
+    - Add callbackUrl and redirectUrl fields
+    - _Requirements: 9.1, 10.1, 20.4_
+  - [x] 1.2 Create Disbursal model and related tables
+    - Create Disbursal table with status, payment channel, transaction reference
+    - Create DisbursalStatusHistory table for audit trail
+    - Add indexes for efficient querying
+    - _Requirements: 5.1, 5.5, 7.1, 7.7_
+  - [x] 1.3 Create ClinicPaymentConfig model
+    - Add payment channel configuration fields
+    - Add M-Pesa fields (tillNumber, paybillNumber, mobileNumber)
+    - Add bank account fields (accountNumber, bankName, branchCode)
+    - _Requirements: 5.1, 5.2, 5.3, 6.2, 6.3_
+  - [x] 1.4 Create AuditLog model for admin actions
+    - Add fields for admin ID, action type, target, reason, metadata
+    - Add indexes for querying by admin, target, and timestamp
+    - _Requirements: 3.8_
+  - [x] 1.5 Update Subscription model with claim limits and payment frequency
+    - Add annualCapLimit field with tier-based defaults
+    - Add paymentFrequency field
+    - Ensure subscriptionStartDate is properly tracked
+    - _Requirements: 12.1, 12.2, 12.3, 16.1, 20.4_
+  - [x] 1.6 Create migration script for existing subscriptions
+    - Set paymentFrequency to MONTHLY for all existing subscriptions
+    - Set annualCapLimit based on tier (Bronze=6000, Silver=10000, Gold=15000)
+    - Ensure idempotency (safe to run multiple times)
+    - _Requirements: 23.1, 23.2, 23.7_
+
+- [x] 2. Backend - Disbursal Service Implementation
+  - [x] 2.1 Create DisbursalService with core methods
+    - Implement initiateDisbursement, processDisbursement, updateDisbursalStatus
+    - Implement getClinicPaymentConfig
+    - Add status transition validation
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6_
+  - [x] 2.2 Implement M-Pesa payment channel methods
+    - Implement sendMPesaTill for Till Number payments
+    - Implement sendMPesaPaybill for Paybill payments
+    - Implement sendMPesaMobile for Mobile Number payments
+    - Use SasaPay B2C API for all M-Pesa channels
+    - _Requirements: 5.1, 5.2, 5.3, 5.4_
+  - [x] 2.3 Implement bank transfer method
+    - Implement sendBankTransfer using SasaPay B2C API
+    - Follow SasaPay B2C API specification
+    - Include bank account details in API request
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+  - [x] 2.4 Implement disbursal retry and reversal logic
+    - Implement retryDisbursement method
+    - Implement reverseDisbursement method with claim limit restoration
+    - Add validation to prevent invalid state transitions
+    - _Requirements: 4.3, 4.4, 4.1, 4.2, 8.7_
+  - [ ]\* 2.5 Write property tests for disbursal service
+    - **Property 16: Disbursal Status Lifecycle**
+    - **Validates: Requirements 7.1-7.6**
+    - **Property 17: Disbursal Amount Accuracy**
+    - **Validates: Requirements 8.1, 8.2**
+    - **Property 18: Disbursal Duplicate Prevention**
+    - **Validates: Requirements 8.5**
+    - **Property 20: Reversed Disbursal Claim Limit Restoration**
+    - **Validates: Requirements 8.7**
+  - [ ]\* 2.6 Write unit tests for disbursal service
+    - Test each payment channel method
+    - Test error handling for failed disbursals
+    - Test retry logic
+    - Test reversal logic
+    - _Requirements: 5.1-5.7, 6.1-6.7, 4.1-4.7_
+
+- [x] 3. Backend - Enhanced Payment Service
+  - [x] 3.1 Implement payment amount calculation for yearly payments
+    - Add calculatePaymentAmount method
+    - Calculate yearly as monthly \* 12
+    - Validate tier pricing from database
+    - _Requirements: 20.1, 20.2, 20.3_
+  - [x] 3.2 Implement callback and redirect URL generation
+    - Implement generateCallbackUrl method
+    - Implement generateRedirectUrl method
+    - Use environment-specific base URLs
+    - Validate URLs are HTTPS
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6_
+  - [x] 3.3 Update payment initiation to support payment frequency
+    - Accept paymentFrequency in request
+    - Calculate amount based on frequency
+    - Store frequency with payment record
+    - Include callback and redirect URLs
+    - _Requirements: 20.4, 20.5, 21.1, 21.2, 21.3_
+  - [x] 3.4 Implement claim limit assignment by tier
+    - Implement setClaimLimitByTier method
+    - Set limits: Bronze=6000, Silver=10000, Gold=15000
+    - Update subscription record with limit
+    - _Requirements: 12.1, 12.2, 12.3, 12.4_
+  - [ ]\* 3.5 Write property tests for payment service
+    - **Property 21: Callback URL Format Correctness**
+    - **Validates: Requirements 9.1-9.5**
+    - **Property 22: Redirect URL Format Correctness**
+    - **Validates: Requirements 10.1-10.6**
+    - **Property 31: Yearly Payment Amount Calculation**
+    - **Validates: Requirements 20.1, 20.2, 20.3**
+    - **Property 23: Claim Limit Tier Assignment**
+    - **Validates: Requirements 12.1-12.4**
+  - [ ]\* 3.6 Write unit tests for payment service
+    - Test URL generation for different environments
+    - Test payment amount calculation
+    - Test claim limit assignment
+    - _Requirements: 9.1-9.7, 10.1-10.7, 20.1-20.7, 12.1-12.7_
+
+- [x] 4. Backend - Enhanced Subscription Service
+  - [x] 4.1 Implement waiting period check logic
+    - Implement checkWaitingPeriod method
+    - Calculate required days based on payment frequency and procedure type
+    - Monthly: 60 days for emergency, 90 days for restorative
+    - Annual: 14 days for all procedures
+    - _Requirements: 15.1, 15.2, 15.3, 16.1, 16.2, 17.1, 17.2, 17.3, 17.4, 17.5, 17.6_
+  - [x] 4.2 Implement claim limit validation
+    - Implement checkClaimLimit method
+    - Verify claim amount + current usage <= limit
+    - Return descriptive error with details when exceeded
+    - _Requirements: 12.5, 12.6, 14.1, 14.2, 14.3_
+  - [x] 4.3 Implement waiting period status display data
+    - Implement getWaitingPeriodStatus method
+    - Return status for each procedure category
+    - Calculate days remaining for each category
+    - _Requirements: 2.7, 18.1, 18.2, 18.3_
+  - [ ]\* 4.4 Write property tests for subscription service
+    - **Property 26: Monthly Payment Emergency Procedure Waiting Period**
+    - **Validates: Requirements 15.1, 15.2**
+    - **Property 27: Monthly Payment Restorative Procedure Waiting Period**
+    - **Validates: Requirements 15.3**
+    - **Property 29: Annual Payment Universal Waiting Period**
+    - **Validates: Requirements 16.1, 16.2, 16.3**
+    - **Property 30: Waiting Period Function Correctness**
+    - **Validates: Requirements 17.1-17.6**
+    - **Property 24: Claim Limit Enforcement at Submission**
+    - **Validates: Requirements 12.5, 12.6, 14.1-14.3**
+  - [ ]\* 4.5 Write unit tests for subscription service
+    - Test waiting period calculations for various scenarios
+    - Test claim limit validation
+    - Test waiting period status display
+    - _Requirements: 15.1-15.7, 16.1-16.7, 17.1-17.7, 14.1-14.7_
+
+- [x] 5. Backend - Admin Controller and Services
+  - [x] 5.1 Create AdminController with search endpoints
+    - Implement searchPayments endpoint
+    - Implement getPaymentDetail endpoint
+    - Implement searchMembers endpoint
+    - Implement getMemberDetail endpoint
+    - _Requirements: 1.1, 1.5, 2.1_
+  - [x] 5.2 Implement payment detail response builder
+    - Include all payment fields
+    - Include status history
+    - Include SasaPay fields
+    - Include related record links
+    - _Requirements: 1.2, 1.3, 1.4, 1.6, 1.7_
+  - [x] 5.3 Implement member detail response builder
+    - Include member profile fields
+    - Include subscription information
+    - Include payment history
+    - Include claim summary
+    - Exclude treatment details (privacy)
+    - Include waiting period status
+    - _Requirements: 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
+  - [x] 5.4 Implement admin action endpoints
+    - Implement suspendMember endpoint
+    - Implement deactivateSubscription endpoint
+    - Implement verifyPaymentManually endpoint
+    - Implement reverseDisburs al endpoint
+    - Implement retryDisbursal endpoint
+    - _Requirements: 3.1, 3.3, 3.5, 4.1, 4.3_
+  - [x] 5.5 Create AuditLogService
+    - Implement logAction method
+    - Implement getActionHistory method
+    - Implement getAdminActions method
+    - Log all admin actions with full context
+    - _Requirements: 3.8, 25.1, 25.2, 25.3, 25.4, 25.5, 25.6, 25.7_
+  - [x] 5.6 Implement payment reconciliation endpoint
+    - Query SasaPay for transaction status in date range
+    - Compare local status with SasaPay status
+    - Flag discrepancies
+    - Provide sync action
+    - Generate reconciliation report
+    - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5, 24.6, 24.7_
+  - [ ]\* 5.7 Write property tests for admin controller
+    - **Property 1: Payment Search Returns Matching Records**
+    - **Validates: Requirements 1.1**
+    - **Property 5: Member Search Returns Matching Profiles**
+    - **Validates: Requirements 2.1**
+    - **Property 7: Suspend Member State Transition**
+    - **Validates: Requirements 3.1**
+    - **Property 9: Deactivate Subscription State Transition**
+    - **Validates: Requirements 3.3, 3.4**
+    - **Property 11: Admin Action Audit Trail**
+    - **Validates: Requirements 3.8**
+    - **Property 34: Payment Reconciliation Discrepancy Detection**
+    - **Validates: Requirements 24.1-24.4**
+  - [ ]\* 5.8 Write unit tests for admin controller
+    - Test search functionality
+    - Test detail response builders
+    - Test admin actions
+    - Test audit logging
+    - Test reconciliation
+    - _Requirements: 1.1-1.7, 2.1-2.7, 3.1-3.8, 4.1-4.7, 24.1-24.7_
+
+- [x] 6. Checkpoint - Backend Services Complete
+  - Ensure all backend tests pass
+  - Verify database migrations work correctly
+  - Test API endpoints with Postman/Insomnia
+  - Ask the user if questions arise
+
+- [-] 7. Frontend - Admin Panel Components
+  - [x] 7.1 Create PaymentSearch component
+    - Implement search form with transaction ID, phone, email inputs
+    - Implement search results display
+    - Display all payment fields
+    - Display status history
+    - Display SasaPay fields
+    - Include links to related records
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+  - [x] 7.2 Create MemberManagement component
+    - Implement member search form
+    - Display member profile
+    - Display subscription information
+    - Display payment history
+    - Display claim summary (no treatment details)
+    - Display waiting period status
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
+  - [x] 7.3 Create AdminActions component
+    - Implement suspend member action with confirmation
+    - Implement deactivate subscription action with confirmation
+    - Implement verify payment action
+    - Implement reverse disbursal action with confirmation
+    - Implement retry disbursal action
+    - Show success/error messages
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 4.1, 4.2, 4.3, 4.4_
+  - [x] 7.4 Create DisbursalManagement component
+    - Display disbursal status for claims
+    - Display disbursal details
+    - Provide reverse and retry actions
+    - Show error messages for failed disbursals
+    - _Requirements: 4.5, 4.6, 4.7_
+  - [x] 7.5 Create PaymentReconciliation component
+    - Implement date range selector
+    - Display reconciliation results
+    - Highlight discrepancies
+    - Provide sync action
+    - Display reconciliation report
+    - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5, 24.6, 24.7_
+  - [ ]\* 7.6 Write unit tests for admin panel components
+    - Test PaymentSearch component
+    - Test MemberManagement component
+    - Test AdminActions component
+    - Test DisbursalManagement component
+    - Test PaymentReconciliation component
+
+- [ ] 8. Frontend - Payment Frequency Selector
+  - [x] 8.1 Create PaymentFrequencySelector component
+    - Display monthly and yearly options side by side
+    - Show payment frequency, amount, total annual cost for each
+    - Calculate yearly amount as monthly \* 12
+    - Highlight yearly benefits (immediate access, no long waiting periods)
+    - Show monthly waiting periods (60/90 days)
+    - Use visual design to make yearly option prominent
+    - Allow user to select one option
+    - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 19.6, 19.7_
+  - [x] 8.2 Create PaymentBenefitsComparison component
+    - Display comparison table for monthly vs yearly
+    - Show waiting periods, total cost, transaction fees, access timeline
+    - Use icons and visual indicators
+    - Include tooltips explaining benefits
+    - _Requirements: 22.1, 22.2, 22.3, 22.4, 22.5, 22.6, 22.7_
+  - [ ] 8.3 Integrate payment frequency into payment flow
+    - Update payment initiation to include selected frequency
+    - Pass frequency to backend API
+    - Trigger SasaPay prompt with correct amount
+    - Include proper description in payment prompt
+    - _Requirements: 20.4, 20.5, 20.6, 20.7, 21.1, 21.2, 21.3, 21.4, 21.5, 21.6, 21.7_
+  - [ ]\* 8.4 Write unit tests for payment frequency components
+    - Test PaymentFrequencySelector component
+    - Test PaymentBenefitsComparison component
+    - Test payment flow integration
+    - _Requirements: 19.1-19.7, 22.1-22.7, 21.1-21.7_
+
+- [ ] 9. Frontend - Waiting Period Display
+  - [x] 9.1 Create WaitingPeriodDisplay component
+    - Display waiting period status for each procedure category
+    - Show procedure name, waiting period duration, days remaining
+    - Use color coding: red for unavailable, yellow for waiting, green for available
+    - Display countdown for active waiting periods
+    - Display "Available Now" for passed waiting periods
+    - Explain difference between monthly and annual waiting periods
+    - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7_
+  - [ ] 9.2 Integrate waiting period display into member dashboard
+    - Add WaitingPeriodDisplay to dashboard
+    - Fetch waiting period status from backend
+    - Update display in real-time
+    - _Requirements: 18.1, 18.6_
+  - [ ]\* 9.3 Write unit tests for waiting period display
+    - Test WaitingPeriodDisplay component
+    - Test data fetching and display
+    - Test color coding logic
+    - _Requirements: 18.1-18.7_
+
+- [ ] 10. Smart Contract - Claim Limit Enforcement
+  - [ ] 10.1 Update subscription NFT contract with claim limits
+    - Add claim limit storage for each tier
+    - Store Bronze=6000, Silver=10000, Gold=15000
+    - Record tier and limit when minting NFT
+    - _Requirements: 13.1, 13.2_
+  - [ ] 10.2 Implement on-chain claim limit validation
+    - Add claim submission validation function
+    - Verify claim amount + current usage <= tier limit
+    - Revert transaction if limit exceeded
+    - Track cumulative usage per subscription per year
+    - _Requirements: 13.3, 13.4, 13.5_
+  - [ ] 10.3 Add claim limit query function
+    - Implement function to query remaining limit
+    - Return current usage and remaining limit
+    - _Requirements: 13.6_
+  - [ ] 10.4 Add claim limit events
+    - Emit event when claim limit is updated
+    - Emit event when claim limit is exceeded
+    - _Requirements: 13.7_
+  - [ ]\* 10.5 Write smart contract tests
+    - **Property 25: Smart Contract Claim Limit Enforcement**
+    - **Validates: Requirements 13.1-13.4**
+    - Test claim limit storage and retrieval
+    - Test claim submission with various amounts
+    - Test limit exceeded scenarios
+    - Test cumulative usage tracking
+    - _Requirements: 13.1-13.7_
+
+- [ ] 11. Integration and End-to-End Testing
+  - [ ] 11.1 Test complete admin workflow
+    - Search for payment → view details → verify manually
+    - Search for member → view profile → suspend member
+    - View disbursal → reverse disbursal → verify claim limit restored
+    - _Requirements: 1.1-1.7, 2.1-2.7, 3.1-3.8, 4.1-4.7_
+  - [ ] 11.2 Test complete disbursal workflow
+    - Approve claim → initiate disbursal → receive callback → verify completion
+    - Test each payment channel (Till, Paybill, Mobile, Bank)
+    - Test failed disbursal → retry → success
+    - _Requirements: 5.1-5.7, 6.1-6.7, 7.1-7.7, 8.1-8.7_
+  - [ ] 11.3 Test complete payment workflow with yearly option
+    - Select yearly payment → calculate amount → initiate payment
+    - Receive callback → assign claim limits → verify subscription active
+    - Verify waiting period is 14 days
+    - _Requirements: 19.1-19.7, 20.1-20.7, 21.1-21.7, 16.1-16.7_
+  - [ ] 11.4 Test waiting period enforcement
+    - Create monthly subscription → attempt claim before 60 days → verify rejection
+    - Create annual subscription → attempt claim after 14 days → verify success
+    - _Requirements: 15.1-15.7, 16.1-16.7, 17.1-17.7_
+  - [ ] 11.5 Test claim limit enforcement
+    - Submit claim within limit → verify success
+    - Submit claim exceeding limit → verify rejection with details
+    - Test on-chain enforcement → verify smart contract reverts
+    - _Requirements: 12.1-12.7, 13.1-13.7, 14.1-14.7_
+  - [ ] 11.6 Test payment reconciliation
+    - Create payment discrepancies → run reconciliation → verify detection
+    - Sync status → verify local records updated
+    - _Requirements: 24.1-24.7_
+
+- [ ] 12. Final Checkpoint and Documentation
+  - Ensure all tests pass (unit, property, integration)
+  - Verify all requirements are implemented
+  - Test in staging environment
+  - Update API documentation
+  - Update user documentation for yearly payment option
+  - Update admin documentation for new admin panel features
+  - Ask the user if questions arise
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for faster MVP
+- Each task references specific requirements for traceability
+- Checkpoints ensure incremental validation
+- Property tests validate universal correctness properties
+- Unit tests validate specific examples and edge cases
+- Integration tests verify complete workflows
+- Smart contract tests ensure on-chain enforcement works correctly

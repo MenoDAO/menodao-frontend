@@ -84,10 +84,20 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async requestOtp(phoneNumber: string) {
+  async checkPhoneExists(phoneNumber: string) {
+    return this.request<{ exists: boolean; phoneNumber: string }>(
+      "/auth/check-phone",
+      {
+        method: "POST",
+        body: JSON.stringify({ phoneNumber }),
+      },
+    );
+  }
+
+  async requestOtp(phoneNumber: string, createIfNotExists: boolean = false) {
     return this.request<{ message: string }>("/auth/request-otp", {
       method: "POST",
-      body: JSON.stringify({ phoneNumber }),
+      body: JSON.stringify({ phoneNumber, createIfNotExists }),
     });
   }
 
@@ -150,18 +160,47 @@ class ApiClient {
     return this.request<Subscription | null>("/subscriptions/current");
   }
 
-  async subscribe(tier: "BRONZE" | "SILVER" | "GOLD") {
+  async subscribe(
+    tier: "BRONZE" | "SILVER" | "GOLD",
+    paymentFrequency?: "MONTHLY" | "ANNUAL",
+  ) {
     return this.request<Subscription>("/subscriptions/subscribe", {
       method: "POST",
-      body: JSON.stringify({ tier }),
+      body: JSON.stringify({ tier, paymentFrequency }),
     });
   }
 
   async upgrade(newTier: "BRONZE" | "SILVER" | "GOLD") {
-    return this.request<Subscription>("/subscriptions/upgrade", {
+    return this.request<{
+      currentTier: string;
+      newTier: string;
+      paymentRequired: boolean;
+      paymentAmount: number;
+      displayAmount: number;
+      message: string;
+    }>("/subscriptions/upgrade", {
       method: "POST",
       body: JSON.stringify({ newTier }),
     });
+  }
+
+  async getWaitingPeriodStatus() {
+    return this.request<{
+      consultationsExtractions: {
+        available: boolean;
+        daysRemaining: number;
+        requiredDays: number;
+        eligibleDate: string;
+      };
+      restorativeProcedures: {
+        available: boolean;
+        daysRemaining: number;
+        requiredDays: number;
+        eligibleDate: string;
+      };
+      paymentFrequency: string;
+      subscriptionStartDate: string;
+    }>("/subscriptions/waiting-period-status");
   }
 
   // [DEV ONLY] Mock payment for testing without real payment provider
@@ -186,10 +225,18 @@ class ApiClient {
     amount: number,
     paymentMethod: string,
     phoneNumber?: string,
+    isUpgrade?: boolean,
+    newTier?: "BRONZE" | "SILVER" | "GOLD",
   ) {
     return this.request<PaymentInitiation>("/contributions/pay", {
       method: "POST",
-      body: JSON.stringify({ amount, paymentMethod, phoneNumber }),
+      body: JSON.stringify({
+        amount,
+        paymentMethod,
+        phoneNumber,
+        isUpgrade,
+        newTier,
+      }),
     });
   }
 

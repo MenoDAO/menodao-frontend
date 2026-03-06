@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api, Claim } from "@/lib/api";
+import { getRemainingClaimLimit } from "@/lib/claim-limits";
 import {
   FileText,
   Plus,
@@ -58,6 +59,17 @@ export default function ClaimsPage() {
     queryFn: () => api.getMyClaims(),
   });
 
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => api.getProfile(),
+  });
+
+  const { data: waitingPeriodStatus } = useQuery({
+    queryKey: ["waitingPeriodStatus"],
+    queryFn: () => api.getWaitingPeriodStatus(),
+    enabled: !!profile?.subscription?.isActive,
+  });
+
   const createClaimMutation = useMutation({
     mutationFn: (data: ClaimFormData) =>
       api.createClaim({
@@ -91,6 +103,39 @@ export default function ClaimsPage() {
   };
 
   const summary = claimsData?.summary;
+  const subscription = profile?.subscription;
+
+  // Calculate correct remaining claim limit using centralized utility (same as dashboard)
+  const amountClaimed = summary?.amountClaimed || 0;
+  const isSubscriptionActive = subscription?.isActive === true;
+  const correctRemainingLimit =
+    subscription?.tier && isSubscriptionActive
+      ? getRemainingClaimLimit(subscription.tier, amountClaimed)
+      : 0;
+
+  // Check if claims are available based on waiting period
+  const canSubmitClaims =
+    waitingPeriodStatus?.consultationsExtractions?.available ||
+    waitingPeriodStatus?.restorativeProcedures?.available;
+
+  // Calculate projected eligibility date
+  const getProjectedDate = () => {
+    if (!waitingPeriodStatus || canSubmitClaims) return null;
+
+    const daysRemaining =
+      waitingPeriodStatus.consultationsExtractions?.daysRemaining || 0;
+    const projectedDate = new Date();
+    projectedDate.setDate(projectedDate.getDate() + daysRemaining);
+    return projectedDate;
+  };
+
+  const projectedDate = getProjectedDate();
+
+  const waitingPeriodMessage = !canSubmitClaims
+    ? waitingPeriodStatus?.consultationsExtractions?.daysRemaining
+      ? `Claims available in ${waitingPeriodStatus.consultationsExtractions.daysRemaining} days (${projectedDate?.toLocaleDateString("en-KE", { year: "numeric", month: "long", day: "numeric" })})`
+      : "Waiting period in effect"
+    : null;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -103,13 +148,22 @@ export default function ClaimsPage() {
             Submit and track your benefit claims
           </p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          New Claim
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            disabled={!canSubmitClaims}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-5 h-5" />
+            New Claim
+          </button>
+          {waitingPeriodMessage && (
+            <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {waitingPeriodMessage}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -144,7 +198,9 @@ export default function ClaimsPage() {
               Limit Left
             </p>
             <p className="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 truncate">
-              KES {summary.amountRemaining.toLocaleString()}
+              {isSubscriptionActive
+                ? `KES ${correctRemainingLimit.toLocaleString()}`
+                : "Pending Payment"}
             </p>
           </div>
         </div>

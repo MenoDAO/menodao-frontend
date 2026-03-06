@@ -62,11 +62,16 @@ export default function SubscriptionPage() {
   });
 
   const subscribeMutation = useMutation({
-    mutationFn: (tier: "BRONZE" | "SILVER" | "GOLD") => api.subscribe(tier),
+    mutationFn: ({
+      tier,
+      paymentFrequency,
+    }: {
+      tier: "BRONZE" | "SILVER" | "GOLD";
+      paymentFrequency?: "MONTHLY" | "ANNUAL";
+    }) => api.subscribe(tier, paymentFrequency),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscription"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      setSelectedTier(null);
     },
   });
 
@@ -98,11 +103,32 @@ export default function SubscriptionPage() {
       window.location.hostname === "localhost" ||
       window.location.hostname === "127.0.0.1");
 
-  const handleSubscribe = (tier: "BRONZE" | "SILVER" | "GOLD") => {
-    if (subscription) {
-      upgradeMutation.mutate(tier);
+  const handleSubscribe = async (tier: "BRONZE" | "SILVER" | "GOLD") => {
+    // Only call upgrade endpoint if:
+    // 1. User has an ACTIVE subscription (not just any subscription)
+    // 2. AND is selecting a HIGHER tier
+    const hasActiveSubscription = subscription?.isActive === true;
+    const isSelectingHigherTier =
+      subscription && tierOrder[tier] > tierOrder[subscription.tier];
+    const isUpgrade = hasActiveSubscription && isSelectingHigherTier;
+
+    if (isUpgrade) {
+      try {
+        // This is a true upgrade - call upgrade endpoint to validate
+        await api.upgrade(tier);
+
+        // Set the selected tier and open payment dialog
+        setSelectedTier(tier);
+        setIsPaymentDialogOpen(true);
+      } catch (error) {
+        // Show error if upgrade is not allowed (e.g., has active claims)
+        alert((error as Error).message);
+      }
     } else {
-      subscribeMutation.mutate(tier);
+      // First subscription, inactive subscription, or selecting same/lower tier
+      // Just open the payment dialog - subscription will be created after frequency selection
+      setSelectedTier(tier);
+      setIsPaymentDialogOpen(true);
     }
   };
 
@@ -143,7 +169,7 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Current Subscription Card */}
-      {subscription && (
+      {subscription && subscription.isActive && (
         <div
           className={`rounded-2xl p-6 bg-gradient-to-r ${tierColors[subscription.tier].gradient} text-white shadow-lg`}
         >
@@ -195,15 +221,19 @@ export default function SubscriptionPage() {
       {/* Package Selection */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          {subscription ? "Upgrade Your Package" : "Choose Your Package"}
+          {subscription?.isActive
+            ? "Upgrade Your Package"
+            : "Choose Your Package"}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {packages?.map((pkg: Package) => {
             const Icon = tierIcons[pkg.tier];
             const colors = tierColors[pkg.tier];
-            const isCurrentTier = subscription?.tier === pkg.tier;
-            const canUpgrade = tierOrder[pkg.tier] > currentTierLevel;
-            const isDisabled = subscription && !canUpgrade;
+            const isCurrentTier =
+              subscription?.isActive && subscription?.tier === pkg.tier;
+            const canUpgrade =
+              subscription?.isActive && tierOrder[pkg.tier] > currentTierLevel;
+            const isDisabled = subscription?.isActive && !canUpgrade;
 
             return (
               <div
@@ -282,7 +312,7 @@ export default function SubscriptionPage() {
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : isCurrentTier ? (
                       "Current Plan"
-                    ) : subscription ? (
+                    ) : subscription?.isActive ? (
                       canUpgrade ? (
                         "Upgrade"
                       ) : (
@@ -314,14 +344,38 @@ export default function SubscriptionPage() {
         </div>
       </div>
 
-      {/* Payment Dialog */}
-      {subscription && (
+      {/* Payment Dialog for Active Subscription */}
+      {subscription?.isActive && !selectedTier && (
         <PaymentDialog
           isOpen={isPaymentDialogOpen}
           onClose={() => setIsPaymentDialogOpen(false)}
           amount={subscription.monthlyAmount}
           tier={subscription.tier}
           onPaymentComplete={handlePaymentComplete}
+        />
+      )}
+
+      {/* Payment Dialog for New/Inactive Subscription or Upgrade */}
+      {selectedTier && (
+        <PaymentDialog
+          isOpen={isPaymentDialogOpen}
+          onClose={() => {
+            setIsPaymentDialogOpen(false);
+            setSelectedTier(null);
+          }}
+          amount={
+            packages?.find((p) => p.tier === selectedTier)?.monthlyPrice || 0
+          }
+          tier={selectedTier}
+          onPaymentComplete={handlePaymentComplete}
+          isUpgrade={subscription?.isActive === true}
+          currentTier={subscription?.tier}
+          onSubscribe={async (tier, frequency) => {
+            await subscribeMutation.mutateAsync({
+              tier,
+              paymentFrequency: frequency,
+            });
+          }}
         />
       )}
     </div>

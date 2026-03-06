@@ -15,33 +15,22 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
-// Mock the auth store
-const mockRequestOtp = jest.fn();
-const mockVerifyOtp = jest.fn();
-let mockOtpSent = false;
-let mockPhoneNumber = "";
-
-jest.mock("@/lib/auth-store", () => ({
-  useAuthStore: Object.assign(
-    () => ({
-      requestOtp: mockRequestOtp,
-      verifyOtp: mockVerifyOtp,
-      otpSent: mockOtpSent,
-      phoneNumber: mockPhoneNumber,
-    }),
-    {
-      setState: jest.fn((state) => {
-        if (state.otpSent !== undefined) mockOtpSent = state.otpSent;
-      }),
-    },
-  ),
+// Mock the API
+jest.mock("@/lib/api", () => ({
+  api: {
+    checkPhoneExists: jest.fn(),
+    requestOtp: jest.fn(),
+  },
 }));
+
+// Import the mocked API to access the mock functions
+import { api } from "@/lib/api";
+const mockCheckPhoneExists = api.checkPhoneExists as jest.Mock;
+const mockRequestOtp = api.requestOtp as jest.Mock;
 
 describe("LoginPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockOtpSent = false;
-    mockPhoneNumber = "";
   });
 
   describe("Phone Number Form", () => {
@@ -50,7 +39,7 @@ describe("LoginPage", () => {
 
       expect(screen.getByText("Welcome Back")).toBeInTheDocument();
       expect(
-        screen.getByText("Sign in with your phone number"),
+        screen.getByText("Enter your phone number to continue"),
       ).toBeInTheDocument();
       expect(screen.getByPlaceholderText("0712345678")).toBeInTheDocument();
       expect(
@@ -58,25 +47,11 @@ describe("LoginPage", () => {
       ).toBeInTheDocument();
     });
 
-    it("shows validation error for invalid phone number", async () => {
-      render(<LoginPage />);
-      const user = userEvent.setup();
-
-      const phoneInput = screen.getByPlaceholderText("0712345678");
-      await user.type(phoneInput, "123");
-
-      const submitButton = screen.getByRole("button", { name: /continue/i });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/phone number must be at least 10 digits/i),
-        ).toBeInTheDocument();
+    it("shows error for non-existent phone number", async () => {
+      mockCheckPhoneExists.mockResolvedValueOnce({
+        exists: false,
+        phoneNumber: "+254712345678",
       });
-    });
-
-    it("submits valid phone number and requests OTP", async () => {
-      mockRequestOtp.mockResolvedValueOnce(undefined);
       render(<LoginPage />);
       const user = userEvent.setup();
 
@@ -87,12 +62,43 @@ describe("LoginPage", () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(mockRequestOtp).toHaveBeenCalledWith("0712345678");
+        expect(
+          screen.getByText("Phone number not found. Please sign up instead"),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: /sign up/i }),
+        ).toBeInTheDocument();
       });
     });
 
-    it("displays error when OTP request fails", async () => {
-      mockRequestOtp.mockRejectedValueOnce(new Error("Network error"));
+    it("sends OTP for existing phone number", async () => {
+      mockCheckPhoneExists.mockResolvedValueOnce({
+        exists: true,
+        phoneNumber: "+254712345678",
+      });
+      mockRequestOtp.mockResolvedValueOnce({
+        message: "OTP sent successfully",
+      });
+      render(<LoginPage />);
+      const user = userEvent.setup();
+
+      const phoneInput = screen.getByPlaceholderText("0712345678");
+      await user.type(phoneInput, "0712345678");
+
+      const submitButton = screen.getByRole("button", { name: /continue/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockCheckPhoneExists).toHaveBeenCalledWith("+254712345678");
+        expect(mockRequestOtp).toHaveBeenCalledWith("+254712345678", false);
+        expect(mockPush).toHaveBeenCalledWith(
+          "/verify-otp?flow=login&phone=%2B254712345678",
+        );
+      });
+    });
+
+    it("displays error when phone check fails", async () => {
+      mockCheckPhoneExists.mockRejectedValueOnce(new Error("Network error"));
       render(<LoginPage />);
       const user = userEvent.setup();
 
@@ -108,7 +114,13 @@ describe("LoginPage", () => {
     });
 
     it("accepts phone numbers with country code", async () => {
-      mockRequestOtp.mockResolvedValueOnce(undefined);
+      mockCheckPhoneExists.mockResolvedValueOnce({
+        exists: true,
+        phoneNumber: "+254712345678",
+      });
+      mockRequestOtp.mockResolvedValueOnce({
+        message: "OTP sent successfully",
+      });
       render(<LoginPage />);
       const user = userEvent.setup();
 
@@ -119,173 +131,14 @@ describe("LoginPage", () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(mockRequestOtp).toHaveBeenCalledWith("+254712345678");
+        expect(mockCheckPhoneExists).toHaveBeenCalledWith("+254712345678");
       });
-    });
-  });
-
-  describe("OTP Verification Form", () => {
-    beforeEach(() => {
-      mockOtpSent = true;
-      mockPhoneNumber = "0712345678";
-    });
-
-    it("renders OTP form when OTP is sent", () => {
-      render(<LoginPage />);
-
-      expect(screen.getByText("Enter Verification Code")).toBeInTheDocument();
-      expect(
-        screen.getByText(/we sent a code to 0712345678/i),
-      ).toBeInTheDocument();
-      expect(screen.getByPlaceholderText("123456")).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /verify & sign in/i }),
-      ).toBeInTheDocument();
-    });
-
-    it("shows validation error for invalid OTP", async () => {
-      render(<LoginPage />);
-      const user = userEvent.setup();
-
-      const otpInput = screen.getByPlaceholderText("123456");
-      await user.type(otpInput, "123");
-
-      const submitButton = screen.getByRole("button", {
-        name: /verify & sign in/i,
-      });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/otp must be 6 digits/i)).toBeInTheDocument();
-      });
-    });
-
-    it("submits valid OTP and navigates to dashboard for existing user", async () => {
-      mockVerifyOtp.mockResolvedValueOnce(undefined);
-      // Mock an existing user with a name
-      const { useAuthStore } = require("@/lib/auth-store");
-      useAuthStore.getState = jest.fn().mockReturnValue({
-        member: { id: "1", phoneNumber: "0712345678", fullName: "Jane Doe" },
-      });
-
-      render(<LoginPage />);
-      const user = userEvent.setup();
-
-      const otpInput = screen.getByPlaceholderText("123456");
-      await user.type(otpInput, "123456");
-
-      const submitButton = screen.getByRole("button", {
-        name: /verify & sign in/i,
-      });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockVerifyOtp).toHaveBeenCalledWith("123456");
-        expect(mockPush).toHaveBeenCalledWith("/dashboard");
-      });
-    });
-
-    it("shows profile setup for new user without full name", async () => {
-      mockVerifyOtp.mockResolvedValueOnce(undefined);
-      // Mock a new user without a name
-      const { useAuthStore } = require("@/lib/auth-store");
-      useAuthStore.getState = jest.fn().mockReturnValue({
-        member: { id: "1", phoneNumber: "0712345678" },
-      });
-
-      render(<LoginPage />);
-      const user = userEvent.setup();
-
-      const otpInput = screen.getByPlaceholderText("123456");
-      await user.type(otpInput, "123456");
-
-      const submitButton = screen.getByRole("button", {
-        name: /verify & sign in/i,
-      });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Complete Your Profile")).toBeInTheDocument();
-        expect(
-          screen.getByPlaceholderText("e.g. Jane Wanjiku"),
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("filters and selects a county in the dropdown", async () => {
-      mockVerifyOtp.mockResolvedValueOnce(undefined);
-      const { useAuthStore } = require("@/lib/auth-store");
-      useAuthStore.getState = jest.fn().mockReturnValue({
-        member: { id: "1", phoneNumber: "0712345678" },
-      });
-
-      render(<LoginPage />);
-      const user = userEvent.setup();
-
-      // Get to profile setup
-      const otpInput = screen.getByPlaceholderText("123456");
-      await user.type(otpInput, "123456");
-      fireEvent.click(
-        screen.getByRole("button", { name: /verify & sign in/i }),
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("Complete Your Profile")).toBeInTheDocument();
-      });
-
-      // Open dropdown
-      const dropdownButton = screen.getByRole("button", {
-        name: /select your county/i,
-      });
-      fireEvent.click(dropdownButton);
-
-      // Search for Nairobi
-      const searchInput = screen.getByPlaceholderText("Search county...");
-      await user.type(searchInput, "Nairobi");
-
-      // Select Nairobi
-      const nairobiOption = screen.getByRole("button", { name: /nairobi/i });
-      fireEvent.click(nairobiOption);
-
-      // Verify selection
-      expect(screen.getByText("Nairobi")).toBeInTheDocument();
-      expect(
-        screen.queryByPlaceholderText("Search county..."),
-      ).not.toBeInTheDocument();
-    });
-
-    it("displays error when OTP verification fails", async () => {
-      mockVerifyOtp.mockRejectedValueOnce(new Error("Invalid OTP"));
-      render(<LoginPage />);
-      const user = userEvent.setup();
-
-      const otpInput = screen.getByPlaceholderText("123456");
-      await user.type(otpInput, "123456");
-
-      const submitButton = screen.getByRole("button", {
-        name: /verify & sign in/i,
-      });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Invalid OTP")).toBeInTheDocument();
-      });
-    });
-
-    it("allows user to go back to phone form", () => {
-      const { useAuthStore } = require("@/lib/auth-store");
-      render(<LoginPage />);
-
-      const backButton = screen.getByText("Use different number");
-      fireEvent.click(backButton);
-
-      expect(useAuthStore.setState).toHaveBeenCalledWith({ otpSent: false });
     });
   });
 
   describe("Loading States", () => {
-    it("shows loading spinner during OTP request", async () => {
-      mockRequestOtp.mockImplementation(
+    it("shows loading spinner during phone check", async () => {
+      mockCheckPhoneExists.mockImplementation(
         () => new Promise((resolve) => setTimeout(resolve, 1000)),
       );
       render(<LoginPage />);
@@ -313,11 +166,11 @@ describe("LoginPage", () => {
       expect(screen.getByAltText("MenoDAO")).toBeInTheDocument();
     });
 
-    it("has link to join MenoDAO", () => {
+    it("has link to sign up", () => {
       render(<LoginPage />);
 
-      const joinLink = screen.getByText("Join MenoDAO");
-      expect(joinLink).toHaveAttribute("href", "https://menodao.org");
+      const signUpLinks = screen.getAllByText("Sign Up");
+      expect(signUpLinks.length).toBeGreaterThan(0);
     });
 
     it("displays security message", () => {

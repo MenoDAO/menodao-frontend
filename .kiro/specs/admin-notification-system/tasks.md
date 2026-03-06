@@ -1,0 +1,357 @@
+# Implementation Plan: Admin Notification System
+
+## Overview
+
+This implementation plan breaks down the admin notification system into discrete coding tasks. The approach follows a bottom-up strategy: starting with the data layer (Prisma schema), then building backend services and API endpoints, and finally implementing the frontend components. Testing tasks are integrated throughout to validate functionality incrementally.
+
+## Tasks
+
+- [x] 1. Set up database schema and models
+  - [x] 1.1 Create Notification model in Prisma schema
+    - Add Notification model with all required fields (id, type, recipientCount, message, status, successCount, failureCount, sentAt, sentBy, filterCriteria)
+    - Add NotificationType enum (SMS, PUSH)
+    - Add NotificationStatus enum (PENDING, SENT, DELIVERED, FAILED, PARTIAL)
+    - Add indexes for efficient querying (type, sentAt, sentBy, status)
+    - Add relation to Admin model
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
+  - [x] 1.2 Update Admin model with notifications relation
+    - Add notifications field to Admin model as one-to-many relation
+    - _Requirements: 7.5, 7.6_
+  - [x] 1.3 Generate and run Prisma migration
+    - Migration already included in baseline migration (20260302000000_baseline)
+    - Notification table and enums created successfully
+    - _Requirements: 4.8_
+
+- [x] 2. Implement Sanitization Service
+  - [x] 2.1 Create SanitizationService class
+    - Implement `containsSensitiveContent(message: string): boolean` method
+    - Implement `sanitizeMessage(message: string): string` method
+    - Define regex patterns for sensitive content (password, otp, pin, verification code)
+    - Use case-insensitive matching
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+  - [ ]\* 2.2 Write property test for sensitive pattern detection
+    - **Property 13: Sensitive Pattern Detection**
+    - **Validates: Requirements 6.1, 6.2, 6.3, 6.4**
+    - Install fast-check library first
+  - [ ]\* 2.3 Write unit tests for specific sensitive patterns
+    - Test "password", "otp", "pin", "verification code" detection
+    - Test case-insensitive matching
+    - Test messages without sensitive content
+    - _Requirements: 6.1, 6.2, 6.3, 6.4_
+
+- [x] 3. Implement Filter Service
+  - [x] 3.1 Create FilterService class
+    - Implement `getFilteredRecipients(filters: RecipientFilters): Promise<string[]>` method
+    - Implement `countFilteredRecipients(filters: RecipientFilters): Promise<number>` method
+    - Build Prisma queries combining all filter criteria with AND logic
+    - Handle package type, date joined, balance, subscription status filters
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.7_
+  - [x] 3.2 Implement phone number validation
+    - Create `validatePhoneNumber(phone: string): boolean` helper
+    - Support international phone number formats
+    - Handle single phone number filter
+    - _Requirements: 8.5_
+  - [x] 3.3 Implement CSV parsing functionality
+    - Implement `parseCSVPhoneNumbers(fileBuffer: Buffer): { valid: string[], errors: string[] }` method
+    - Extract phone numbers from first column
+    - Skip header rows
+    - Validate each phone number
+    - Deduplicate phone numbers
+    - Report errors with line numbers
+    - _Requirements: 8.6, 10.2, 10.3, 10.4, 10.5_
+  - [ ]\* 3.4 Write property test for filter query correctness
+    - **Property 5: Filter Query Correctness**
+    - **Validates: Requirements 2.5, 8.1, 8.2, 8.3, 8.4, 8.7**
+    - Install fast-check library first
+  - [ ]\* 3.5 Write property test for CSV parsing and deduplication
+    - **Property 18: CSV Parsing and Deduplication**
+    - **Validates: Requirements 8.6, 10.2, 10.3, 10.5**
+    - Install fast-check library first
+  - [ ]\* 3.6 Write unit tests for edge cases
+    - Test empty filter results
+    - Test invalid phone number formats
+    - Test malformed CSV files
+    - Test CSV with all invalid numbers
+    - _Requirements: 8.8, 10.1, 10.7_
+
+- [x] 4. Implement Notification Service
+  - [x] 4.1 Create NotificationService class with core methods
+    - Implement `getSMSStats(): Promise<SMSStatsResponse>` method
+    - Implement `getNotificationHistory(params): Promise<HistoryResponse>` method
+    - Implement `previewRecipients(filters): Promise<PreviewResponse>` method
+    - Implement `sendNotification(request, adminId): Promise<SendResponse>` method
+    - Implement `updateDeliveryStatus(notificationId, recipientPhone, status): Promise<void>` method
+    - _Requirements: 1.1, 1.2, 2.1, 3.8, 3.11_
+  - [x] 4.2 Implement SMS statistics calculation
+    - Query database for SMS count today (filter by sentAt date)
+    - Query database for all-time SMS count
+    - Return both counts
+    - _Requirements: 1.1, 1.2, 1.4, 5.6_
+  - [x] 4.3 Implement notification history with pagination
+    - Build query with type, status, date range filters
+    - Apply pagination (skip, take)
+    - Return results with total count metadata
+    - Include delivery stats in response
+    - _Requirements: 2.1, 2.2, 2.6, 5.5_
+  - [x] 4.4 Implement recipient preview functionality
+    - Use FilterService to count matching members
+    - Return count without sending notifications
+    - _Requirements: 3.8_
+  - [x] 4.5 Implement send notification workflow
+    - Use FilterService to get recipient list
+    - Validate recipient count > 0
+    - Use SanitizationService to sanitize message for storage
+    - Create Notification record in database with sanitized message
+    - Call SMS or Push service to send to each recipient
+    - Track delivery responses and update stats
+    - Store filter criteria as JSON for audit
+    - _Requirements: 3.11, 4.7, 4.8, 6.6, 6.7_
+  - [x] 4.6 Implement delivery status tracking
+    - Update notification status based on delivery results
+    - Increment successCount or failureCount
+    - Set final status (DELIVERED, FAILED, or PARTIAL)
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+  - [ ]\* 4.7 Write property test for SMS metrics calculation accuracy
+    - **Property 1: SMS Metrics Calculation Accuracy**
+    - **Validates: Requirements 1.1, 1.2, 1.4, 5.6**
+    - Install fast-check library first
+  - [ ]\* 4.8 Write property test for notification history pagination
+    - **Property 2: Notification History Pagination**
+    - **Validates: Requirements 2.1, 5.5**
+    - Install fast-check library first
+  - [ ]\* 4.9 Write property test for recipient preview accuracy
+    - **Property 6: Recipient Preview Accuracy**
+    - **Validates: Requirements 3.8**
+    - Install fast-check library first
+  - [ ]\* 4.10 Write property test for sanitization before storage
+    - **Property 10: Sanitization Before Storage**
+    - **Validates: Requirements 4.7, 6.5, 6.6**
+    - Install fast-check library first
+  - [ ]\* 4.11 Write property test for delivery statistics accuracy
+    - **Property 20: Delivery Statistics Accuracy**
+    - **Validates: Requirements 9.4, 9.5, 9.6, 9.7**
+    - Install fast-check library first
+  - [ ]\* 4.12 Write unit tests for notification service
+    - Test empty recipient list handling
+    - Test delivery status transitions
+    - Test partial delivery scenarios
+    - _Requirements: 8.8, 9.7_
+
+- [x] 5. Checkpoint - Ensure backend services tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 6. Implement Notification Controller and API endpoints
+  - [x] 6.1 Create NotificationController class
+    - Set up controller with `/api/admin/notifications` base path
+    - Apply AdminAuthGuard to all endpoints
+    - Apply rate limiting to send endpoint (10 per hour)
+    - _Requirements: 7.1, 7.2, 7.3_
+  - [x] 6.2 Implement GET /sms-stats endpoint
+    - Call NotificationService.getSMSStats()
+    - Return SMS statistics response
+    - _Requirements: 1.1, 1.2, 5.3_
+  - [x] 6.3 Implement GET /history endpoint
+    - Parse query parameters (page, pageSize, type, status, dateFrom, dateTo)
+    - Call NotificationService.getNotificationHistory()
+    - Return paginated notification history
+    - _Requirements: 2.1, 5.2_
+  - [x] 6.4 Implement POST /preview endpoint
+    - Parse request body with recipient filters
+    - Validate filter parameters
+    - Call NotificationService.previewRecipients()
+    - Return recipient count
+    - _Requirements: 3.8, 5.4_
+  - [x] 6.5 Implement POST /send endpoint
+    - Parse request body (type, filters, message)
+    - Validate all parameters
+    - Extract admin ID from authenticated request
+    - Call NotificationService.sendNotification()
+    - Return success response with notification ID
+    - Handle errors and return appropriate status codes
+    - _Requirements: 3.11, 5.1, 5.4_
+  - [x] 6.6 Implement error handling middleware
+    - Handle validation errors (400)
+    - Handle authentication errors (401)
+    - Handle rate limiting errors (429)
+    - Handle external service errors (500, 502)
+    - Handle database errors (500, 504)
+    - Return consistent error response format
+    - _Requirements: 5.4, 7.2, 7.4_
+  - [ ]\* 6.7 Write property test for authentication requirement
+    - **Property 14: Authentication Requirement**
+    - **Validates: Requirements 7.1, 7.2**
+    - Install fast-check library first
+  - [ ]\* 6.8 Write property test for filter parameter validation
+    - **Property 12: Filter Parameter Validation**
+    - **Validates: Requirements 5.4, 8.5**
+    - Install fast-check library first
+  - [ ]\* 6.9 Write unit tests for API endpoints
+    - Test each endpoint with valid inputs
+    - Test authentication failures
+    - Test rate limiting
+    - Test validation errors
+    - _Requirements: 7.1, 7.2, 7.3, 7.4_
+
+- [x] 7. Integrate external notification services
+  - [x] 7.1 Create SMS service integration
+    - Set up SMS gateway client (e.g., Twilio, AWS SNS)
+    - Implement `sendSMS(phone: string, message: string): Promise<DeliveryResult>` method
+    - Handle delivery confirmations and failures
+    - Implement retry logic for transient failures
+    - _Requirements: 3.11_
+  - [x] 7.2 Create Push notification service integration
+    - Set up push notification client (e.g., Firebase Cloud Messaging)
+    - Implement `sendPush(deviceToken: string, message: string): Promise<DeliveryResult>` method
+    - Handle delivery confirmations and failures
+    - _Requirements: 3.11_
+  - [ ]\* 7.3 Write unit tests for external service integrations
+    - Test successful delivery
+    - Test service failures
+    - Test retry logic
+    - Mock external services
+    - _Requirements: 3.11_
+
+- [x] 8. Implement frontend Dashboard SMS Metrics component
+  - [x] 8.1 Create SMSMetrics component
+    - Fetch SMS statistics from `/api/admin/notifications/sms-stats`
+    - Display today count with label "SMS sent today"
+    - Display all-time count with label "Total SMS sent"
+    - Style metrics prominently on dashboard
+    - Handle loading and error states
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [ ]\* 8.2 Write unit tests for SMSMetrics component
+    - Test rendering with mock data
+    - Test loading state
+    - Test error handling
+    - _Requirements: 1.1, 1.2_
+
+- [x] 9. Implement frontend Notification History component (Alerts Tab)
+  - [x] 9.1 Create NotificationHistory component
+    - Fetch notification history from `/api/admin/notifications/history`
+    - Display table with columns: Type, Recipients, Message, Status, Delivery Rate, Sent At, Sent By
+    - Show "[PROTECTED]" for sanitized messages
+    - Implement pagination controls
+    - Calculate and display delivery success rate percentage
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.6, 9.6_
+  - [x] 9.2 Add filter controls to NotificationHistory
+    - Add dropdown for notification type filter (All, SMS, Push)
+    - Add dropdown for status filter (All, Pending, Sent, Delivered, Failed, Partial)
+    - Add date range picker for date filters
+    - Update table when filters change
+    - _Requirements: 2.5_
+  - [ ]\* 9.3 Write property test for required fields display
+    - **Property 3: Required Fields Display**
+    - **Validates: Requirements 2.2, 2.6**
+    - Install fast-check library first
+  - [ ]\* 9.4 Write property test for sensitive content sanitization in display
+    - **Property 4: Sensitive Content Sanitization in Display**
+    - **Validates: Requirements 2.3, 6.5**
+    - Install fast-check library first
+  - [ ]\* 9.5 Write unit tests for NotificationHistory component
+    - Test table rendering with mock data
+    - Test pagination
+    - Test filters
+    - Test delivery rate calculation
+    - _Requirements: 2.1, 2.5, 9.6_
+
+- [x] 10. Implement frontend Send Notification component
+  - [x] 10.1 Create SendNotification component structure
+    - Create form with notification type selector (radio buttons for SMS/Push)
+    - Add message text area with character counter
+    - Add recipient preview display
+    - Add send button with confirmation dialog
+    - _Requirements: 3.1, 3.9, 3.10_
+  - [x] 10.2 Implement recipient filter controls
+    - Add multi-select dropdown for package types (Bronze, Silver, Gold)
+    - Add date range picker for date joined filter
+    - Add number range inputs for balance filter (min/max)
+    - Add radio buttons for subscription status (Active, Inactive, All)
+    - Add text input for single phone number
+    - Add file upload for CSV with validation
+    - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
+  - [x] 10.3 Implement recipient preview functionality
+    - Call `/api/admin/notifications/preview` when filters change
+    - Display recipient count that updates in real-time
+    - Debounce API calls to avoid excessive requests
+    - _Requirements: 3.8_
+  - [x] 10.4 Implement CSV upload and parsing
+    - Handle file selection and upload
+    - Call FilterService to parse and validate CSV
+    - Display count of valid phone numbers extracted
+    - Show validation errors with line numbers
+    - Handle file format errors
+    - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7_
+  - [x] 10.5 Implement send notification workflow
+    - Validate form inputs before sending
+    - Show confirmation dialog with recipient count and message preview
+    - Call `/api/admin/notifications/send` on confirmation
+    - Display success message with notification ID
+    - Handle errors and display error messages
+    - Reset form after successful send
+    - _Requirements: 3.10, 3.11_
+  - [ ]\* 10.6 Write property test for character count accuracy
+    - **Property 7: Character Count Accuracy**
+    - **Validates: Requirements 3.9**
+    - Install fast-check library first
+  - [ ]\* 10.7 Write property test for CSV file format validation
+    - **Property 21: CSV File Format Validation**
+    - **Validates: Requirements 10.1, 10.7**
+    - Install fast-check library first
+  - [ ]\* 10.8 Write property test for valid phone count display
+    - **Property 22: Valid Phone Count Display**
+    - **Validates: Requirements 10.6**
+    - Install fast-check library first
+  - [ ]\* 10.9 Write unit tests for SendNotification component
+    - Test form validation
+    - Test filter controls
+    - Test CSV upload
+    - Test confirmation dialog
+    - Test error handling
+    - _Requirements: 3.1, 3.8, 3.10, 10.1_
+
+- [x] 11. Checkpoint - Ensure all frontend tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 12. Integration and wiring
+  - [x] 12.1 Wire NotificationService to NotificationController
+    - Inject NotificationService into NotificationController
+    - Ensure all endpoints call correct service methods
+    - _Requirements: 5.1, 5.2, 5.3_
+  - [x] 12.2 Wire FilterService and SanitizationService to NotificationService
+    - Inject FilterService into NotificationService
+    - Inject SanitizationService into NotificationService
+    - Ensure send workflow uses both services correctly
+    - _Requirements: 4.7, 8.7_
+  - [x] 12.3 Wire SMS and Push services to NotificationService
+    - Inject SMS service into NotificationService
+    - Inject Push service into NotificationService
+    - Ensure correct service is called based on notification type
+    - _Requirements: 3.11_
+  - [x] 12.4 Add notification routes to admin panel
+    - Add Alerts tab to admin navigation
+    - Add route for notification history page
+    - Add route for send notification page
+    - Update dashboard to include SMS metrics
+    - _Requirements: 1.1, 2.1, 3.1_
+  - [ ]\* 12.5 Write integration tests for complete notification flow
+    - Test end-to-end flow from send to delivery tracking
+    - Test notification history retrieval after sending
+    - Test SMS metrics update after sending
+    - _Requirements: 3.11, 4.8, 9.1, 9.2, 9.3_
+
+- [x] 13. Final checkpoint - Ensure all tests pass and system works end-to-end
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for faster MVP
+- Each task references specific requirements for traceability
+- Checkpoints ensure incremental validation
+- Property tests validate universal correctness properties (22 properties total)
+- Unit tests validate specific examples and edge cases
+- The implementation follows a bottom-up approach: data layer → services → API → frontend
+- External service integrations (SMS, Push) may require API keys and configuration
+- Rate limiting requires a rate limiter library (e.g., `express-rate-limit` or Redis-based solution)
+- CSV parsing can use libraries like `csv-parse` or `papaparse`
+- Phone number validation can use `libphonenumber-js` library
+- **Property-based testing requires `fast-check` library**: Install with `npm install --save-dev fast-check` in backend before implementing property tests
