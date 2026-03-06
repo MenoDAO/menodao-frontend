@@ -108,7 +108,9 @@ export default function PaymentDialog({
   useEffect(() => {
     if (isOpen) {
       setPayerPhone("");
-      setPaymentStatus("FREQUENCY_SELECT");
+      // For active subscriptions (regular payments), skip frequency selection
+      // For new subscriptions or upgrades, show frequency selection
+      setPaymentStatus(!isUpgrade && onSubscribe ? "FREQUENCY_SELECT" : "IDLE");
       setStatusMessage("");
       setContributionId(null);
       setErrorMessage(null);
@@ -116,7 +118,7 @@ export default function PaymentDialog({
       setSelectedFrequency(null);
       setSelectedAmount(amount);
     }
-  }, [isOpen, amount]);
+  }, [isOpen, amount, isUpgrade, onSubscribe]);
 
   // Payment initiation mutation
   const paymentMutation = useMutation({
