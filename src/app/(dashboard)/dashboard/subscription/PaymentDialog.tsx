@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -104,9 +104,11 @@ export default function PaymentDialog({
     }
   }, [isOpen, isUpgrade, tier]);
 
-  // Reset state when dialog opens
+  // Reset state when dialog opens (only when transitioning from closed to open)
+  const prevIsOpenRef = useRef(false);
   useEffect(() => {
-    if (isOpen) {
+    // Only reset if dialog is opening (was closed, now open)
+    if (isOpen && !prevIsOpenRef.current) {
       setPayerPhone("");
       // For active subscriptions (regular payments), skip frequency selection
       // For new subscriptions or upgrades, show frequency selection
@@ -118,6 +120,7 @@ export default function PaymentDialog({
       setSelectedFrequency(null);
       setSelectedAmount(amount);
     }
+    prevIsOpenRef.current = isOpen;
   }, [isOpen, amount, isUpgrade, onSubscribe]);
 
   // Payment initiation mutation
