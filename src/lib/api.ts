@@ -160,10 +160,13 @@ class ApiClient {
     return this.request<Subscription | null>("/subscriptions/current");
   }
 
-  async subscribe(tier: "BRONZE" | "SILVER" | "GOLD") {
+  async subscribe(
+    tier: "BRONZE" | "SILVER" | "GOLD",
+    paymentFrequency?: "MONTHLY" | "ANNUAL",
+  ) {
     return this.request<Subscription>("/subscriptions/subscribe", {
       method: "POST",
-      body: JSON.stringify({ tier }),
+      body: JSON.stringify({ tier, paymentFrequency }),
     });
   }
 
