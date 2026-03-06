@@ -154,8 +154,11 @@ export default function PaymentDialog({
         tier: configTier,
         frequency,
         amount,
+        selectedAmount,
+        displayAmount,
         selectedFrequency,
         isUpgrade,
+        phoneNumber,
       });
 
       // Validate the amount matches expected (skip validation for upgrades)
@@ -249,6 +252,14 @@ export default function PaymentDialog({
     // This means the subscription should have been created
     if (!isUpgrade && !selectedFrequency) {
       setValidationError("Please select a payment frequency first");
+      return;
+    }
+
+    // Safety check: Ensure amount is valid (minimum 10 KES)
+    if (selectedAmount < 10) {
+      setValidationError(
+        "Invalid payment amount. Please refresh the page and try again.",
+      );
       return;
     }
 
