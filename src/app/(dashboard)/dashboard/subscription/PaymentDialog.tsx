@@ -37,6 +37,10 @@ interface PaymentDialogProps {
   onPaymentComplete: () => void;
   isUpgrade?: boolean;
   currentTier?: "BRONZE" | "SILVER" | "GOLD";
+  onSubscribe?: (
+    tier: "BRONZE" | "SILVER" | "GOLD",
+    frequency: "MONTHLY" | "ANNUAL",
+  ) => Promise<void>;
 }
 
 // Map tier names to payment config format
@@ -59,6 +63,7 @@ export default function PaymentDialog({
   onPaymentComplete,
   isUpgrade = false,
   currentTier,
+  onSubscribe,
 }: PaymentDialogProps) {
   const member = useAuthStore((state) => state.member);
   const [payerPhone, setPayerPhone] = useState("");
@@ -73,6 +78,7 @@ export default function PaymentDialog({
   >(null);
   const [selectedAmount, setSelectedAmount] = useState<number>(amount);
   const [upgradeInfo, setUpgradeInfo] = useState<{
+    paymentAmount: number;
     displayAmount: number;
     message: string;
   } | null>(null);
@@ -84,10 +90,12 @@ export default function PaymentDialog({
         .upgrade(tier)
         .then((info) => {
           setUpgradeInfo({
+            paymentAmount: info.paymentAmount,
             displayAmount: info.displayAmount,
             message: info.message,
           });
-          setSelectedAmount(info.displayAmount);
+          // Use paymentAmount for actual payment (respects dev/prod pricing)
+          setSelectedAmount(info.paymentAmount);
         })
         .catch((error) => {
           setErrorMessage((error as Error).message);
@@ -218,6 +226,14 @@ export default function PaymentDialog({
 
   const handlePayment = () => {
     setValidationError(null);
+
+    // Safety check: For non-upgrade payments, ensure we have selected a frequency
+    // This means the subscription should have been created
+    if (!isUpgrade && !selectedFrequency) {
+      setValidationError("Please select a payment frequency first");
+      return;
+    }
+
     const phoneToUse = payerPhone.trim() || undefined;
 
     if (phoneToUse && !validatePhone(phoneToUse)) {
@@ -276,8 +292,20 @@ export default function PaymentDialog({
     });
   };
 
-  const handleContinueToPayment = () => {
+  const handleContinueToPayment = async () => {
     if (!selectedFrequency) return;
+
+    // For new subscriptions (not upgrades), create the subscription with the selected frequency
+    if (!isUpgrade && onSubscribe) {
+      try {
+        await onSubscribe(tier, selectedFrequency);
+      } catch (error) {
+        setErrorMessage((error as Error).message);
+        setPaymentStatus("FAILED");
+        return;
+      }
+    }
+
     setPaymentStatus("IDLE");
   };
 
@@ -345,6 +373,13 @@ export default function PaymentDialog({
                     <p className="text-3xl font-bold text-gray-900 dark:text-white">
                       KES {upgradeInfo.displayAmount.toLocaleString()}
                     </p>
+                    {upgradeInfo.paymentAmount !==
+                      upgradeInfo.displayAmount && (
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-2">
+                        Dev pricing: KES{" "}
+                        {upgradeInfo.paymentAmount.toLocaleString()}
+                      </p>
+                    )}
                   </div>
                   <button
                     onClick={() => setPaymentStatus("IDLE")}
