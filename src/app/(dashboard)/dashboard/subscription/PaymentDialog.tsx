@@ -229,10 +229,10 @@ export default function PaymentDialog({
       clearInterval(interval);
       if (paymentStatus === "PENDING") {
         setStatusMessage(
-          "Payment is taking longer than expected. Please check your phone.",
+          "Payment is taking longer than expected. We're still checking... You can close this dialog and check your subscription status.",
         );
       }
-    }, 120000); // Stop polling after 2 minutes
+    }, 300000); // Stop polling after 5 minutes (increased from 2 minutes)
 
     return () => {
       clearInterval(interval);
@@ -528,6 +528,18 @@ export default function PaymentDialog({
                 </p>
                 <p>3. Confirm payment</p>
               </div>
+
+              {/* Manual check status button */}
+              {paymentStatus === "PENDING" && (
+                <div className="mt-6">
+                  <button
+                    onClick={checkStatus}
+                    className="px-4 py-2 text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
+                  >
+                    Check Status Now
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
