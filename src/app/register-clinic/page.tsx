@@ -434,10 +434,13 @@ export default function RegisterClinicPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>KMPDC Registration Number</label>
+                <label className={labelClass}>
+                  KMPDC Registration Number *
+                </label>
                 <input
                   type="text"
                   name="kmpdcRegNumber"
+                  required
                   value={form.kmpdcRegNumber}
                   onChange={handleChange}
                   className={inputClass}

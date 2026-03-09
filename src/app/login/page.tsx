@@ -178,7 +178,13 @@ export default function LoginPage() {
                 Sign Up
               </Link>
             </p>
-            <div>
+            <div className="flex flex-col items-center gap-2">
+              <Link
+                href="/register-clinic"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-medium rounded-lg transition-colors"
+              >
+                Register MenoHub
+              </Link>
               <a
                 href="/staff/login"
                 className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
