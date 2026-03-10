@@ -6,7 +6,7 @@ import { adminApi } from "@/lib/admin-api";
 // Mock the admin API
 jest.mock("@/lib/admin-api", () => ({
   adminApi: {
-    getSMSStats: jest.fn(),
+    getSmsMetrics: jest.fn(),
   },
 }));
 
@@ -23,13 +23,20 @@ const createWrapper = () => {
   );
 };
 
+const makeMockData = (todayCount: number, allTimeTotal: number) => ({
+  todayCount,
+  allTimeTotal,
+  byStatus: [],
+  dailyBreakdown: [],
+});
+
 describe("SMSMetrics", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("should display loading state initially", () => {
-    (adminApi.getSMSStats as jest.Mock).mockImplementation(
+    (adminApi.getSmsMetrics as jest.Mock).mockImplementation(
       () => new Promise(() => {}), // Never resolves
     );
 
@@ -39,25 +46,22 @@ describe("SMSMetrics", () => {
   });
 
   it("should display SMS metrics when data is loaded", async () => {
-    const mockData = {
-      todayCount: 42,
-      allTimeCount: 1337,
-    };
-
-    (adminApi.getSMSStats as jest.Mock).mockResolvedValue(mockData);
+    (adminApi.getSmsMetrics as jest.Mock).mockResolvedValue(
+      makeMockData(42, 1337),
+    );
 
     render(<SMSMetrics />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText("SMS sent today")).toBeInTheDocument();
+      expect(screen.getByText("Today")).toBeInTheDocument();
       expect(screen.getByText("42")).toBeInTheDocument();
-      expect(screen.getByText("Total SMS sent")).toBeInTheDocument();
+      expect(screen.getByText("All Time")).toBeInTheDocument();
       expect(screen.getByText("1,337")).toBeInTheDocument();
     });
   });
 
   it("should display error state when API call fails", async () => {
-    (adminApi.getSMSStats as jest.Mock).mockRejectedValue(
+    (adminApi.getSmsMetrics as jest.Mock).mockRejectedValue(
       new Error("API Error"),
     );
 
@@ -71,12 +75,9 @@ describe("SMSMetrics", () => {
   });
 
   it("should format large numbers with commas", async () => {
-    const mockData = {
-      todayCount: 1234,
-      allTimeCount: 9876543,
-    };
-
-    (adminApi.getSMSStats as jest.Mock).mockResolvedValue(mockData);
+    (adminApi.getSmsMetrics as jest.Mock).mockResolvedValue(
+      makeMockData(1234, 9876543),
+    );
 
     render(<SMSMetrics />, { wrapper: createWrapper() });
 
@@ -87,12 +88,7 @@ describe("SMSMetrics", () => {
   });
 
   it("should display zero when counts are zero", async () => {
-    const mockData = {
-      todayCount: 0,
-      allTimeCount: 0,
-    };
-
-    (adminApi.getSMSStats as jest.Mock).mockResolvedValue(mockData);
+    (adminApi.getSmsMetrics as jest.Mock).mockResolvedValue(makeMockData(0, 0));
 
     render(<SMSMetrics />, { wrapper: createWrapper() });
 
