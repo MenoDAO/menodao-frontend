@@ -84,7 +84,11 @@ export default function SignUpPage() {
       );
 
       // Send OTP (create member if doesn't exist for signup flow)
-      await api.requestOtp(normalizedPhone, true);
+      // Pass fullName and location so the member is created with profile data
+      await api.requestOtp(normalizedPhone, true, {
+        fullName: formData.fullName.trim(),
+        location: formData.location.trim(),
+      });
 
       // Navigate to OTP verification with signup flow
       router.push(
