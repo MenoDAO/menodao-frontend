@@ -99,36 +99,17 @@ class AdminApiClient {
         timestamp: new Date().toISOString(),
       });
 
-      // Handle 401 Unauthorized errors intelligently
+      // Handle 401 Unauthorized — clear auth and redirect to login
       if (response.status === 401 && typeof window !== "undefined") {
-        // Check if this is a token validation issue
-        const isTokenInvalid =
-          errorMessage.includes("Invalid or expired token") ||
-          errorMessage.includes("jwt expired") ||
-          errorMessage.includes("invalid token") ||
-          errorMessage.includes("jwt malformed") ||
-          errorMessage.includes("Missing or invalid authorization header") ||
-          errorMessage.includes("Admin not found") ||
-          errorMessage.includes("Invalid token type");
-
-        if (isTokenInvalid) {
-          console.warn(
-            "[AdminAPI] Token is invalid/expired - clearing auth and redirecting",
-          );
-          // Clear auth and redirect to login
-          localStorage.removeItem("admin-auth-storage");
-          if (
-            window.location.pathname.startsWith("/admin") &&
-            window.location.pathname !== "/admin/login"
-          ) {
-            window.location.href = "/admin/login";
-          }
-        } else {
-          // Log but don't redirect - might be a permission issue
-          console.warn(
-            "[AdminAPI] 401 error but not a token issue - might be permissions:",
-            errorMessage,
-          );
+        console.warn(
+          "[AdminAPI] 401 Unauthorized — clearing auth and redirecting to login",
+        );
+        localStorage.removeItem("admin-auth-storage");
+        if (
+          window.location.pathname.startsWith("/admin") &&
+          window.location.pathname !== "/admin/login"
+        ) {
+          window.location.href = "/admin/login";
         }
       }
 
@@ -156,7 +137,7 @@ class AdminApiClient {
   async login(username: string, password: string) {
     return this.request<{
       accessToken: string;
-      admin: { id: string; username: string };
+      admin: { id: string; username: string; role: string };
     }>("/admin/login", {
       method: "POST",
       body: JSON.stringify({ username, password }),
@@ -451,6 +432,18 @@ class AdminApiClient {
         method: "POST",
       },
     );
+  }
+
+  // SMS Metrics
+  async getSmsMetrics(days = 30) {
+    return this.request<SmsMetricsResponse>(
+      `/admin/stats/sms-metrics?days=${days}`,
+    );
+  }
+
+  // Audit Logs
+  async getAuditLogs(limit = 50) {
+    return this.request<AuditLogEntry[]>(`/admin/audit-logs?limit=${limit}`);
   }
 }
 
@@ -806,4 +799,27 @@ export interface ReconciliationReport {
     amount: number;
     createdAt: string;
   }>;
+}
+
+export interface SmsMetricsResponse {
+  allTimeTotal: number;
+  todayCount: number;
+  byStatus: { status: string; count: number }[];
+  dailyBreakdown: { date: string; count: number }[];
+}
+
+export interface AuditLogEntry {
+  id: string;
+  adminId: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  reason: string;
+  metadata: Record<string, unknown> | null;
+  ipAddress: string;
+  timestamp: string;
+  admin: {
+    id: string;
+    username: string;
+  };
 }
