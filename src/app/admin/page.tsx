@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-api";
 import { useAdminStore } from "@/lib/admin-store";
 import { SMSMetrics } from "./components/SMSMetrics";
+import { AuditLog } from "./components/AuditLog";
 import {
   Users,
   CreditCard,
@@ -343,6 +344,8 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+      {/* Activity Log */}
+      <AuditLog limit={20} />
     </div>
   );
 }

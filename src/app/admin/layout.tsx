@@ -26,8 +26,13 @@ const navItems = [
   { href: "/admin/clinics", label: "Clinics", icon: Building2 },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/alerts", label: "Alerts", icon: Bell },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
-];
+  {
+    href: "/admin/settings",
+    label: "Settings",
+    icon: Settings,
+    superAdminOnly: true,
+  },
+] as const;
 
 export default function AdminLayout({
   children,
@@ -104,25 +109,32 @@ export default function AdminLayout({
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
-                    isActive
-                      ? "bg-emerald-600 text-white"
-                      : "text-gray-400 hover:text-white hover:bg-gray-700"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {item.label}
-                </Link>
-              );
-            })}
+            {navItems
+              .filter((item) => {
+                if ("superAdminOnly" in item && item.superAdminOnly) {
+                  return admin?.role === "SUPER_ADMIN";
+                }
+                return true;
+              })
+              .map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
+                      isActive
+                        ? "bg-emerald-600 text-white"
+                        : "text-gray-400 hover:text-white hover:bg-gray-700"
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {item.label}
+                  </Link>
+                );
+              })}
           </nav>
 
           {/* User section */}
@@ -137,7 +149,11 @@ export default function AdminLayout({
                 <p className="text-sm font-medium text-white truncate">
                   {admin?.username}
                 </p>
-                <p className="text-xs text-gray-400">Administrator</p>
+                <p className="text-xs text-gray-400">
+                  {admin?.role === "CUSTOMER_SERVICE"
+                    ? "Customer Service"
+                    : "Administrator"}
+                </p>
               </div>
             </div>
             <button

@@ -1,9 +1,10 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface Admin {
   id: string;
   username: string;
+  role: string;
 }
 
 interface AdminAuthState {
@@ -24,7 +25,7 @@ export const useAdminStore = create<AdminAuthState>()(
       logout: () => set({ admin: null, token: null, isAuthenticated: false }),
     }),
     {
-      name: 'admin-auth-storage',
-    }
-  )
+      name: "admin-auth-storage",
+    },
+  ),
 );
