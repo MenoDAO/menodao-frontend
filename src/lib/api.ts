@@ -94,10 +94,18 @@ class ApiClient {
     );
   }
 
-  async requestOtp(phoneNumber: string, createIfNotExists: boolean = false) {
+  async requestOtp(
+    phoneNumber: string,
+    createIfNotExists: boolean = false,
+    signupData?: { fullName?: string; location?: string },
+  ) {
     return this.request<{ message: string }>("/auth/request-otp", {
       method: "POST",
-      body: JSON.stringify({ phoneNumber, createIfNotExists }),
+      body: JSON.stringify({
+        phoneNumber,
+        createIfNotExists,
+        ...signupData,
+      }),
     });
   }
 
