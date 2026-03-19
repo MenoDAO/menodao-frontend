@@ -509,6 +509,41 @@ class StaffApiClient {
   async getPatientHistory(memberId: string): Promise<PatientHistory> {
     return this.request<PatientHistory>(`/visits/history/${memberId}`);
   }
+
+  // Web3 / Filecoin / Hypercert
+  async uploadCaseImages(
+    visitId: string,
+    beforeFile: File,
+    afterFile: File,
+  ): Promise<Web3UploadResult> {
+    const formData = new FormData();
+    formData.append("beforeImage", beforeFile);
+    formData.append("afterImage", afterFile);
+
+    const headers: Record<string, string> = {};
+    if (this.token) headers["Authorization"] = `Bearer ${this.token}`;
+
+    const res = await fetch(`${this.baseUrl}/web3/cases/${visitId}/upload`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Upload failed: ${res.status}`);
+    }
+    return res.json();
+  }
+
+  async processWeb3Case(visitId: string): Promise<Web3ProcessResult> {
+    return this.request<Web3ProcessResult>(`/web3/cases/${visitId}/process`, {
+      method: "POST",
+    });
+  }
+
+  async getWeb3CaseStatus(visitId: string): Promise<Web3CaseStatus> {
+    return this.request<Web3CaseStatus>(`/web3/cases/${visitId}/status`);
+  }
 }
 
 export interface Camp {
@@ -624,3 +659,44 @@ export interface PatientHistory {
 }
 
 export const staffApi = new StaffApiClient();
+
+// Web3 / Filecoin / Hypercert types
+export interface Web3UploadResult {
+  beforeCID: string;
+  afterCID: string;
+  beforeUrl: string;
+  afterUrl: string;
+}
+
+export interface Web3ProcessResult {
+  verified: boolean;
+  aiResult: { verified: boolean; confidence: number; reason: string };
+  caseId?: number;
+  submitTxHash?: string;
+  payoutTxHash?: string;
+  hypercertData?: {
+    impactType: string;
+    beforeCID: string;
+    afterCID: string;
+    timestamp: number;
+    verifier: string;
+    visitId: string;
+    clinicAddress: string;
+    mintedAt: string;
+    mockTokenId: string;
+  };
+}
+
+export interface Web3CaseStatus {
+  id: string;
+  beforeCID: string | null;
+  afterCID: string | null;
+  beforeUrl: string | null;
+  afterUrl: string | null;
+  web3VerificationStatus: "NONE" | "PENDING" | "VERIFIED" | "REJECTED";
+  caseOnChainId: number | null;
+  onChainTxHash: string | null;
+  payoutTxHash: string | null;
+  hypercertData: Web3ProcessResult["hypercertData"] | null;
+  aiVerificationResult: Web3ProcessResult["aiResult"] | null;
+}
