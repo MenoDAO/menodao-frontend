@@ -53,13 +53,58 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
     setStage("processing");
     setErrorMsg("");
     try {
-      const result = await staffApi.processWeb3Case(visitId);
-      setProcessResult(result);
-      setStage(result.verified ? "done" : "rejected");
+      // Kick off background pipeline — returns immediately
+      await staffApi.processWeb3Case(visitId);
+      // Now poll for completion
+      await pollForCompletion();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Processing failed");
       setStage("error");
     }
+  };
+
+  const pollForCompletion = async () => {
+    const MAX_POLLS = 40; // 40 × 5s = 3.3 min max wait
+    for (let i = 0; i < MAX_POLLS; i++) {
+      await new Promise((r) => setTimeout(r, 5000)); // wait 5s
+      try {
+        const status = await staffApi.getWeb3CaseStatus(visitId);
+        if (status.web3VerificationStatus === "VERIFIED") {
+          // Build a processResult-like object from status
+          setProcessResult({
+            verified: true,
+            aiResult: status.aiVerificationResult || {
+              verified: true,
+              confidence: 0.9,
+              reason: "Verified",
+            },
+            caseId: status.caseOnChainId ?? undefined,
+            submitTxHash: status.onChainTxHash ?? undefined,
+            payoutTxHash: status.payoutTxHash ?? undefined,
+            hypercertData: status.hypercertData ?? undefined,
+          });
+          setStage("done");
+          return;
+        }
+        if (status.web3VerificationStatus === "REJECTED") {
+          setProcessResult({
+            verified: false,
+            aiResult: status.aiVerificationResult || {
+              verified: false,
+              confidence: 0,
+              reason: "Rejected by AI agent",
+            },
+          });
+          setStage("rejected");
+          return;
+        }
+        // Still PENDING — keep polling
+      } catch {
+        // transient poll error — keep trying
+      }
+    }
+    setErrorMsg("Verification timed out — check back in a moment");
+    setStage("error");
   };
 
   const calibrationExplorer = "https://calibration.filfox.info/en/message";
@@ -170,7 +215,7 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
           )}
           <StatusRow
             icon="🤖"
-            label="AI agent verifying dental improvement on Calibration testnet..."
+            label="AI agent verifying on Calibration testnet — polling every 5s, please wait..."
           />
         </div>
       )}
