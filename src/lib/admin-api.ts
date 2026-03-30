@@ -441,6 +441,11 @@ class AdminApiClient {
     );
   }
 
+  // Web3 / Filecoin / Hypercert impact stats
+  async getWeb3Stats() {
+    return this.request<Web3Stats>("/admin/stats/web3");
+  }
+
   // Audit Logs
   async getAuditLogs(limit = 50) {
     return this.request<AuditLogEntry[]>(`/admin/audit-logs?limit=${limit}`);
@@ -822,4 +827,28 @@ export interface AuditLogEntry {
     id: string;
     username: string;
   };
+}
+
+export interface Web3Stats {
+  contract: {
+    address: string | null;
+    explorerUrl: string | null;
+    network: string;
+    rpc: string;
+  };
+  cases: {
+    total: number;
+    verified: number;
+    rejected: number;
+    pending: number;
+    successRate: number;
+  };
+  recentVerified: {
+    visitId: string;
+    clinic: string;
+    onChainTxHash: string | null;
+    payoutTxHash: string | null;
+    verifiedAt: string;
+    explorerUrl: string | null;
+  }[];
 }
