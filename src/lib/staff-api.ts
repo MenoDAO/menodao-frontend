@@ -688,6 +688,13 @@ export interface Web3ProcessResult {
     clinicAddress: string;
     mintedAt: string;
     mockTokenId: string;
+    metadataCID?: string;
+    metadataUrl?: string;
+    ownership?: {
+      attester: string;
+      clinic: string;
+      beneficiary: string;
+    };
   };
 }
 

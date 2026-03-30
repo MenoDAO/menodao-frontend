@@ -225,16 +225,34 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
             />
           )}
           {processResult.hypercertData && (
-            <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-              <span>🏅</span>
-              <div>
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg space-y-2">
+              <div className="flex items-center gap-2">
+                <span>🏅</span>
                 <p className="text-sm font-semibold text-green-800">
-                  Hypercert Impact Proof Minted
-                </p>
-                <p className="text-xs text-green-600 font-mono">
-                  {processResult.hypercertData.mockTokenId}
+                  Hypercert Impact Proof Created
                 </p>
               </div>
+              <p className="text-xs font-mono text-green-700">
+                {processResult.hypercertData.mockTokenId}
+              </p>
+              <div className="text-xs text-gray-600 space-y-0.5">
+                <p>Attester: MenoDAO (verified &amp; funded care)</p>
+                <p>
+                  Clinic:{" "}
+                  {processResult.hypercertData.clinicAddress.slice(0, 10)}...
+                </p>
+                <p>Beneficiary: patient visit</p>
+              </div>
+              {processResult.hypercertData.metadataUrl && (
+                <a
+                  href={processResult.hypercertData.metadataUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-green-600 hover:underline block"
+                >
+                  View impact metadata on IPFS ↗
+                </a>
+              )}
             </div>
           )}
         </div>
