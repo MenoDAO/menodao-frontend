@@ -62,7 +62,7 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
     }
   };
 
-  const explorerBase = "https://calibration.filfox.info/en/message";
+  const calibrationExplorer = "https://calibration.filfox.info/en/message";
 
   return (
     <div className="mt-6 border border-purple-200 rounded-xl bg-purple-50 p-5">
@@ -76,8 +76,9 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
         </span>
       </div>
       <p className="text-sm text-purple-700 mb-4">
-        Upload before/after images to Filecoin, verify with AI, and mint a
-        Hypercert as proof of dental care impact.
+        Upload before/after images to IPFS via Pinata, verify with AI on
+        Filecoin Calibration, and mint a Hypercert as proof of dental care
+        impact.
       </p>
 
       {/* File pickers */}
@@ -113,29 +114,32 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
             disabled={!beforeFile || !afterFile}
             className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-40"
           >
-            Upload to Filecoin
+            Upload to IPFS (Pinata/Filecoin)
           </button>
         </div>
       )}
 
-      {/* Uploading spinner */}
       {stage === "uploading" && (
-        <StatusRow icon="⏳" label="Uploading images to Filecoin..." />
+        <StatusRow icon="⏳" label="Uploading images to IPFS via Pinata..." />
       )}
 
-      {/* Uploaded — show CIDs, prompt to process */}
       {stage === "uploaded" && uploadResult && (
         <div className="space-y-3">
-          <StatusRow icon="✅" label="Images stored on Filecoin" />
+          <StatusRow
+            icon="✅"
+            label="Images pinned to IPFS — CIDs recorded on Filecoin"
+          />
           <CIDRow
             label="Before CID"
             cid={uploadResult.beforeCID}
-            url={uploadResult.beforeUrl}
+            gatewayUrl={uploadResult.beforeUrl}
+            explorerUrl={uploadResult.beforeExplorerUrl}
           />
           <CIDRow
             label="After CID"
             cid={uploadResult.afterCID}
-            url={uploadResult.afterUrl}
+            gatewayUrl={uploadResult.afterUrl}
+            explorerUrl={uploadResult.afterExplorerUrl}
           />
           <button
             onClick={handleProcess}
@@ -146,7 +150,6 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
         </div>
       )}
 
-      {/* Processing */}
       {stage === "processing" && (
         <div className="space-y-2">
           {uploadResult && (
@@ -154,23 +157,24 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
               <CIDRow
                 label="Before CID"
                 cid={uploadResult.beforeCID}
-                url={uploadResult.beforeUrl}
+                gatewayUrl={uploadResult.beforeUrl}
+                explorerUrl={uploadResult.beforeExplorerUrl}
               />
               <CIDRow
                 label="After CID"
                 cid={uploadResult.afterCID}
-                url={uploadResult.afterUrl}
+                gatewayUrl={uploadResult.afterUrl}
+                explorerUrl={uploadResult.afterExplorerUrl}
               />
             </>
           )}
           <StatusRow
             icon="🤖"
-            label="AI agent verifying dental improvement..."
+            label="AI agent verifying dental improvement on Calibration testnet..."
           />
         </div>
       )}
 
-      {/* Rejected */}
       {stage === "rejected" && processResult && (
         <div className="space-y-2">
           <StatusRow icon="❌" label="AI verification rejected" />
@@ -183,7 +187,6 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
         </div>
       )}
 
-      {/* Done — full pipeline complete */}
       {stage === "done" && processResult && uploadResult && (
         <div className="space-y-3">
           <StatusRow
@@ -197,26 +200,28 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
           <CIDRow
             label="Before CID"
             cid={uploadResult.beforeCID}
-            url={uploadResult.beforeUrl}
+            gatewayUrl={uploadResult.beforeUrl}
+            explorerUrl={uploadResult.beforeExplorerUrl}
           />
           <CIDRow
             label="After CID"
             cid={uploadResult.afterCID}
-            url={uploadResult.afterUrl}
+            gatewayUrl={uploadResult.afterUrl}
+            explorerUrl={uploadResult.afterExplorerUrl}
           />
 
           {processResult.submitTxHash && (
             <TxRow
-              label="Case submitted on-chain"
+              label="Case submitted on Calibration testnet"
               txHash={processResult.submitTxHash}
-              explorerBase={explorerBase}
+              explorerBase={calibrationExplorer}
             />
           )}
           {processResult.payoutTxHash && (
             <TxRow
               label="Payout released on-chain"
               txHash={processResult.payoutTxHash}
-              explorerBase={explorerBase}
+              explorerBase={calibrationExplorer}
             />
           )}
           {processResult.hypercertData && (
@@ -224,7 +229,7 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
               <span>🏅</span>
               <div>
                 <p className="text-sm font-semibold text-green-800">
-                  Hypercert Minted
+                  Hypercert Impact Proof Minted
                 </p>
                 <p className="text-xs text-green-600 font-mono">
                   {processResult.hypercertData.mockTokenId}
@@ -250,23 +255,38 @@ function StatusRow({ icon, label }: { icon: string; label: string }) {
 function CIDRow({
   label,
   cid,
-  url,
+  gatewayUrl,
+  explorerUrl,
 }: {
   label: string;
   cid: string;
-  url: string;
+  gatewayUrl: string;
+  explorerUrl?: string;
 }) {
   return (
     <div className="p-2 bg-white border border-gray-200 rounded-lg">
-      <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-xs font-mono text-blue-600 hover:underline break-all"
-      >
-        {cid}
-      </a>
+      <p className="text-xs text-gray-500 mb-1">{label}</p>
+      <p className="text-xs font-mono text-gray-800 break-all mb-1">{cid}</p>
+      <div className="flex gap-3 flex-wrap">
+        <a
+          href={gatewayUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-600 hover:underline"
+        >
+          View on IPFS ↗
+        </a>
+        {explorerUrl && (
+          <a
+            href={explorerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-purple-600 hover:underline"
+          >
+            Explore on IPLD ↗
+          </a>
+        )}
+      </div>
     </div>
   );
 }
@@ -289,7 +309,7 @@ function TxRow({
         rel="noopener noreferrer"
         className="text-xs font-mono text-indigo-600 hover:underline break-all"
       >
-        {txHash}
+        {txHash} ↗
       </a>
     </div>
   );

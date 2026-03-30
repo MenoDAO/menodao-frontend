@@ -666,6 +666,10 @@ export interface Web3UploadResult {
   afterCID: string;
   beforeUrl: string;
   afterUrl: string;
+  beforePinataUrl?: string;
+  afterPinataUrl?: string;
+  beforeExplorerUrl?: string;
+  afterExplorerUrl?: string;
 }
 
 export interface Web3ProcessResult {
