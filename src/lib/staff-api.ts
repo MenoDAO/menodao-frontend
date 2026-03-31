@@ -666,8 +666,8 @@ export interface Web3UploadResult {
   afterCID: string;
   beforeUrl: string;
   afterUrl: string;
-  beforePinataUrl?: string;
-  afterPinataUrl?: string;
+  beforeStorachaUrl?: string;
+  afterStorachaUrl?: string;
   beforeExplorerUrl?: string;
   afterExplorerUrl?: string;
 }
