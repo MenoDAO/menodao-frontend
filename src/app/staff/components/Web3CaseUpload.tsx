@@ -121,7 +121,7 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
         </span>
       </div>
       <p className="text-sm text-purple-700 mb-4">
-        Upload before/after images to IPFS via Pinata, verify with AI on
+        Upload before/after images to IPFS via Storacha, verify with AI on
         Filecoin Calibration, and mint a Hypercert as proof of dental care
         impact.
       </p>
@@ -159,13 +159,13 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
             disabled={!beforeFile || !afterFile}
             className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-40"
           >
-            Upload to IPFS (Pinata/Filecoin)
+            Upload to IPFS (Storacha/Filecoin)
           </button>
         </div>
       )}
 
       {stage === "uploading" && (
-        <StatusRow icon="⏳" label="Uploading images to IPFS via Pinata..." />
+        <StatusRow icon="⏳" label="Uploading images to IPFS via Storacha..." />
       )}
 
       {stage === "uploaded" && uploadResult && (
