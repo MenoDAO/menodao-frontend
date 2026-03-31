@@ -9,6 +9,8 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardList,
+  ExternalLink,
+  Share2,
 } from "lucide-react";
 
 export default function MemberHistoryPage() {
@@ -22,7 +24,6 @@ export default function MemberHistoryPage() {
     const loadHistory = async () => {
       setLoading(true);
       setError("");
-
       try {
         const data = await api.getMemberHistory(page, 20);
         setHistory(data);
@@ -32,26 +33,14 @@ export default function MemberHistoryPage() {
         setLoading(false);
       }
     };
-
     loadHistory();
   }, [page]);
 
   const toggleVisit = (visitId: string) => {
     const newExpanded = new Set(expandedVisits);
-    if (newExpanded.has(visitId)) {
-      newExpanded.delete(visitId);
-    } else {
-      newExpanded.add(visitId);
-    }
+    if (newExpanded.has(visitId)) newExpanded.delete(visitId);
+    else newExpanded.add(visitId);
     setExpandedVisits(newExpanded);
-  };
-
-  const handlePrevPage = () => {
-    if (page > 1) setPage(page - 1);
-  };
-
-  const handleNextPage = () => {
-    if (history && page < history.meta.totalPages) setPage(page + 1);
   };
 
   if (loading) {
@@ -112,13 +101,12 @@ export default function MemberHistoryPage() {
             />
           ))}
 
-          {/* Pagination */}
           {history.meta.totalPages > 1 && (
             <div className="flex items-center justify-between bg-white rounded-lg shadow p-4 mt-6">
               <button
-                onClick={handlePrevPage}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50"
               >
                 Previous
               </button>
@@ -126,9 +114,11 @@ export default function MemberHistoryPage() {
                 Page {page} of {history.meta.totalPages}
               </span>
               <button
-                onClick={handleNextPage}
+                onClick={() =>
+                  setPage((p) => Math.min(history.meta.totalPages, p + 1))
+                }
                 disabled={page === history.meta.totalPages}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50"
               >
                 Next
               </button>
@@ -155,6 +145,7 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
+      {/* Header */}
       <div className="flex justify-between items-start mb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -199,9 +190,14 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
         Treated by: {visit.treatedBy}
       </div>
 
-      {/* Expandable Details */}
+      {/* Impact Proof Badge */}
+      {visit.impactProof?.status === "VERIFIED" && (
+        <ImpactBadge proof={visit.impactProof} visit={visit} />
+      )}
+
+      {/* Expandable Clinical Details */}
       {hasDetails && (
-        <div>
+        <div className="mt-4">
           <button
             onClick={onToggle}
             className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
@@ -221,7 +217,6 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
 
           {isExpanded && (
             <div className="border-t pt-4 mt-4 space-y-4">
-              {/* Clinical Data */}
               {(visit.clinicalData?.chiefComplaint ||
                 visit.clinicalData?.medicalHistory ||
                 visit.clinicalData?.clinicalNotes) && (
@@ -250,27 +245,54 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
                 </div>
               )}
 
-              {/* Questionnaire */}
               {visit.questionnaire && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">
                     Dental Assessment:
                   </h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {visit.questionnaire.dmftScore !== null && (
-                      <div>
-                        <span className="text-gray-500">DMFT Score:</span>
-                        <span className="ml-2 font-medium">
-                          {visit.questionnaire.dmftScore}
-                        </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {visit.questionnaire.dmftScore !== null &&
+                      visit.questionnaire.dmftScore !== undefined && (
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-2">
+                          <p className="text-xs text-blue-600 font-semibold uppercase mb-0.5">
+                            DMFT Score
+                          </p>
+                          <p className="text-lg font-bold text-blue-900">
+                            {visit.questionnaire.dmftScore}
+                          </p>
+                          <p className="text-xs text-blue-500">
+                            Decayed + Missing + Filled
+                          </p>
+                        </div>
+                      )}
+                    {visit.questionnaire.lastDentalVisit && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
+                        <p className="text-xs text-gray-500 font-semibold uppercase mb-0.5">
+                          Last Dental Visit
+                        </p>
+                        <p className="text-sm font-medium text-gray-800">
+                          {visit.questionnaire.lastDentalVisit}
+                        </p>
                       </div>
                     )}
-                    {visit.questionnaire.lastDentalVisit && (
-                      <div>
-                        <span className="text-gray-500">Last Visit:</span>
-                        <span className="ml-2 font-medium">
-                          {visit.questionnaire.lastDentalVisit}
-                        </span>
+                    {visit.questionnaire.cariesRisk && (
+                      <div className="bg-orange-50 border border-orange-100 rounded-lg p-2">
+                        <p className="text-xs text-orange-600 font-semibold uppercase mb-0.5">
+                          Caries Risk
+                        </p>
+                        <p className="text-sm font-medium text-orange-900">
+                          {visit.questionnaire.cariesRisk}
+                        </p>
+                      </div>
+                    )}
+                    {visit.questionnaire.oralHygieneIndex && (
+                      <div className="bg-green-50 border border-green-100 rounded-lg p-2">
+                        <p className="text-xs text-green-600 font-semibold uppercase mb-0.5">
+                          Oral Hygiene
+                        </p>
+                        <p className="text-sm font-medium text-green-900">
+                          {visit.questionnaire.oralHygieneIndex}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -280,6 +302,127 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+interface ImpactBadgeProps {
+  proof: NonNullable<MemberVisit["impactProof"]>;
+  visit: MemberVisit;
+}
+
+function ImpactBadge({ proof, visit }: ImpactBadgeProps) {
+  const shareText = `🦷 My dental care at ${visit.clinic} was verified on-chain by MenoDAO! Transparent, trustless healthcare powered by Filecoin. #MenoDAO #DeSci #Web3Health`;
+  const shareUrl = proof.metadataUrl || `https://app.menodao.org`;
+
+  const shareTwitter = () => {
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const shareWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const copyLink = async () => {
+    await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+    alert("Copied to clipboard!");
+  };
+
+  return (
+    <div className="mb-4 rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50 p-4">
+      {/* Badge header */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-2xl">🏅</span>
+        <div>
+          <p className="text-sm font-bold text-purple-900">
+            Verified Impact Proof
+          </p>
+          <p className="text-xs text-purple-600">
+            Dental care verified on Filecoin Calibration testnet
+          </p>
+        </div>
+        {proof.tokenId && (
+          <span className="ml-auto text-xs font-mono text-purple-500 bg-purple-100 px-2 py-0.5 rounded-full">
+            {proof.tokenId.slice(0, 16)}...
+          </span>
+        )}
+      </div>
+
+      {/* Ownership chain */}
+      <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+        <div className="bg-white rounded-lg p-2 border border-purple-100">
+          <p className="text-xs text-gray-500 mb-0.5">Attester</p>
+          <p className="text-xs font-semibold text-gray-800">🏛️ MenoDAO</p>
+        </div>
+        <div className="bg-white rounded-lg p-2 border border-purple-100">
+          <p className="text-xs text-gray-500 mb-0.5">Provider</p>
+          <p className="text-xs font-semibold text-gray-800 truncate">
+            🦷 {proof.ownership.clinic}
+          </p>
+        </div>
+        <div className="bg-white rounded-lg p-2 border border-purple-100">
+          <p className="text-xs text-gray-500 mb-0.5">Beneficiary</p>
+          <p className="text-xs font-semibold text-purple-700 truncate">
+            ⭐ {proof.ownership.beneficiary}
+          </p>
+        </div>
+      </div>
+
+      {/* Links */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        {proof.metadataUrl && (
+          <a
+            href={proof.metadataUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-indigo-600 hover:underline bg-white border border-indigo-200 rounded-lg px-2 py-1"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Impact metadata
+          </a>
+        )}
+        {proof.onChainTxHash && (
+          <a
+            href={`https://calibration.filfox.info/en/message/${proof.onChainTxHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-indigo-600 hover:underline bg-white border border-indigo-200 rounded-lg px-2 py-1"
+          >
+            <ExternalLink className="w-3 h-3" />
+            On-chain proof
+          </a>
+        )}
+      </div>
+
+      {/* Share buttons */}
+      <div className="border-t border-purple-100 pt-3">
+        <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+          <Share2 className="w-3 h-3" />
+          Share your impact
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={shareTwitter}
+            className="flex-1 text-xs py-1.5 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+          >
+            𝕏 Twitter
+          </button>
+          <button
+            onClick={shareWhatsApp}
+            className="flex-1 text-xs py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+          >
+            WhatsApp
+          </button>
+          <button
+            onClick={copyLink}
+            className="flex-1 text-xs py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Copy link
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { OpenVisit, Procedure, staffApi } from "@/lib/staff-api";
 import { getTierBadgeColor, getTierDisplayName } from "@/lib/tier-utils";
+import Web3CaseUpload from "./Web3CaseUpload";
 
 interface TreatmentRoomScreenProps {
   visit: OpenVisit;
@@ -194,12 +195,15 @@ export default function TreatmentRoomScreen({
       )}
 
       {visit.visit.procedures.length > 0 && (
-        <button
-          onClick={onDischarge}
-          className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
-        >
-          Proceed to Discharge
-        </button>
+        <>
+          <Web3CaseUpload visitId={visit.visit.id} />
+          <button
+            onClick={onDischarge}
+            className="w-full mt-4 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+          >
+            Proceed to Discharge
+          </button>
+        </>
       )}
     </div>
   );

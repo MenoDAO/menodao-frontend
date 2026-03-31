@@ -2,6 +2,57 @@
 
 import { useState } from "react";
 
+// All 47 Kenya counties
+const KENYA_COUNTIES = [
+  "Baringo",
+  "Bomet",
+  "Bungoma",
+  "Busia",
+  "Elgeyo-Marakwet",
+  "Embu",
+  "Garissa",
+  "Homa Bay",
+  "Isiolo",
+  "Kajiado",
+  "Kakamega",
+  "Kericho",
+  "Kiambu",
+  "Kilifi",
+  "Kirinyaga",
+  "Kisii",
+  "Kisumu",
+  "Kitui",
+  "Kwale",
+  "Laikipia",
+  "Lamu",
+  "Machakos",
+  "Makueni",
+  "Mandera",
+  "Marsabit",
+  "Meru",
+  "Migori",
+  "Mombasa",
+  "Murang'a",
+  "Nairobi",
+  "Nakuru",
+  "Nandi",
+  "Narok",
+  "Nyamira",
+  "Nyandarua",
+  "Nyeri",
+  "Samburu",
+  "Siaya",
+  "Taita-Taveta",
+  "Tana River",
+  "Tharaka-Nithi",
+  "Trans Nzoia",
+  "Turkana",
+  "Uasin Gishu",
+  "Vihiga",
+  "Wajir",
+  "West Pokot",
+];
+
 export interface QuestionnaireData {
   // Section 1: Demographics & Consent
   age?: number;
@@ -203,15 +254,20 @@ export default function QuestionnaireForm({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   County/Region
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.residenceCounty || ""}
                   onChange={(e) =>
                     updateField("residenceCounty", e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  placeholder="e.g., Nairobi"
-                />
+                >
+                  <option value="">Select county...</option>
+                  {KENYA_COUNTIES.map((county) => (
+                    <option key={county} value={county}>
+                      {county}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

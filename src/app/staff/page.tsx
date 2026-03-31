@@ -100,16 +100,10 @@ export default function StaffDashboardPage() {
 
   const handleCheckIn = async (data: CheckInDto) => {
     try {
-      const result = await staffApi.checkIn(data);
-      console.log("Check-in result:", result);
-
-      // Show success and prompt to search again
-      alert(
-        "Patient checked in successfully! Search for the patient again to start treatment.",
-      );
-
-      // Reset search to allow fresh search
-      setSearchResult(null);
+      await staffApi.checkIn(data);
+      // Immediately re-search the same number — the open visit now exists
+      // so handleSearch will find it and auto-transition to treatment screen
+      await handleSearch(data.phoneNumber);
     } catch (error: unknown) {
       console.error("Check-in error:", error);
       alert(

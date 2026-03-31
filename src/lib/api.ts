@@ -551,6 +551,20 @@ export interface MemberVisit {
     clinicalNotes: string | null;
   };
   questionnaire: any | null;
+  impactProof?: {
+    status: "PENDING" | "VERIFIED" | "REJECTED";
+    tokenId: string | null;
+    metadataUrl: string | null;
+    metadataCID: string | null;
+    onChainTxHash: string | null;
+    payoutTxHash: string | null;
+    mintedAt: string | null;
+    ownership: {
+      attester: string;
+      clinic: string;
+      beneficiary: string;
+    };
+  } | null;
 }
 
 export const api = new ApiClient(API_BASE_URL);

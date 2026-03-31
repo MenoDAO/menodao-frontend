@@ -10,6 +10,7 @@ import {
 import { useAdminStore } from "@/lib/admin-store";
 import { SMSMetrics } from "./components/SMSMetrics";
 import { AuditLog } from "./components/AuditLog";
+import { Web3ImpactStats } from "./components/Web3ImpactStats";
 import {
   Users,
   CreditCard,
@@ -172,6 +173,9 @@ export default function AdminDashboard() {
           icon={MessageSquare}
         />
       </div>
+
+      {/* Web3 Impact Stats */}
+      <Web3ImpactStats />
 
       {/* SMS Metrics */}
       <SMSMetrics />
