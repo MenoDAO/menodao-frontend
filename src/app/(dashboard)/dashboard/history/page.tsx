@@ -250,21 +250,49 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">
                     Dental Assessment:
                   </h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {visit.questionnaire.dmftScore !== null && (
-                      <div>
-                        <span className="text-gray-500">DMFT Score:</span>
-                        <span className="ml-2 font-medium">
-                          {visit.questionnaire.dmftScore}
-                        </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {visit.questionnaire.dmftScore !== null &&
+                      visit.questionnaire.dmftScore !== undefined && (
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-2">
+                          <p className="text-xs text-blue-600 font-semibold uppercase mb-0.5">
+                            DMFT Score
+                          </p>
+                          <p className="text-lg font-bold text-blue-900">
+                            {visit.questionnaire.dmftScore}
+                          </p>
+                          <p className="text-xs text-blue-500">
+                            Decayed + Missing + Filled
+                          </p>
+                        </div>
+                      )}
+                    {visit.questionnaire.lastDentalVisit && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
+                        <p className="text-xs text-gray-500 font-semibold uppercase mb-0.5">
+                          Last Dental Visit
+                        </p>
+                        <p className="text-sm font-medium text-gray-800">
+                          {visit.questionnaire.lastDentalVisit}
+                        </p>
                       </div>
                     )}
-                    {visit.questionnaire.lastDentalVisit && (
-                      <div>
-                        <span className="text-gray-500">Last Visit:</span>
-                        <span className="ml-2 font-medium">
-                          {visit.questionnaire.lastDentalVisit}
-                        </span>
+                    {visit.questionnaire.cariesRisk && (
+                      <div className="bg-orange-50 border border-orange-100 rounded-lg p-2">
+                        <p className="text-xs text-orange-600 font-semibold uppercase mb-0.5">
+                          Caries Risk
+                        </p>
+                        <p className="text-sm font-medium text-orange-900">
+                          {visit.questionnaire.cariesRisk}
+                        </p>
+                      </div>
+                    )}
+                    {visit.questionnaire.oralHygieneIndex && (
+                      <div className="bg-green-50 border border-green-100 rounded-lg p-2">
+                        <p className="text-xs text-green-600 font-semibold uppercase mb-0.5">
+                          Oral Hygiene
+                        </p>
+                        <p className="text-sm font-medium text-green-900">
+                          {visit.questionnaire.oralHygieneIndex}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -336,7 +364,9 @@ function ImpactBadge({ proof, visit }: ImpactBadgeProps) {
         </div>
         <div className="bg-white rounded-lg p-2 border border-purple-100">
           <p className="text-xs text-gray-500 mb-0.5">Beneficiary</p>
-          <p className="text-xs font-semibold text-purple-700">⭐ You</p>
+          <p className="text-xs font-semibold text-purple-700 truncate">
+            ⭐ {proof.ownership.beneficiary}
+          </p>
         </div>
       </div>
 
