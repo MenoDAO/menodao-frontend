@@ -97,7 +97,7 @@ class ApiClient {
   async requestOtp(
     phoneNumber: string,
     createIfNotExists: boolean = false,
-    signupData?: { fullName?: string; location?: string },
+    signupData?: { fullName?: string; location?: string; referredBy?: string },
   ) {
     return this.request<{ message: string }>("/auth/request-otp", {
       method: "POST",
@@ -328,6 +328,32 @@ class ApiClient {
 
   async getSupportedChains() {
     return this.request<SupportedChain[]>("/blockchain/chains");
+  }
+
+  // Champion / Referral endpoints
+  async getChampionStats() {
+    return this.request<ChampionStats>("/referrals/my-stats");
+  }
+
+  async getChampionReferrals(page = 1, limit = 10) {
+    return this.request<PaginatedReferrals>(
+      `/referrals/my-referrals?page=${page}&limit=${limit}`,
+    );
+  }
+
+  async requestWithdrawal(amount: number) {
+    return this.request<WithdrawalRecord>("/referrals/withdraw", {
+      method: "POST",
+      body: JSON.stringify({ amount }),
+    });
+  }
+
+  async getWithdrawalHistory() {
+    return this.request<WithdrawalRecord[]>("/referrals/withdrawals");
+  }
+
+  async getLeaderboard() {
+    return this.request<LeaderboardEntry[]>("/champions/leaderboard");
   }
 }
 
@@ -565,6 +591,66 @@ export interface MemberVisit {
       beneficiary: string;
     };
   } | null;
+}
+
+// Champion / Referral types
+export interface ChampionStats {
+  referralCode: string;
+  inviteLink: string;
+  totalReferrals: number;
+  activeReferrals: number;
+  commissionsEarned: number;
+  commissionsWithdrawn: number;
+  commissionsBalance: number;
+  isGoldMember: boolean;
+}
+
+export interface ReferralEntry {
+  id: string;
+  firstName: string;
+  registrationDate: string;
+  firstPaymentCleared: boolean;
+}
+
+export interface PaginatedReferrals {
+  data: ReferralEntry[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface WithdrawalRecord {
+  id: string;
+  championId: string;
+  amount: number;
+  status:
+    | "PENDING"
+    | "PENDING_ADMIN_APPROVAL"
+    | "APPROVED"
+    | "REJECTED"
+    | "FAILED"
+    | "COMPLETED";
+  sasaPayRequestId?: string;
+  mpesaReceiptNumber?: string;
+  errorMessage?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+  approvedAt?: string;
+  completedAt?: string;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  firstName: string;
+  referralCode: string;
+  totalReferrals: number;
+  activeReferrals: number;
+  totalCommissionsEarned: number;
+  memberSince: string;
 }
 
 export const api = new ApiClient(API_BASE_URL);

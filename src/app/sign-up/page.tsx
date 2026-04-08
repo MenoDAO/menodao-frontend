@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { User, MapPin, Phone, Loader2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { KENYAN_COUNTIES } from "@/lib/counties";
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [referredBy, setReferredBy] = useState<string>("");
   const [formData, setFormData] = useState({
     fullName: "",
     location: "",
@@ -18,6 +20,13 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      setReferredBy(ref);
+    }
+  }, [searchParams]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -84,10 +93,11 @@ export default function SignUpPage() {
       );
 
       // Send OTP (create member if doesn't exist for signup flow)
-      // Pass fullName and location so the member is created with profile data
+      // Pass fullName, location, and referredBy so the member is created with profile data
       await api.requestOtp(normalizedPhone, true, {
         fullName: formData.fullName.trim(),
         location: formData.location.trim(),
+        ...(referredBy && { referredBy }),
       });
 
       // Navigate to OTP verification with signup flow
@@ -148,6 +158,17 @@ export default function SignUpPage() {
               Please provide the details below to continue
             </p>
           </div>
+
+          {/* Referral Banner */}
+          {referredBy && (
+            <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm flex items-center gap-2">
+              <span>🏆</span>
+              <span>
+                You were invited by a MenoDAO Champion! Your referral code:{" "}
+                <strong>{referredBy}</strong>
+              </span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Full Name */}
@@ -340,5 +361,13 @@ export default function SignUpPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignUpForm />
+    </Suspense>
   );
 }

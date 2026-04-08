@@ -16,6 +16,7 @@ import {
   X,
   BarChart3,
   Building2,
+  Wallet,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/clinics", label: "Clinics", icon: Building2 },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
+  { href: "/admin/withdrawals", label: "Withdrawals", icon: Wallet },
   { href: "/admin/alerts", label: "Alerts", icon: Bell },
   {
     href: "/admin/settings",
