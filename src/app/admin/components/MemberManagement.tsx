@@ -9,9 +9,20 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle,
-  XCircle,
+  Trophy,
 } from "lucide-react";
 import { adminApi, MemberDetailResponse } from "@/lib/admin-api";
+
+// Extended type to include champion referral fields returned by the API
+interface MemberDetailWithReferral extends MemberDetailResponse {
+  referralCode?: string;
+  referredBy?: string | null;
+  firstPaymentCleared?: boolean;
+  commissionsBalance?: number;
+  commissionsWithdrawn?: number;
+  activeReferralsCount?: number;
+  isGoldMember?: boolean;
+}
 
 interface MemberManagementProps {
   memberId?: string;
@@ -25,11 +36,11 @@ export function MemberManagement({
     email: "",
     memberId: initialMemberId || "",
   });
-  const [searchResults, setSearchResults] = useState<MemberDetailResponse[]>(
-    [],
-  );
+  const [searchResults, setSearchResults] = useState<
+    MemberDetailWithReferral[]
+  >([]);
   const [selectedMember, setSelectedMember] =
-    useState<MemberDetailResponse | null>(null);
+    useState<MemberDetailWithReferral | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
 
@@ -525,6 +536,78 @@ export function MemberManagement({
                   </div>
                 </div>
               )}
+
+            {/* Champion Referral Section */}
+            <div className="border-t border-gray-700 pt-4">
+              <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-yellow-400" />
+                Champion Referral
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Referral Code</p>
+                  <p className="text-white font-mono">
+                    {selectedMember.referralCode || "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Referred By</p>
+                  <p className="text-white font-mono">
+                    {selectedMember.referredBy || "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">
+                    First Payment Cleared
+                  </p>
+                  {selectedMember.firstPaymentCleared ? (
+                    <span className="inline-flex items-center gap-1 text-emerald-400 text-sm">
+                      <CheckCircle className="w-4 h-4" /> Yes
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-sm">No</span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Gold Member</p>
+                  {selectedMember.isGoldMember ? (
+                    <span className="inline-flex items-center gap-1 text-yellow-400 text-sm font-semibold">
+                      <Trophy className="w-4 h-4" /> Gold Champion 🏆
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-sm">No</span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">
+                    Commissions Balance
+                  </p>
+                  <p className="text-white font-semibold">
+                    KES{" "}
+                    {(selectedMember.commissionsBalance ?? 0).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">
+                    Commissions Withdrawn
+                  </p>
+                  <p className="text-white">
+                    KES{" "}
+                    {(
+                      selectedMember.commissionsWithdrawn ?? 0
+                    ).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">
+                    Active Referrals Count
+                  </p>
+                  <p className="text-white font-semibold">
+                    {selectedMember.activeReferralsCount ?? 0}
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {/* Privacy Notice */}
             <div className="border-t border-gray-700 pt-4">
