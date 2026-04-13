@@ -108,6 +108,7 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
   };
 
   const calibrationExplorer = "https://calibration.filfox.info/en/message";
+  const baseSepoliaExplorer = "https://sepolia.basescan.org/tx";
 
   return (
     <div className="mt-6 border border-purple-200 rounded-xl bg-purple-50 p-5">
@@ -266,7 +267,7 @@ export default function Web3CaseUpload({ visitId }: Web3CaseUploadProps) {
             <TxRow
               label="Payout released on-chain"
               txHash={processResult.payoutTxHash}
-              explorerBase={calibrationExplorer}
+              explorerBase={baseSepoliaExplorer}
             />
           )}
           {processResult.hypercertData && (
