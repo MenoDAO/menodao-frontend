@@ -3,9 +3,18 @@
 import { useState, useEffect } from "react";
 import { useWalletStore, SUPPORTED_CHAINS } from "@/lib/wallet-store";
 import { ConnectWalletButton } from "./ConnectWalletButton";
-import { Wallet, ExternalLink, Award, Loader2, CheckCircle, AlertCircle, Copy } from "lucide-react";
+import {
+  Wallet,
+  ExternalLink,
+  Award,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  Copy,
+} from "lucide-react";
 import { getApiUrl, api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { useTranslation } from "@/lib/i18n";
 
 interface NFT {
   id: string;
@@ -30,9 +39,11 @@ interface CustodialWallet {
 export function NFTSection() {
   const { address: connectedWallet } = useWalletStore();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { t } = useTranslation();
 
   const [nfts, setNfts] = useState<NFT[]>([]);
-  const [custodialWallet, setCustodialWallet] = useState<CustodialWallet | null>(null);
+  const [custodialWallet, setCustodialWallet] =
+    useState<CustodialWallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +107,9 @@ export function NFTSection() {
       const data = await res.json();
 
       if (res.ok) {
-        setSuccess(`NFT claimed successfully! TX: ${data.txHash?.slice(0, 10)}...`);
+        setSuccess(
+          `NFT claimed successfully! TX: ${data.txHash?.slice(0, 10)}...`,
+        );
         // Refresh NFTs
         const nftsRes = await fetch(`${getApiUrl()}/blockchain/nfts`, {
           headers: { Authorization: `Bearer ${authToken}` },
@@ -134,8 +147,8 @@ export function NFTSection() {
   };
 
   const getChainExplorer = (chain: string) => {
-    const chainInfo = Object.values(SUPPORTED_CHAINS).find(
-      (c) => c.name.toLowerCase().includes(chain.toLowerCase())
+    const chainInfo = Object.values(SUPPORTED_CHAINS).find((c) =>
+      c.name.toLowerCase().includes(chain.toLowerCase()),
     );
     return chainInfo?.explorer || "https://polygonscan.com";
   };
@@ -146,7 +159,7 @@ export function NFTSection() {
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
           <span className="ml-2 text-gray-600 dark:text-gray-400">
-            Loading blockchain data...
+            {t("nft.loading")}
           </span>
         </div>
       </div>
@@ -159,14 +172,14 @@ export function NFTSection() {
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Wallet className="w-5 h-5 text-emerald-600" />
-          Wallet
+          {t("nft.wallet")}
         </h3>
 
         {/* Custodial Wallet */}
         {custodialWallet && (
           <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-              MenoDAO Wallet (custodial)
+              {t("nft.custodialWallet")}
             </p>
             <div className="flex items-center gap-2">
               <code className="flex-1 font-mono text-sm text-gray-900 dark:text-white break-all">
@@ -190,9 +203,13 @@ export function NFTSection() {
         {/* External Wallet Connection */}
         <div className="border-t dark:border-gray-700 pt-4">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-            Connect your personal wallet to claim NFTs to your own address.
+            {t("nft.connectDesc")}
           </p>
-          <ConnectWalletButton showBalance showChainSelector label="Connect Wallet" />
+          <ConnectWalletButton
+            showBalance
+            showChainSelector
+            label={t("nft.connectWallet")}
+          />
         </div>
       </div>
 
@@ -200,7 +217,7 @@ export function NFTSection() {
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Award className="w-5 h-5 text-emerald-600" />
-          Membership NFTs
+          {t("nft.membershipNFTs")}
         </h3>
 
         {/* Status Messages */}
@@ -223,8 +240,7 @@ export function NFTSection() {
               <Award className="w-8 h-8 text-gray-400" />
             </div>
             <p className="text-gray-500 dark:text-gray-400">
-              No NFTs yet. Subscribe to a package and make your first payment to receive your
-              membership NFT!
+              {t("nft.noNFTs")}
             </p>
           </div>
         ) : (
@@ -259,12 +275,15 @@ export function NFTSection() {
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        Minted {new Date(nft.mintedAt).toLocaleDateString()}
+                        {t("nft.minted", {
+                          date: new Date(nft.mintedAt).toLocaleDateString(),
+                        })}
                       </p>
                       {isClaimed && (
                         <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
-                          ✓ Claimed to {nft.metadata?.claimedTo?.slice(0, 6)}...
-                          {nft.metadata?.claimedTo?.slice(-4)}
+                          {t("nft.claimed", {
+                            address: `${nft.metadata?.claimedTo?.slice(0, 6)}...${nft.metadata?.claimedTo?.slice(-4)}`,
+                          })}
                         </p>
                       )}
                     </div>
@@ -277,7 +296,7 @@ export function NFTSection() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                        title="View on Explorer"
+                        title={t("nft.viewExplorer")}
                       >
                         <ExternalLink className="w-4 h-4" />
                       </a>
@@ -292,17 +311,17 @@ export function NFTSection() {
                         {claiming === nft.id ? (
                           <>
                             <Loader2 className="w-3 h-3 animate-spin" />
-                            Claiming...
+                            {t("nft.claiming")}
                           </>
                         ) : (
-                          "Claim to Wallet"
+                          t("nft.claimToWallet")
                         )}
                       </button>
                     )}
 
                     {!connectedWallet && !isClaimed && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Connect wallet to claim
+                        {t("nft.connectToClaim")}
                       </span>
                     )}
                   </div>

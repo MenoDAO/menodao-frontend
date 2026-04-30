@@ -77,7 +77,7 @@ export default function DashboardPage() {
             👋
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Here&apos;s what&apos;s happening with your membership
+            {t("dashboard.happeningDesc")}
           </p>
         </div>
         {subscription && subscription.isActive && (
@@ -88,7 +88,7 @@ export default function DashboardPage() {
               className={`w-3 h-3 rounded-full bg-gradient-to-r ${tierColors[tier]}`}
             />
             <span className="font-semibold text-gray-900 dark:text-white">
-              {tier} Member
+              {t("dashboard.tierMember", { tier })}
             </span>
           </div>
         )}
@@ -98,29 +98,29 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           icon={<Wallet className="w-5 h-5 sm:w-6 sm:h-6" />}
-          label="Total Contributed"
+          label={t("dashboard.totalContributed")}
           value={`KES ${(contributionSummary?.totalContributed || 0).toLocaleString()}`}
           color="emerald"
         />
         <StatCard
           icon={<Calendar className="w-5 h-5 sm:w-6 sm:h-6" />}
-          label="Months Active"
+          label={t("dashboard.monthsActive")}
           value={contributionSummary?.monthsContributed || 0}
           color="blue"
         />
         <StatCard
           icon={<FileText className="w-5 h-5 sm:w-6 sm:h-6" />}
-          label="Claims Made"
+          label={t("dashboard.claimsMade")}
           value={claimsData?.summary?.claimsUsed || 0}
           color="purple"
         />
         <StatCard
           icon={<Shield className="w-5 h-5 sm:w-6 sm:h-6" />}
-          label="Claim Limit Left"
+          label={t("dashboard.claimLimitLeft")}
           value={
             isSubscriptionActive
               ? `KES ${correctRemainingLimit.toLocaleString()}`
-              : "Pending Payment"
+              : t("dashboard.pendingPayment")
           }
           color="orange"
         />
@@ -136,10 +136,15 @@ export default function DashboardPage() {
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-white/80 text-sm">Your Package</p>
-                  <h2 className="text-2xl font-bold mt-1">{tier} Membership</h2>
+                  <p className="text-white/80 text-sm">
+                    {t("dashboard.yourPackage")}
+                  </p>
+                  <h2 className="text-2xl font-bold mt-1">
+                    {t("subscription.membership", { tier })}{" "}
+                  </h2>
                   <p className="text-white/80 mt-2">
-                    KES {subscription.monthlyAmount}/month
+                    KES {subscription.monthlyAmount}
+                    {t("subscription.perMonth")}
                   </p>
                 </div>
                 <CreditCard className="w-12 h-12 text-white/30" />
@@ -159,7 +164,7 @@ export default function DashboardPage() {
                   href="/dashboard/subscription"
                   className="px-4 py-2 bg-white text-gray-900 rounded-lg font-medium hover:bg-white/90 transition-colors flex items-center gap-2"
                 >
-                  Manage Package
+                  {t("dashboard.managePackage")}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 {tier !== "GOLD" && (
@@ -167,7 +172,7 @@ export default function DashboardPage() {
                     href="/dashboard/subscription"
                     className="px-4 py-2 bg-white/20 text-white rounded-lg font-medium hover:bg-white/30 transition-colors"
                   >
-                    Upgrade
+                    {t("dashboard.upgrade")}
                   </Link>
                 )}
               </div>
@@ -177,16 +182,16 @@ export default function DashboardPage() {
               <div className="text-center py-8">
                 <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  No Active Subscription
+                  {t("dashboard.noSubscription")}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  Subscribe to a package to start enjoying dental care benefits
+                  {t("dashboard.noSubscriptionDesc")}
                 </p>
                 <Link
                   href="/dashboard/subscription"
                   className="inline-flex items-center gap-2 mt-4 px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors"
                 >
-                  View Packages
+                  {t("dashboard.viewPackages")}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -197,24 +202,24 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div className="space-y-4">
           <h3 className="font-semibold text-gray-900 dark:text-white">
-            Quick Actions
+            {t("dashboard.quickActions")}
           </h3>
           <QuickActionCard
             icon={<TrendingUp className="w-5 h-5" />}
-            label="Make Payment"
-            description="Pay monthly contribution"
+            label={t("dashboard.makePayment")}
+            description={t("dashboard.makePaymentDesc")}
             href="/dashboard/subscription"
           />
           <QuickActionCard
             icon={<FileText className="w-5 h-5" />}
-            label="Submit Claim"
-            description="Request treatment benefit"
+            label={t("dashboard.submitClaim")}
+            description={t("dashboard.submitClaimDesc")}
             href="/dashboard/claims"
           />
           <QuickActionCard
             icon={<MapPin className="w-5 h-5" />}
-            label="Find a Clinic"
-            description="Nearby dental clinics"
+            label={t("dashboard.findClinic")}
+            description={t("dashboard.findClinicDesc")}
             href="/dashboard/camps"
           />
         </div>
@@ -225,13 +230,13 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900 dark:text-white">
-              Upcoming Dental Clinics
+              {t("dashboard.upcomingClinics")}
             </h3>
             <Link
               href="/dashboard/camps"
               className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 text-sm font-medium flex items-center gap-1"
             >
-              View All <ArrowRight className="w-4 h-4" />
+              {t("dashboard.viewAll")} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

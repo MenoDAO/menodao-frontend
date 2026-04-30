@@ -165,8 +165,8 @@ export default function SubscriptionPage() {
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           {subscription
-            ? "Manage your membership and make payments"
-            : "Choose a package to start your dental care journey"}
+            ? t("subscription.manageDesc")
+            : t("subscription.chooseDesc")}
         </p>
       </div>
 
@@ -177,16 +177,22 @@ export default function SubscriptionPage() {
         >
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-white/80 text-sm">Current Package</p>
+              <p className="text-white/80 text-sm">
+                {t("subscription.currentPackage")}
+              </p>
               <h2 className="text-2xl font-bold mt-1">
-                {subscription.tier} Membership
+                {t("subscription.membership", { tier: subscription.tier })}
               </h2>
               <p className="text-white/80 mt-2">
-                KES {subscription.monthlyAmount}/month
+                KES {subscription.monthlyAmount}
+                {t("subscription.perMonth")}
               </p>
               <p className="text-white/60 text-sm mt-1">
-                Member since{" "}
-                {new Date(subscription.startDate).toLocaleDateString("en-KE")}
+                {t("subscription.memberSince", {
+                  date: new Date(subscription.startDate).toLocaleDateString(
+                    "en-KE",
+                  ),
+                })}
               </p>
             </div>
             <CreditCard className="w-12 h-12 text-white/30" />
@@ -195,7 +201,7 @@ export default function SubscriptionPage() {
           {/* Benefits */}
           <div className="mt-6">
             <h3 className="text-sm font-medium text-white/80 mb-2">
-              Your Benefits
+              {t("subscription.yourBenefits")}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {subscription.benefits?.map((benefit, i) => (
@@ -213,7 +219,7 @@ export default function SubscriptionPage() {
               onClick={() => setIsPaymentDialogOpen(true)}
               className="px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-white/90 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
             >
-              Pay KES {subscription.monthlyAmount}
+              {t("subscription.pay", { amount: subscription.monthlyAmount })}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -224,8 +230,8 @@ export default function SubscriptionPage() {
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           {subscription?.isActive
-            ? "Upgrade Your Package"
-            : "Choose Your Package"}
+            ? t("subscription.upgradePackage")
+            : t("subscription.choosePackage")}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {packages?.map((pkg: Package) => {
@@ -250,12 +256,12 @@ export default function SubscriptionPage() {
                   <div
                     className={`absolute top-0 left-0 right-0 py-1 text-center text-xs font-semibold text-white bg-gradient-to-r ${colors.gradient}`}
                   >
-                    CURRENT PLAN
+                    {t("subscription.currentPlanLabel")}
                   </div>
                 )}
                 {pkg.tier === "GOLD" && !isCurrentTier && (
                   <div className="absolute top-0 left-0 right-0 py-1 text-center text-xs font-semibold text-white bg-gradient-to-r from-yellow-400 to-yellow-600">
-                    RECOMMENDED
+                    {t("subscription.recommended")}
                   </div>
                 )}
 
@@ -276,7 +282,7 @@ export default function SubscriptionPage() {
                       KES {pkg.monthlyPrice}
                     </span>
                     <span className="text-gray-500 dark:text-gray-400">
-                      /month
+                      {t("subscription.perMonth")}
                     </span>
                   </div>
 
@@ -313,15 +319,15 @@ export default function SubscriptionPage() {
                     upgradeMutation.isPending ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : isCurrentTier ? (
-                      "Current Plan"
+                      t("subscription.currentPlanBtn")
                     ) : subscription?.isActive ? (
                       canUpgrade ? (
-                        "Upgrade"
+                        t("subscription.upgradeBtn")
                       ) : (
-                        "Lower Tier"
+                        t("subscription.lowerTier")
                       )
                     ) : (
-                      "Select Package"
+                      t("subscription.selectPackage")
                     )}
                   </button>
 
@@ -335,7 +341,7 @@ export default function SubscriptionPage() {
                       {devMockPaymentMutation.isPending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <>⚡ DEV: Activate Instantly</>
+                        <>{t("subscription.devActivate")}</>
                       )}
                     </button>
                   )}

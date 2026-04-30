@@ -21,12 +21,12 @@ import {
 import { useTranslation } from "@/lib/i18n";
 
 const claimTypes = [
-  { value: "DENTAL_CHECKUP", label: "Dental Checkup" },
-  { value: "DENTAL_CLEANING", label: "Dental Cleaning" },
-  { value: "DENTAL_FILLING", label: "Dental Filling" },
-  { value: "DENTAL_EXTRACTION", label: "Dental Extraction" },
-  { value: "ROOT_CANAL", label: "Root Canal" },
-  { value: "OTHER", label: "Other Treatment" },
+  { value: "DENTAL_CHECKUP", labelKey: "claims.type.checkup" },
+  { value: "DENTAL_CLEANING", labelKey: "claims.type.cleaning" },
+  { value: "DENTAL_FILLING", labelKey: "claims.type.filling" },
+  { value: "DENTAL_EXTRACTION", labelKey: "claims.type.extraction" },
+  { value: "ROOT_CANAL", labelKey: "claims.type.rootCanal" },
+  { value: "OTHER", labelKey: "claims.type.other" },
 ];
 
 const claimSchema = z.object({
@@ -135,8 +135,15 @@ export default function ClaimsPage() {
 
   const waitingPeriodMessage = !canSubmitClaims
     ? waitingPeriodStatus?.consultationsExtractions?.daysRemaining
-      ? `Claims available in ${waitingPeriodStatus.consultationsExtractions.daysRemaining} days (${projectedDate?.toLocaleDateString("en-KE", { year: "numeric", month: "long", day: "numeric" })})`
-      : "Waiting period in effect"
+      ? t("claims.availableIn", {
+          days: waitingPeriodStatus.consultationsExtractions.daysRemaining,
+          date: projectedDate?.toLocaleDateString("en-KE", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+        })
+      : t("claims.waitingPeriod")
     : null;
 
   return (
@@ -147,7 +154,7 @@ export default function ClaimsPage() {
             {t("claims.title")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Submit and track your benefit claims
+            {t("claims.submitAndTrack")}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -157,7 +164,7 @@ export default function ClaimsPage() {
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-5 h-5" />
-            New Claim
+            {t("claims.newClaim")}
           </button>
           {waitingPeriodMessage && (
             <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -173,7 +180,7 @@ export default function ClaimsPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700">
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
-              Claims Used
+              {t("claims.claimsUsed")}
             </p>
             <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">
               {summary.claimsUsed}
@@ -181,7 +188,7 @@ export default function ClaimsPage() {
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700">
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
-              Claims Left
+              {t("claims.claimsLeft")}
             </p>
             <p className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
               {summary.claimsRemaining}
@@ -189,7 +196,7 @@ export default function ClaimsPage() {
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700">
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
-              Amount Claimed
+              {t("claims.amountClaimed")}
             </p>
             <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-1 truncate">
               KES {summary.amountClaimed.toLocaleString()}
@@ -197,12 +204,12 @@ export default function ClaimsPage() {
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700">
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
-              Limit Left
+              {t("claims.limitLeft")}
             </p>
             <p className="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 truncate">
               {isSubscriptionActive
                 ? `KES ${correctRemainingLimit.toLocaleString()}`
-                : "Pending Payment"}
+                : t("claims.pendingPayment")}
             </p>
           </div>
         </div>
@@ -212,7 +219,7 @@ export default function ClaimsPage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="font-semibold text-gray-900 dark:text-white">
-            Claim History
+            {t("claims.claimHistory")}
           </h2>
         </div>
 
@@ -224,10 +231,10 @@ export default function ClaimsPage() {
           <div className="text-center py-12">
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              No Claims Yet
+              {t("claims.noClaimsYet")}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Submit your first claim to get started
+              {t("claims.submitFirst")}
             </p>
           </div>
         ) : (
@@ -245,8 +252,13 @@ export default function ClaimsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <h3 className="font-medium text-gray-900 dark:text-white">
-                          {claimTypes.find((t) => t.value === claim.claimType)
-                            ?.label || claim.claimType}
+                          {claimTypes.find((ct) => ct.value === claim.claimType)
+                            ? t(
+                                claimTypes.find(
+                                  (ct) => ct.value === claim.claimType,
+                                )!.labelKey,
+                              )
+                            : claim.claimType}
                         </h3>
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${status.bg} ${status.text} flex items-center gap-1`}
@@ -277,7 +289,7 @@ export default function ClaimsPage() {
                           rel="noopener noreferrer"
                           className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1 justify-end mt-1"
                         >
-                          View on Chain
+                          {t("claims.viewOnChain")}
                           <ExternalLink className="w-3 h-3" />
                         </a>
                       )}
@@ -296,7 +308,7 @@ export default function ClaimsPage() {
           <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
-                Submit New Claim
+                {t("claims.submitNew")}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -316,18 +328,18 @@ export default function ClaimsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Claim Type
+                  {t("claims.claimType")}
                 </label>
                 <select
                   {...register("claimType")}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-gray-900"
                 >
                   <option value="" className="text-gray-500">
-                    Select type...
+                    {t("claims.selectType")}
                   </option>
                   {claimTypes.map((type) => (
                     <option key={type.value} value={type.value}>
-                      {type.label}
+                      {t(type.labelKey)}
                     </option>
                   ))}
                 </select>
@@ -340,12 +352,12 @@ export default function ClaimsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Amount (KES)
+                  {t("claims.amountKES")}
                 </label>
                 <input
                   {...register("amount", { valueAsNumber: true })}
                   type="number"
-                  placeholder="Enter amount"
+                  placeholder={t("claims.enterAmount")}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-gray-900 placeholder-gray-500"
                 />
                 {errors.amount && (
@@ -357,12 +369,12 @@ export default function ClaimsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  {t("claims.description")}
                 </label>
                 <textarea
                   {...register("description")}
                   rows={4}
-                  placeholder="Describe the treatment you received..."
+                  placeholder={t("claims.descPlaceholder")}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none text-gray-900 placeholder-gray-500"
                 />
                 {errors.description && (
@@ -378,7 +390,7 @@ export default function ClaimsPage() {
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -388,7 +400,7 @@ export default function ClaimsPage() {
                   {createClaimMutation.isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    "Submit Claim"
+                    t("claims.submitClaim")
                   )}
                 </button>
               </div>
