@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { Phone, Loader2, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -98,11 +100,9 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-2xl p-8 animate-fade-in">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 font-outfit">
-              Welcome Back
+              {t("auth.login.title")}
             </h2>
-            <p className="text-gray-600 mt-2">
-              Enter your phone number to continue
-            </p>
+            <p className="text-gray-600 mt-2">{t("auth.login.subtitle")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -111,7 +111,7 @@ export default function LoginPage() {
                 htmlFor="phoneNumber"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Phone Number
+                {t("auth.login.phone")}
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -120,7 +120,7 @@ export default function LoginPage() {
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => handlePhoneChange(e.target.value)}
-                  placeholder="0712345678"
+                  placeholder={t("auth.login.phonePlaceholder")}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-gray-900 placeholder-gray-400"
                   autoFocus
                   required
@@ -157,11 +157,11 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Checking...
+                  {t("common.loading")}
                 </>
               ) : (
                 <>
-                  Continue
+                  {t("auth.login.submit")}
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -170,12 +170,12 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-3">
             <p className="text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
+              {t("auth.login.noAccount")}{" "}
               <Link
                 href="/sign-up"
                 className="text-emerald-600 hover:text-emerald-700 font-medium"
               >
-                Sign Up
+                {t("auth.login.signUp")}
               </Link>
             </p>
             <div className="flex flex-col items-center gap-2">

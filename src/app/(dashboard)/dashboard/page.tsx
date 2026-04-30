@@ -15,6 +15,7 @@ import {
   Wallet,
   Shield,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 const tierColors = {
   BRONZE: "from-amber-600 to-amber-800",
@@ -30,6 +31,7 @@ const tierBg = {
 
 export default function DashboardPage() {
   const member = useAuthStore((state) => state.member);
+  const { t } = useTranslation();
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile"],
@@ -69,7 +71,10 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white font-outfit">
-            Welcome back, {member?.fullName?.split(" ")[0] || "Member"}! 👋
+            {t("dashboard.welcome", {
+              name: member?.fullName?.split(" ")[0] || "Member",
+            })}{" "}
+            👋
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Here&apos;s what&apos;s happening with your membership

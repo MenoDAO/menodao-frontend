@@ -18,6 +18,7 @@ import {
   ExternalLink,
   X,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 const claimTypes = [
   { value: "DENTAL_CHECKUP", label: "Dental Checkup" },
@@ -53,6 +54,7 @@ const statusColors = {
 export default function ClaimsPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { t } = useTranslation();
 
   const { data: claimsData, isLoading } = useQuery({
     queryKey: ["claims"],
@@ -142,7 +144,7 @@ export default function ClaimsPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">
-            Claims
+            {t("claims.title")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Submit and track your benefit claims

@@ -365,6 +365,7 @@ export interface Member {
   location?: string;
   walletAddress?: string;
   isVerified: boolean;
+  preferredLanguage?: string | null;
   subscription?: Subscription;
 }
 

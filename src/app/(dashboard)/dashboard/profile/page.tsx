@@ -19,6 +19,8 @@ import {
   Search,
   Check,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -31,6 +33,7 @@ export default function ProfilePage() {
   const queryClient = useQueryClient();
   const member = useAuthStore((state) => state.member);
   const updateMember = useAuthStore((state) => state.updateMember);
+  const { t } = useTranslation();
 
   // County dropdown state
   const [isCountyDropdownOpen, setIsCountyDropdownOpen] = useState(false);
@@ -114,10 +117,10 @@ export default function ProfilePage() {
     <div className="space-y-6 animate-fade-in max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">
-          Profile
+          {t("profile.title")}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Manage your account information
+          {t("common.save")}
         </p>
       </div>
 
@@ -133,7 +136,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Full Name
+                {t("profile.fullName")}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -153,7 +156,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Phone Number
+                {t("profile.phone")}
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -256,12 +259,27 @@ export default function ProfilePage() {
               ) : (
                 <>
                   <Save className="w-5 h-5" />
-                  Save Changes
+                  {t("profile.save")}
                 </>
               )}
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Language Preferences */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="font-semibold text-gray-900 dark:text-white">
+            {t("profile.language")}
+          </h2>
+        </div>
+        <div className="p-6">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {t("profile.languageLabel")}
+          </label>
+          <LanguageSwitcher />
+        </div>
       </div>
 
       {/* Wallet & NFT Section */}
