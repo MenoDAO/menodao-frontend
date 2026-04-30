@@ -80,7 +80,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Top Navigation */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div className="w-full mx-auto px-3 sm:px-6 lg:px-12">
+        <div className="w-full mx-auto px-3 sm:px-6 lg:px-20">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link
@@ -94,7 +94,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </Link>
 
             {/* Desktop Nav — evenly spread across available space */}
-            <nav className="hidden md:flex flex-1 items-center justify-evenly mx-2 overflow-hidden">
+            <nav className="hidden md:flex flex-1 items-center justify-evenly mx-4 overflow-hidden gap-0.5">
               {navItemDefs.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
@@ -238,10 +238,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Footer language switcher */}
       <footer className="border-t border-gray-200 dark:border-gray-700 py-4">
         <div className="w-full mx-auto px-3 sm:px-4 lg:px-6 flex items-center justify-center gap-3">
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-gray-600 dark:text-gray-400">
             {t("common.language")}:
           </span>
-          <LanguageSwitcher className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 bg-transparent" />
+          <LanguageSwitcher />
         </div>
       </footer>
 

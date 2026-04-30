@@ -49,7 +49,7 @@ export default function LanguageSwitcher({
     <select
       value={currentLocale}
       onChange={(e) => handleChange(e.target.value as Locale)}
-      className={`text-sm bg-transparent border border-gray-300 rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500 ${className}`}
+      className={`text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500 ${className}`}
       aria-label="Select language"
     >
       <option value="en">English</option>
