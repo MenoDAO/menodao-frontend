@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import i18n, { type Locale } from "@/lib/i18n";
+import { api } from "@/lib/api";
 
 const LOCALE_STORAGE_KEY = "menodao_preferred_language";
 
@@ -28,13 +29,9 @@ export default function LanguageSwitcher({
     await i18n.changeLanguage(locale);
     localStorage.setItem(LOCALE_STORAGE_KEY, locale);
 
-    // Fire-and-forget: persist to backend
+    // Fire-and-forget: persist to backend using authenticated API client
     try {
-      await fetch("/api/members/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ preferredLanguage: locale }),
-      });
+      await api.updateProfile({ preferredLanguage: locale });
     } catch (err) {
       console.error(
         "[LanguageSwitcher] Failed to persist language preference:",

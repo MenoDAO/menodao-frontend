@@ -128,7 +128,11 @@ class ApiClient {
     return this.request<MemberProfile>("/members/profile");
   }
 
-  async updateProfile(data: { fullName?: string; location?: string }) {
+  async updateProfile(data: {
+    fullName?: string;
+    location?: string;
+    preferredLanguage?: string;
+  }) {
     return this.request<Member>("/members/profile", {
       method: "PATCH",
       body: JSON.stringify(data),

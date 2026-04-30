@@ -24,6 +24,7 @@ import { useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import i18n, { detectLocale, useTranslation } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { api } from "@/lib/api";
 
 const navItemDefs = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: Home },
@@ -133,11 +134,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                     const locale = e.target.value as "en" | "sw";
                     i18n.changeLanguage(locale);
                     localStorage.setItem("menodao_preferred_language", locale);
-                    fetch("/api/members/profile", {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ preferredLanguage: locale }),
-                    }).catch(() => {});
+                    api
+                      .updateProfile({ preferredLanguage: locale })
+                      .catch(() => {});
                   }}
                   defaultValue={
                     typeof window !== "undefined"
