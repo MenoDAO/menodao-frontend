@@ -39,11 +39,13 @@ describe("LoginPage", () => {
 
       expect(screen.getByText("Welcome Back")).toBeInTheDocument();
       expect(
-        screen.getByText("Enter your phone number to continue"),
+        screen.getByText("Sign in to your MenoDAO account"),
       ).toBeInTheDocument();
-      expect(screen.getByPlaceholderText("0712345678")).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /continue/i }),
+        screen.getByPlaceholderText("+254 7XX XXX XXX"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /send otp/i }),
       ).toBeInTheDocument();
     });
 
@@ -55,10 +57,10 @@ describe("LoginPage", () => {
       render(<LoginPage />);
       const user = userEvent.setup();
 
-      const phoneInput = screen.getByPlaceholderText("0712345678");
+      const phoneInput = screen.getByPlaceholderText("+254 7XX XXX XXX");
       await user.type(phoneInput, "0712345678");
 
-      const submitButton = screen.getByRole("button", { name: /continue/i });
+      const submitButton = screen.getByRole("button", { name: /send otp/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -82,10 +84,10 @@ describe("LoginPage", () => {
       render(<LoginPage />);
       const user = userEvent.setup();
 
-      const phoneInput = screen.getByPlaceholderText("0712345678");
+      const phoneInput = screen.getByPlaceholderText("+254 7XX XXX XXX");
       await user.type(phoneInput, "0712345678");
 
-      const submitButton = screen.getByRole("button", { name: /continue/i });
+      const submitButton = screen.getByRole("button", { name: /send otp/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -102,10 +104,10 @@ describe("LoginPage", () => {
       render(<LoginPage />);
       const user = userEvent.setup();
 
-      const phoneInput = screen.getByPlaceholderText("0712345678");
+      const phoneInput = screen.getByPlaceholderText("+254 7XX XXX XXX");
       await user.type(phoneInput, "0712345678");
 
-      const submitButton = screen.getByRole("button", { name: /continue/i });
+      const submitButton = screen.getByRole("button", { name: /send otp/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -124,10 +126,10 @@ describe("LoginPage", () => {
       render(<LoginPage />);
       const user = userEvent.setup();
 
-      const phoneInput = screen.getByPlaceholderText("0712345678");
+      const phoneInput = screen.getByPlaceholderText("+254 7XX XXX XXX");
       await user.type(phoneInput, "+254712345678");
 
-      const submitButton = screen.getByRole("button", { name: /continue/i });
+      const submitButton = screen.getByRole("button", { name: /send otp/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -144,10 +146,10 @@ describe("LoginPage", () => {
       render(<LoginPage />);
       const user = userEvent.setup();
 
-      const phoneInput = screen.getByPlaceholderText("0712345678");
+      const phoneInput = screen.getByPlaceholderText("+254 7XX XXX XXX");
       await user.type(phoneInput, "0712345678");
 
-      const submitButton = screen.getByRole("button", { name: /continue/i });
+      const submitButton = screen.getByRole("button", { name: /send otp/i });
       fireEvent.click(submitButton);
 
       // Check button is disabled during loading
@@ -169,7 +171,7 @@ describe("LoginPage", () => {
     it("has link to sign up", () => {
       render(<LoginPage />);
 
-      const signUpLinks = screen.getAllByText("Sign Up");
+      const signUpLinks = screen.getAllByText(/sign up/i);
       expect(signUpLinks.length).toBeGreaterThan(0);
     });
 

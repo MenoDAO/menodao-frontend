@@ -13,6 +13,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import PaymentDialog from "./PaymentDialog";
+import { useTranslation } from "@/lib/i18n";
 
 const tierIcons = {
   BRONZE: Shield,
@@ -46,6 +47,7 @@ const tierColors = {
 
 export default function SubscriptionPage() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [selectedTier, setSelectedTier] = useState<
     "BRONZE" | "SILVER" | "GOLD" | null
   >(null);
@@ -159,7 +161,7 @@ export default function SubscriptionPage() {
     <div className="space-y-8 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">
-          My Package
+          {t("subscription.title")}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           {subscription

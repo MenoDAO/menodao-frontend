@@ -5,12 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, Loader2, ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { useTranslation } from "@/lib/i18n";
 
 function VerifyOTPContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const flow = searchParams.get("flow") as "signup" | "login" | null;
   const phone = searchParams.get("phone");
+  const { t } = useTranslation();
 
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -126,10 +128,10 @@ function VerifyOTPContent() {
             <Shield className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Verify Your Phone
+            {t("auth.verifyOtp.title")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            We sent a 6-digit code to
+            {t("auth.verifyOtp.subtitle")}
             <br />
             <span className="font-semibold text-gray-900 dark:text-white">
               {phone}
@@ -146,7 +148,7 @@ function VerifyOTPContent() {
                 htmlFor="otp"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center"
               >
-                Enter Verification Code
+                {t("auth.verifyOtp.codeLabel")}
               </label>
               <input
                 id="otp"
@@ -184,10 +186,10 @@ function VerifyOTPContent() {
               {isVerifying ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Verifying...
+                  {t("common.loading")}
                 </>
               ) : (
-                "Verify & Continue"
+                t("auth.verifyOtp.submit")
               )}
             </button>
           </form>
@@ -202,7 +204,7 @@ function VerifyOTPContent() {
               onClick={handleResendOtp}
               className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-semibold text-sm"
             >
-              Resend OTP
+              {t("auth.verifyOtp.resend")}
             </button>
           </div>
 
@@ -214,7 +216,7 @@ function VerifyOTPContent() {
               className="w-full flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 text-sm"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to {flow === "signup" ? "Sign Up" : "Login"}
+              {t("auth.verifyOtp.back")}
             </button>
           </div>
         </div>
