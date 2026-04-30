@@ -80,18 +80,21 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Top Navigation */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full mx-auto px-3 sm:px-4 lg:px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center gap-3">
-              <img src="/logo.png" alt="MenoDAO" className="w-10 h-10" />
-              <span className="font-bold text-xl text-gray-900 dark:text-white font-outfit hidden sm:block">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 shrink-0"
+            >
+              <img src="/logo.png" alt="MenoDAO" className="w-9 h-9" />
+              <span className="font-bold text-lg text-gray-900 dark:text-white font-outfit hidden sm:block">
                 MenoDAO
               </span>
             </Link>
 
-            {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center overflow-hidden lg:gap-0.5 xl:gap-1">
+            {/* Desktop Nav — evenly spread across available space */}
+            <nav className="hidden md:flex flex-1 items-center justify-evenly mx-2 overflow-hidden">
               {navItemDefs.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
@@ -99,13 +102,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-2 whitespace-nowrap lg:px-2 lg:py-2 lg:text-xs xl:px-3 xl:text-sm px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
+                    className={`flex items-center gap-1 whitespace-nowrap px-1.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                       isActive
                         ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
                         : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
                     {t(item.labelKey)}
                   </Link>
                 );
@@ -113,25 +116,48 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </nav>
 
             {/* User Menu */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 shrink-0">
               {/* Desktop: Show user info and logout */}
-              <div className="hidden md:flex items-center gap-3 min-w-0 flex-shrink-0">
+              <div className="hidden md:flex items-center gap-2">
                 <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-xs font-medium text-gray-900 dark:text-white leading-tight">
                     {member?.fullName || "Member"}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
                     {member?.phoneNumber}
                   </p>
                 </div>
-                <LanguageSwitcher className="hidden md:block" />
+                {/* Subtle language switcher — blends with header */}
+                <select
+                  onChange={(e) => {
+                    const locale = e.target.value as "en" | "sw";
+                    i18n.changeLanguage(locale);
+                    localStorage.setItem("menodao_preferred_language", locale);
+                    fetch("/api/members/profile", {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ preferredLanguage: locale }),
+                    }).catch(() => {});
+                  }}
+                  defaultValue={
+                    typeof window !== "undefined"
+                      ? localStorage.getItem("menodao_preferred_language") ||
+                        "en"
+                      : "en"
+                  }
+                  className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-0 rounded px-1.5 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  aria-label="Select language"
+                >
+                  <option value="en">EN</option>
+                  <option value="sw">SW</option>
+                </select>
                 <ThemeToggle />
                 <button
                   onClick={handleLogout}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   title={t("nav.logout")}
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
 
@@ -205,9 +231,19 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full mx-auto px-3 sm:px-4 lg:px-6 py-8">
         {children}
       </main>
+
+      {/* Footer language switcher */}
+      <footer className="border-t border-gray-200 dark:border-gray-700 py-4">
+        <div className="w-full mx-auto px-3 sm:px-4 lg:px-6 flex items-center justify-center gap-3">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {t("common.language")}:
+          </span>
+          <LanguageSwitcher className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 bg-transparent" />
+        </div>
+      </footer>
 
       {/* Notification Permission Prompt */}
       <NotificationPrompt />
