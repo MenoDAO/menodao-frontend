@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, Camp, CampWithDistance } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 import {
   MapPin,
   Calendar,
@@ -44,6 +45,7 @@ const mapOptions = {
 
 export default function CampsPage() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
@@ -159,10 +161,10 @@ export default function CampsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">
-            Find Dental Clinics
+            {t("clinic.findTitle")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Discover upcoming dental clinics near you
+            {t("clinic.findSubtitle")}
           </p>
         </div>
 
@@ -170,25 +172,17 @@ export default function CampsPage() {
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           <button
             onClick={() => setViewMode("list")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === "list"
-                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === "list" ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"}`}
           >
             <List className="w-4 h-4" />
-            List
+            {t("clinic.listView")}
           </button>
           <button
             onClick={() => setViewMode("map")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === "map"
-                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === "map" ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"}`}
           >
             <Map className="w-4 h-4" />
-            Map
+            {t("clinic.mapView")}
           </button>
         </div>
       </div>
@@ -199,12 +193,12 @@ export default function CampsPage() {
           <div>
             <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
               <Navigation className="w-5 h-5 sm:w-6 sm:h-6" />
-              Find Camps Near You
+              {t("clinic.findNearYou")}
             </h2>
             <p className="text-emerald-100 mt-1 text-sm sm:text-base">
               {userLocation
-                ? "Showing clinics sorted by distance from your location"
-                : "Enable location to find the nearest dental clinics"}
+                ? t("clinic.showingByDistance")
+                : t("clinic.enableLocation")}
             </p>
           </div>
           <button
@@ -215,17 +209,17 @@ export default function CampsPage() {
             {isLocating ? (
               <>
                 <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                Locating...
+                {t("clinic.locating")}
               </>
             ) : userLocation ? (
               <>
                 <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                Location Found
+                {t("clinic.locationFound")}
               </>
             ) : (
               <>
                 <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
-                Use My Location
+                {t("clinic.useMyLocation")}
               </>
             )}
           </button>
@@ -242,7 +236,7 @@ export default function CampsPage() {
       {myRegistrations && myRegistrations.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            My Registrations
+            {t("clinic.myRegistrations")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {myRegistrations
@@ -266,11 +260,7 @@ export default function CampsPage() {
                       <p className="text-sm text-emerald-600 mt-2">
                         {new Date(reg.camp.startDate).toLocaleDateString(
                           "en-KE",
-                          {
-                            weekday: "long",
-                            month: "long",
-                            day: "numeric",
-                          },
+                          { weekday: "long", month: "long", day: "numeric" },
                         )}
                       </p>
                     </div>
@@ -279,7 +269,7 @@ export default function CampsPage() {
                       disabled={cancelMutation.isPending}
                       className="text-sm text-red-600 hover:text-red-700 font-medium"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                   </div>
                 </div>
@@ -404,15 +394,17 @@ export default function CampsPage() {
           <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow" />
-              <span className="text-gray-600">Your Location</span>
+              <span className="text-gray-600">{t("clinic.yourLocation")}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-red-500" />
-              <span className="text-gray-600">Available Clinic</span>
+              <span className="text-gray-600">
+                {t("clinic.availableClinic")}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-emerald-500" />
-              <span className="text-gray-600">Registered</span>
+              <span className="text-gray-600">{t("common.registered")}</span>
             </div>
           </div>
         </div>
@@ -422,7 +414,9 @@ export default function CampsPage() {
       {viewMode === "list" && (
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            {userLocation ? "Clinics Near You" : "Upcoming Clinics"}
+            {userLocation
+              ? t("clinic.clinicsNearYou")
+              : t("clinic.upcomingClinics")}
           </h2>
 
           {campsLoading || nearbyLoading ? (
@@ -433,10 +427,10 @@ export default function CampsPage() {
             <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl">
               <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                No Upcoming Clinics
+                {t("clinic.noUpcoming")}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Check back later for new dental clinic announcements
+                {t("clinic.noUpcomingDesc")}
               </p>
             </div>
           ) : (
@@ -444,7 +438,6 @@ export default function CampsPage() {
               {campsToShow.map((camp: Camp | CampWithDistance) => {
                 const campWithDistance = camp as CampWithDistance;
                 const registered = isRegistered(camp.id);
-
                 return (
                   <div
                     key={camp.id}
@@ -461,7 +454,6 @@ export default function CampsPage() {
                           </span>
                         )}
                       </div>
-
                       <h3 className="font-semibold text-gray-900 dark:text-white text-base sm:text-lg">
                         {camp.name}
                       </h3>
@@ -471,7 +463,6 @@ export default function CampsPage() {
                       <p className="text-gray-500 dark:text-gray-500 text-xs sm:text-sm line-clamp-1">
                         {camp.address}
                       </p>
-
                       <div className="mt-3 sm:mt-4 space-y-1.5 sm:space-y-2">
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                           <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -490,24 +481,20 @@ export default function CampsPage() {
                           <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                           {new Date(camp.startDate).toLocaleTimeString(
                             "en-KE",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
+                            { hour: "2-digit", minute: "2-digit" },
                           )}
                         </div>
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                           <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                          Capacity: {camp.capacity}
+                          {t("clinic.capacity", { count: camp.capacity })}
                         </div>
                       </div>
                     </div>
-
                     <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
                       {registered ? (
                         <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-medium text-sm">
                           <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                          Registered
+                          {t("common.registered")}
                         </div>
                       ) : (
                         <button
@@ -518,7 +505,7 @@ export default function CampsPage() {
                           {registerMutation.isPending ? (
                             <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                           ) : (
-                            "Register for Clinic"
+                            t("clinic.registerForClinic")
                           )}
                         </button>
                       )}

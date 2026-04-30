@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api, MemberHistoryResponse, MemberVisit } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 import {
   Calendar,
   DollarSign,
@@ -19,6 +20,7 @@ export default function MemberHistoryPage() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [expandedVisits, setExpandedVisits] = useState<Set<string>>(new Set());
+  const { t } = useTranslation();
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -47,7 +49,7 @@ export default function MemberHistoryPage() {
     return (
       <div className="p-6 max-w-6xl mx-auto">
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading your treatment history...</div>
+          <div className="text-gray-600">{t("history.loadingHistory")}</div>
         </div>
       </div>
     );
@@ -62,7 +64,7 @@ export default function MemberHistoryPage() {
             onClick={() => window.location.reload()}
             className="mt-2 text-red-600 hover:text-red-800 underline"
           >
-            Try again
+            {t("history.tryAgain")}
           </button>
         </div>
       </div>
@@ -72,21 +74,19 @@ export default function MemberHistoryPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">My Visits</h1>
-        <p className="text-gray-600 mt-2">
-          View your complete dental care journey with MenoDAO
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {t("history.pageTitle")}
+        </h1>
+        <p className="text-gray-600 mt-2">{t("history.pageSubtitle")}</p>
       </div>
 
       {history && history.visits.length === 0 && (
         <div className="bg-gray-50 rounded-lg p-12 text-center">
           <ClipboardList className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-700 mb-2">
-            No visits yet
+            {t("history.noVisitsTitle")}
           </h2>
-          <p className="text-gray-600">
-            Your visits to MenoDAO clinics will appear here
-          </p>
+          <p className="text-gray-600">{t("history.noVisitsDesc")}</p>
         </div>
       )}
 
@@ -100,7 +100,6 @@ export default function MemberHistoryPage() {
               onToggle={() => toggleVisit(visit.id)}
             />
           ))}
-
           {history.meta.totalPages > 1 && (
             <div className="flex items-center justify-between bg-white rounded-lg shadow p-4 mt-6">
               <button
@@ -108,10 +107,10 @@ export default function MemberHistoryPage() {
                 disabled={page === 1}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50"
               >
-                Previous
+                {t("common.previous")}
               </button>
               <span className="text-gray-600">
-                Page {page} of {history.meta.totalPages}
+                {t("common.page", { page, total: history.meta.totalPages })}
               </span>
               <button
                 onClick={() =>
@@ -120,7 +119,7 @@ export default function MemberHistoryPage() {
                 disabled={page === history.meta.totalPages}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50"
               >
-                Next
+                {t("common.next")}
               </button>
             </div>
           )}
@@ -137,6 +136,7 @@ interface VisitCardProps {
 }
 
 function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
+  const { t } = useTranslation();
   const hasDetails =
     visit.clinicalData?.chiefComplaint ||
     visit.clinicalData?.medicalHistory ||
@@ -172,7 +172,7 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
       {/* Procedures */}
       <div className="mb-4">
         <h4 className="text-sm font-semibold text-gray-700 mb-2">
-          Procedures:
+          {t("history.procedures")}
         </h4>
         <div className="space-y-1">
           {visit.procedures.map((proc, idx) => (
@@ -187,7 +187,7 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
       </div>
 
       <div className="text-xs text-gray-500 mb-4">
-        Treated by: {visit.treatedBy}
+        {t("history.treatedBy", { name: visit.treatedBy })}
       </div>
 
       {/* Impact Proof Badge */}
@@ -205,12 +205,12 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
             {isExpanded ? (
               <>
                 <ChevronUp className="w-4 h-4" />
-                Hide details
+                {t("history.hideDetails")}
               </>
             ) : (
               <>
                 <ChevronDown className="w-4 h-4" />
-                Show clinical details
+                {t("history.showDetails")}
               </>
             )}
           </button>
@@ -222,53 +222,56 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
                 visit.clinicalData?.clinicalNotes) && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    Clinical Notes:
+                    {t("history.clinicalNotes")}
                   </h4>
                   {visit.clinicalData.chiefComplaint && (
                     <p className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium">Chief Complaint:</span>{" "}
+                      <span className="font-medium">
+                        {t("history.chiefComplaint")}
+                      </span>{" "}
                       {visit.clinicalData.chiefComplaint}
                     </p>
                   )}
                   {visit.clinicalData.medicalHistory && (
                     <p className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium">Medical History:</span>{" "}
+                      <span className="font-medium">
+                        {t("history.medicalHistory")}
+                      </span>{" "}
                       {visit.clinicalData.medicalHistory}
                     </p>
                   )}
                   {visit.clinicalData.clinicalNotes && (
                     <p className="text-sm text-gray-600">
-                      <span className="font-medium">Notes:</span>{" "}
+                      <span className="font-medium">{t("history.notes")}</span>{" "}
                       {visit.clinicalData.clinicalNotes}
                     </p>
                   )}
                 </div>
               )}
-
               {visit.questionnaire && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    Dental Assessment:
+                    {t("history.dentalAssessment")}
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
                     {visit.questionnaire.dmftScore !== null &&
                       visit.questionnaire.dmftScore !== undefined && (
                         <div className="bg-blue-50 border border-blue-100 rounded-lg p-2">
                           <p className="text-xs text-blue-600 font-semibold uppercase mb-0.5">
-                            DMFT Score
+                            {t("history.dmftScore")}
                           </p>
                           <p className="text-lg font-bold text-blue-900">
                             {visit.questionnaire.dmftScore}
                           </p>
                           <p className="text-xs text-blue-500">
-                            Decayed + Missing + Filled
+                            {t("history.dmftDesc")}
                           </p>
                         </div>
                       )}
                     {visit.questionnaire.lastDentalVisit && (
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
                         <p className="text-xs text-gray-500 font-semibold uppercase mb-0.5">
-                          Last Dental Visit
+                          {t("history.lastDentalVisit")}
                         </p>
                         <p className="text-sm font-medium text-gray-800">
                           {visit.questionnaire.lastDentalVisit}
@@ -278,7 +281,7 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
                     {visit.questionnaire.cariesRisk && (
                       <div className="bg-orange-50 border border-orange-100 rounded-lg p-2">
                         <p className="text-xs text-orange-600 font-semibold uppercase mb-0.5">
-                          Caries Risk
+                          {t("history.cariesRisk")}
                         </p>
                         <p className="text-sm font-medium text-orange-900">
                           {visit.questionnaire.cariesRisk}
@@ -288,7 +291,7 @@ function VisitCard({ visit, isExpanded, onToggle }: VisitCardProps) {
                     {visit.questionnaire.oralHygieneIndex && (
                       <div className="bg-green-50 border border-green-100 rounded-lg p-2">
                         <p className="text-xs text-green-600 font-semibold uppercase mb-0.5">
-                          Oral Hygiene
+                          {t("history.oralHygiene")}
                         </p>
                         <p className="text-sm font-medium text-green-900">
                           {visit.questionnaire.oralHygieneIndex}

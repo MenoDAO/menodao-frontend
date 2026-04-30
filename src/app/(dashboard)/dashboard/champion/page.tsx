@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ChampionStats, ReferralEntry, WithdrawalRecord } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 import {
   Copy,
   Share2,
@@ -74,6 +75,7 @@ function Skeleton() {
 // ─── Withdrawal Status Badge ──────────────────────────────────────────────────
 
 function WithdrawalBadge({ status }: { status: WithdrawalRecord["status"] }) {
+  const { t } = useTranslation();
   const map: Record<WithdrawalRecord["status"], string> = {
     PENDING: "bg-yellow-100 text-yellow-700",
     PENDING_ADMIN_APPROVAL: "bg-orange-100 text-orange-700",
@@ -82,19 +84,19 @@ function WithdrawalBadge({ status }: { status: WithdrawalRecord["status"] }) {
     FAILED: "bg-red-100 text-red-700",
     COMPLETED: "bg-emerald-100 text-emerald-700",
   };
-  const label: Record<WithdrawalRecord["status"], string> = {
-    PENDING: "Pending",
-    PENDING_ADMIN_APPROVAL: "Awaiting Approval",
-    APPROVED: "Approved",
-    REJECTED: "Rejected",
-    FAILED: "Failed",
-    COMPLETED: "Completed",
+  const labelKey: Record<WithdrawalRecord["status"], string> = {
+    PENDING: "champion.statusPending",
+    PENDING_ADMIN_APPROVAL: "champion.statusAwaitingApproval",
+    APPROVED: "champion.statusApproved",
+    REJECTED: "champion.statusRejected",
+    FAILED: "champion.statusFailed",
+    COMPLETED: "champion.statusCompleted",
   };
   return (
     <span
       className={`text-xs px-2 py-1 rounded-full font-medium ${map[status]}`}
     >
-      {label[status]}
+      {t(labelKey[status])}
     </span>
   );
 }
@@ -103,6 +105,7 @@ function WithdrawalBadge({ status }: { status: WithdrawalRecord["status"] }) {
 
 export default function ChampionPage() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [referralsPage, setReferralsPage] = useState(1);
   const [copied, setCopied] = useState<"code" | "link" | null>(null);
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
@@ -182,7 +185,7 @@ export default function ChampionPage() {
   if (!stats) {
     return (
       <div className="text-center py-12 text-gray-500">
-        Failed to load champion data.
+        {t("champion.failedLoad")}
       </div>
     );
   }
@@ -195,17 +198,17 @@ export default function ChampionPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-outfit">
-            Champion Dashboard
+            {t("champion.dashboardTitle")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Track your referrals and commissions
+            {t("champion.dashboardSubtitle")}
           </p>
         </div>
         {stats.isGoldMember && (
           <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-300 rounded-2xl px-4 py-2">
             <Trophy className="w-5 h-5 text-yellow-600" />
             <span className="font-semibold text-yellow-700">
-              Gold Champion 🏆
+              {t("champion.goldStatus")}
             </span>
           </div>
         )}
@@ -217,10 +220,11 @@ export default function ChampionPage() {
           <div className="flex items-center gap-3">
             <Trophy className="w-8 h-8" />
             <div>
-              <p className="font-bold text-lg">Gold Champion Status Active</p>
+              <p className="font-bold text-lg">
+                {t("champion.goldBannerTitle")}
+              </p>
               <p className="text-yellow-100 text-sm">
-                Your monthly premium is waived. You have 25+ active paying
-                referrals.
+                {t("champion.goldBannerDesc")}
               </p>
             </div>
           </div>
@@ -230,29 +234,29 @@ export default function ChampionPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <StatCard
-          label="Total Referrals"
+          label={t("champion.totalReferrals")}
           value={stats.totalReferrals}
           icon={Users}
         />
         <StatCard
-          label="Active Referrals"
+          label={t("champion.activeReferrals")}
           value={stats.activeReferrals}
           icon={TrendingUp}
           highlight
         />
         <StatCard
-          label="Commissions Earned"
+          label={t("champion.commissionsEarned")}
           value={`KES ${stats.commissionsEarned.toLocaleString()}`}
           icon={DollarSign}
         />
         <StatCard
-          label="Commissions Balance"
+          label={t("champion.commissionsBalance")}
           value={`KES ${stats.commissionsBalance.toLocaleString()}`}
           icon={Wallet}
           highlight
         />
         <StatCard
-          label="Commissions Withdrawn"
+          label={t("champion.commissionsWithdrawn")}
           value={`KES ${stats.commissionsWithdrawn.toLocaleString()}`}
           icon={ArrowDownToLine}
         />
@@ -261,13 +265,11 @@ export default function ChampionPage() {
       {/* Referral Code & Invite Link */}
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 space-y-4">
         <h2 className="text-lg font-semibold text-emerald-800">
-          Your Referral Info
+          {t("champion.referralInfo")}
         </h2>
-
-        {/* Referral Code */}
         <div>
           <p className="text-sm text-emerald-700 mb-1 font-medium">
-            Referral Code
+            {t("champion.referralCodeLabel")}
           </p>
           <div className="flex items-center gap-2">
             <span className="font-mono text-xl font-bold text-emerald-900 bg-white border border-emerald-200 rounded-xl px-4 py-2 tracking-widest">
@@ -278,15 +280,13 @@ export default function ChampionPage() {
               className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-colors"
             >
               <Copy className="w-4 h-4" />
-              {copied === "code" ? "Copied!" : "Copy"}
+              {copied === "code" ? t("common.copied") : t("common.copy")}
             </button>
           </div>
         </div>
-
-        {/* Invite Link */}
         <div>
           <p className="text-sm text-emerald-700 mb-1 font-medium">
-            Invite Link
+            {t("champion.inviteLink")}
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-emerald-800 bg-white border border-emerald-200 rounded-xl px-3 py-2 break-all flex-1 min-w-0">
@@ -297,14 +297,14 @@ export default function ChampionPage() {
               className="flex items-center gap-1.5 px-3 py-2 bg-white border border-emerald-300 hover:bg-emerald-50 text-emerald-700 rounded-xl text-sm font-medium transition-colors"
             >
               <Copy className="w-4 h-4" />
-              {copied === "link" ? "Copied!" : "Copy Link"}
+              {copied === "link" ? t("common.copied") : t("champion.copyLink")}
             </button>
             <button
               onClick={() => handleShare(stats.inviteLink)}
               className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-colors"
             >
               <Share2 className="w-4 h-4" />
-              Share
+              {t("common.share")}
             </button>
           </div>
         </div>
@@ -313,19 +313,19 @@ export default function ChampionPage() {
       {/* Withdrawal Section */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">
-          Withdraw Commissions
+          {t("champion.withdrawTitle")}
         </h2>
-
         <div className="flex items-center gap-3">
           <Wallet className="w-6 h-6 text-emerald-600" />
           <div>
-            <p className="text-sm text-gray-500">Current Balance</p>
+            <p className="text-sm text-gray-500">
+              {t("champion.currentBalance")}
+            </p>
             <p className="text-2xl font-bold text-gray-900">
               KES {balance.toLocaleString()}
             </p>
           </div>
         </div>
-
         {withdrawMsg && (
           <div
             className={`rounded-xl p-3 text-sm ${withdrawMsg.type === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}
@@ -333,11 +333,9 @@ export default function ChampionPage() {
             {withdrawMsg.text}
           </div>
         )}
-
         {balance < 200 ? (
           <p className="text-sm text-gray-500 bg-gray-50 rounded-xl p-3 border border-gray-200">
-            Minimum withdrawal is KES 200. Current balance: KES{" "}
-            {balance.toLocaleString()}.
+            {t("champion.minWithdrawal", { balance: balance.toLocaleString() })}
           </p>
         ) : !showWithdrawForm ? (
           <button
@@ -347,7 +345,7 @@ export default function ChampionPage() {
             }}
             className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors"
           >
-            Withdraw
+            {t("common.withdraw")}
           </button>
         ) : (
           <form
@@ -356,7 +354,7 @@ export default function ChampionPage() {
           >
             <div>
               <label className="block text-sm text-gray-600 mb-1">
-                Amount (KES)
+                {t("common.amount")}
               </label>
               <input
                 type="number"
@@ -374,7 +372,9 @@ export default function ChampionPage() {
               disabled={withdrawMutation.isPending}
               className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-medium transition-colors"
             >
-              {withdrawMutation.isPending ? "Submitting..." : "Submit"}
+              {withdrawMutation.isPending
+                ? t("common.submitting")
+                : t("common.submit2")}
             </button>
             <button
               type="button"
@@ -384,16 +384,14 @@ export default function ChampionPage() {
               }}
               className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
           </form>
         )}
-
-        {/* Withdrawal History */}
         {!withdrawalsLoading && withdrawals && withdrawals.length > 0 && (
           <div className="mt-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              Withdrawal History
+              {t("champion.withdrawalHistory")}
             </h3>
             <div className="space-y-2">
               {withdrawals.map((w) => (
@@ -419,8 +417,9 @@ export default function ChampionPage() {
 
       {/* Referrals List */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">My Referrals</h2>
-
+        <h2 className="text-lg font-semibold text-gray-900">
+          {t("champion.myReferrals")}
+        </h2>
         {referralsLoading ? (
           <div className="space-y-2 animate-pulse">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -430,23 +429,22 @@ export default function ChampionPage() {
         ) : !referrals || referrals.data.length === 0 ? (
           <div className="text-center py-10 text-gray-400">
             <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p>No referrals yet. Share your invite link to get started!</p>
+            <p>{t("champion.noReferrals")}</p>
           </div>
         ) : (
           <>
-            {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100">
                     <th className="text-left py-2 px-3 text-gray-500 font-medium">
-                      Name
+                      {t("champion.colName")}
                     </th>
                     <th className="text-left py-2 px-3 text-gray-500 font-medium">
-                      Registered
+                      {t("champion.colRegistered")}
                     </th>
                     <th className="text-left py-2 px-3 text-gray-500 font-medium">
-                      First Payment
+                      {t("champion.colFirstPayment")}
                     </th>
                   </tr>
                 </thead>
@@ -467,11 +465,13 @@ export default function ChampionPage() {
                       <td className="py-3 px-3">
                         {r.firstPaymentCleared ? (
                           <span className="flex items-center gap-1 text-emerald-600">
-                            <CheckCircle className="w-4 h-4" /> Cleared ✅
+                            <CheckCircle className="w-4 h-4" />{" "}
+                            {t("champion.cleared")} ✅
                           </span>
                         ) : (
                           <span className="flex items-center gap-1 text-gray-400">
-                            <Clock className="w-4 h-4" /> Pending ⏳
+                            <Clock className="w-4 h-4" />{" "}
+                            {t("champion.pending")} ⏳
                           </span>
                         )}
                       </td>
@@ -480,8 +480,6 @@ export default function ChampionPage() {
                 </tbody>
               </table>
             </div>
-
-            {/* Mobile cards */}
             <div className="md:hidden space-y-2">
               {referrals.data.map((r: ReferralEntry) => (
                 <div
@@ -499,8 +497,6 @@ export default function ChampionPage() {
                 </div>
               ))}
             </div>
-
-            {/* Pagination */}
             {referrals.meta.totalPages > 1 && (
               <div className="flex items-center justify-between pt-2">
                 <button
@@ -508,10 +504,13 @@ export default function ChampionPage() {
                   disabled={referralsPage === 1}
                   className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm disabled:opacity-50"
                 >
-                  <ChevronLeft className="w-4 h-4" /> Previous
+                  <ChevronLeft className="w-4 h-4" /> {t("common.previous")}
                 </button>
                 <span className="text-sm text-gray-500">
-                  Page {referralsPage} of {referrals.meta.totalPages}
+                  {t("common.page", {
+                    page: referralsPage,
+                    total: referrals.meta.totalPages,
+                  })}
                 </span>
                 <button
                   onClick={() =>
@@ -522,7 +521,7 @@ export default function ChampionPage() {
                   disabled={referralsPage === referrals.meta.totalPages}
                   className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm disabled:opacity-50"
                 >
-                  Next <ChevronRight className="w-4 h-4" />
+                  {t("common.next")} <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             )}
