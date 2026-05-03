@@ -359,6 +359,17 @@ class ApiClient {
   async getLeaderboard() {
     return this.request<LeaderboardEntry[]>("/champions/leaderboard");
   }
+
+  async addDependant(data: { fullName: string; relationship: string }) {
+    return this.request<Dependant>("/members/dependants", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getDependants() {
+    return this.request<Dependant[]>("/members/dependants");
+  }
 }
 
 // Types
@@ -656,6 +667,15 @@ export interface LeaderboardEntry {
   activeReferrals: number;
   totalCommissionsEarned: number;
   memberSince: string;
+}
+
+export interface Dependant {
+  id: string;
+  memberId: string;
+  fullName: string;
+  relationship: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const api = new ApiClient(API_BASE_URL);
