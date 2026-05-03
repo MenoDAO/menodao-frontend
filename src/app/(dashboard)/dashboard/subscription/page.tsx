@@ -165,12 +165,97 @@ export default function SubscriptionPage() {
                 )}
 
                 {/* Tier icon */}
-                <div
-                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color.icon} flex items-center justify-center mb-4`}
-                >
-                  <span className="text-white font-bold text-sm">
-                    {tier[0]}
-                  </span>
+                <div className="w-12 h-12 mb-4">
+                  {tier === "BRONZE" && (
+                    <svg
+                      viewBox="0 0 48 48"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-full h-full drop-shadow-lg"
+                    >
+                      <path
+                        d="M24 4L30 16H44L33 25L37 38L24 30L11 38L15 25L4 16H18L24 4Z"
+                        fill="url(#bronze-fill)"
+                        stroke="#92400e"
+                        strokeWidth="1.5"
+                        strokeLinejoin="round"
+                      />
+                      <defs>
+                        <linearGradient
+                          id="bronze-fill"
+                          x1="4"
+                          y1="4"
+                          x2="44"
+                          y2="44"
+                          gradientUnits="userSpaceOnUse"
+                        >
+                          <stop stopColor="#f59e0b" />
+                          <stop offset="0.5" stopColor="#b45309" />
+                          <stop offset="1" stopColor="#78350f" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  )}
+                  {tier === "SILVER" && (
+                    <svg
+                      viewBox="0 0 48 48"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-full h-full drop-shadow-lg"
+                    >
+                      <path
+                        d="M24 4L30 16H44L33 25L37 38L24 30L11 38L15 25L4 16H18L24 4Z"
+                        fill="url(#silver-fill)"
+                        stroke="#94a3b8"
+                        strokeWidth="1.5"
+                        strokeLinejoin="round"
+                      />
+                      <defs>
+                        <linearGradient
+                          id="silver-fill"
+                          x1="4"
+                          y1="4"
+                          x2="44"
+                          y2="44"
+                          gradientUnits="userSpaceOnUse"
+                        >
+                          <stop stopColor="#f1f5f9" />
+                          <stop offset="0.5" stopColor="#94a3b8" />
+                          <stop offset="1" stopColor="#475569" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  )}
+                  {tier === "GOLD" && (
+                    <svg
+                      viewBox="0 0 48 48"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-full h-full drop-shadow-lg"
+                    >
+                      <path
+                        d="M24 4L30 16H44L33 25L37 38L24 30L11 38L15 25L4 16H18L24 4Z"
+                        fill="url(#gold-fill)"
+                        stroke="#d97706"
+                        strokeWidth="1.5"
+                        strokeLinejoin="round"
+                      />
+                      <defs>
+                        <linearGradient
+                          id="gold-fill"
+                          x1="4"
+                          y1="4"
+                          x2="44"
+                          y2="44"
+                          gradientUnits="userSpaceOnUse"
+                        >
+                          <stop stopColor="#fef08a" />
+                          <stop offset="0.5" stopColor="#eab308" />
+                          <stop offset="1" stopColor="#a16207" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  )}
                 </div>
 
                 {/* Tier name & price */}
