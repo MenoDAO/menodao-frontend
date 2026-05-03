@@ -370,6 +370,16 @@ class ApiClient {
   async getDependants() {
     return this.request<Dependant[]>("/members/dependants");
   }
+
+  async getClinicMapData() {
+    return this.request<ClinicMapItem[]>("/clinics/map");
+  }
+
+  async getNearbyClinics(lat: number, lng: number, radius = 50) {
+    return this.request<ClinicWithDistance[]>(
+      `/clinics/nearby?lat=${lat}&lng=${lng}&radius=${radius}`,
+    );
+  }
 }
 
 // Types
@@ -492,6 +502,22 @@ export interface CampWithDistance extends Camp {
 
 export interface CampDetails extends Camp {
   spotsRemaining: number;
+}
+
+export interface ClinicMapItem {
+  id: string;
+  name: string;
+  subCounty: string;
+  physicalLocation: string;
+  operatingHours: string;
+  whatsappNumber: string;
+  googleMapsLink: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface ClinicWithDistance extends ClinicMapItem {
+  distanceKm: number;
 }
 
 export interface CampRegistration {

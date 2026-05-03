@@ -249,6 +249,24 @@ class AdminApiClient {
     );
   }
 
+  async updateClinic(id: string, data: Partial<AdminClinic>) {
+    return this.request<AdminClinic>(`/admin/clinics/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createClinic(data: Record<string, unknown>) {
+    return this.request<AdminClinic>(`/admin/clinics`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getClinicBranches(id: string) {
+    return this.request<AdminClinic[]>(`/admin/clinics/${id}/branches`);
+  }
+
   // Payments
   async listPayments(params: {
     page?: number;
@@ -653,6 +671,9 @@ export interface AdminClinic {
   name: string;
   subCounty: string;
   physicalLocation: string;
+  googleMapsLink?: string | null;
+  operatingHours?: string;
+  operatesOnWeekends?: boolean;
   leadDentistName: string;
   ownerPhone: string;
   managerName?: string;
@@ -665,6 +686,12 @@ export interface AdminClinic {
   approvedAt?: string;
   activeDentalChairs: number;
   kmpdcRegNumber?: string;
+  // Geo fields
+  latitude: number | null;
+  longitude: number | null;
+  // Branch fields
+  parentClinicId: string | null;
+  branchName: string | null;
   createdAt: string;
   _count: { staffUsers: number };
 }

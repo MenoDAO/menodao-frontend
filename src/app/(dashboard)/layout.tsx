@@ -17,6 +17,7 @@ import {
   X,
   ClipboardList,
   Trophy,
+  Building2,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import NotificationPrompt from "./dashboard/NotificationPrompt";
@@ -41,6 +42,11 @@ const navItemDefs = [
   },
   { href: "/dashboard/champion", labelKey: "nav.champion", icon: Trophy },
   { href: "/dashboard/camps", labelKey: "nav.findClinic", icon: MapPin },
+  {
+    href: "/dashboard/clinics",
+    labelKey: "nav.partnerClinics",
+    icon: Building2,
+  },
   {
     href: "/dashboard/transactions",
     labelKey: "nav.blockchain",

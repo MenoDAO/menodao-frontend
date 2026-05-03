@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getApiUrl } from "@/lib/api";
+import { ClinicLocationPicker } from "@/components/ClinicLocationPicker";
 
 const API_URL = getApiUrl();
 
@@ -15,6 +16,8 @@ interface FormData {
   googleMapsLink: string;
   operatingHours: string;
   operatesOnWeekends: boolean;
+  latitude: string;
+  longitude: string;
   // Section 2
   leadDentistName: string;
   ownerPhone: string;
@@ -43,6 +46,8 @@ const INITIAL: FormData = {
   googleMapsLink: "",
   operatingHours: "",
   operatesOnWeekends: false,
+  latitude: "",
+  longitude: "",
   leadDentistName: "",
   ownerPhone: "",
   managerName: "",
@@ -106,7 +111,13 @@ export default function RegisterClinicPage() {
       const res = await fetch(`${API_URL}/clinics/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          latitude:
+            form.latitude !== "" ? parseFloat(form.latitude) : undefined,
+          longitude:
+            form.longitude !== "" ? parseFloat(form.longitude) : undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -248,6 +259,15 @@ export default function RegisterClinicPage() {
                 placeholder="https://maps.google.com/..."
               />
             </div>
+            <ClinicLocationPicker
+              latitude={form.latitude}
+              longitude={form.longitude}
+              onLatChange={(v) => setForm((prev) => ({ ...prev, latitude: v }))}
+              onLngChange={(v) =>
+                setForm((prev) => ({ ...prev, longitude: v }))
+              }
+              theme="light"
+            />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Standard Operating Hours *</label>
