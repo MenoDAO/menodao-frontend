@@ -135,13 +135,16 @@ export default function SubscriptionPage() {
             const hasActiveSub = subscription?.isActive === true;
             const isHigherTier =
               hasActiveSub && tierOrder[tier] > tierOrder[subscription!.tier];
+            const isLowerTier =
+              hasActiveSub && tierOrder[tier] < tierOrder[subscription!.tier];
             const isRecommended = tier === "GOLD" && !hasActiveSub;
+            const isDisabled = isCurrentTier || isLowerTier;
 
             return (
               <div
                 key={tier}
                 className={`animate-fade-slide-up opacity-0 relative backdrop-blur-md ${color.bg} dark:bg-gray-900/40 border ${color.border} rounded-2xl p-6 ${
-                  isCurrentTier
+                  isDisabled
                     ? ""
                     : "hover:scale-105 hover:shadow-xl transition-all duration-200"
                 }`}
@@ -195,23 +198,39 @@ export default function SubscriptionPage() {
                       <span>{feature}</span>
                     </li>
                   ))}
+                  {/* MenoAI benefit — all tiers */}
+                  <li className="flex items-start gap-2 text-sm text-gray-300">
+                    <Check
+                      className={`w-4 h-4 ${color.text} shrink-0 mt-0.5`}
+                    />
+                    <span className="flex items-center gap-1.5">
+                      MenoAI WhatsApp Chatbot
+                      <span className="text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full leading-none">
+                        soon
+                      </span>
+                    </span>
+                  </li>
                 </ul>
 
                 {/* Action button */}
                 <button
-                  onClick={() => !isCurrentTier && handleCardAction(tier)}
-                  disabled={isCurrentTier}
+                  onClick={() => !isDisabled && handleCardAction(tier)}
+                  disabled={isDisabled}
                   className={`mt-6 w-full py-2.5 rounded-xl font-semibold text-sm transition-colors ${
                     isCurrentTier
                       ? "bg-white/10 text-gray-400 cursor-not-allowed"
-                      : `bg-gradient-to-r ${color.icon} text-white hover:opacity-90`
+                      : isLowerTier
+                        ? "bg-white/5 text-gray-600 cursor-not-allowed border border-white/5"
+                        : `bg-gradient-to-r ${color.icon} text-white hover:opacity-90`
                   }`}
                 >
                   {isCurrentTier
                     ? t("subscription.currentPlan")
-                    : isHigherTier
-                      ? t("subscription.upgrade")
-                      : t("subscription.selectPlan")}
+                    : isLowerTier
+                      ? "Not Available"
+                      : isHigherTier
+                        ? t("subscription.upgrade")
+                        : t("subscription.selectPlan")}
                 </button>
               </div>
             );
