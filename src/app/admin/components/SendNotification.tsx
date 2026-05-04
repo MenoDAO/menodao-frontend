@@ -21,6 +21,8 @@ interface RecipientFilters {
   subscriptionStatus: "active" | "inactive" | "all";
   singlePhoneNumber: string;
   csvFile: File | null;
+  subCounty: string;
+  tier: "ALL" | "BRONZE" | "SILVER" | "GOLD";
 }
 
 export function SendNotification() {
@@ -39,6 +41,8 @@ export function SendNotification() {
     subscriptionStatus: "all",
     singlePhoneNumber: "",
     csvFile: null,
+    subCounty: "",
+    tier: "ALL",
   });
   const [csvFileName, setCsvFileName] = useState<string>("");
   const [csvError, setCsvError] = useState<string>("");
@@ -155,6 +159,12 @@ export function SendNotification() {
         }
         if (csvPhones.length > 0) {
           apiFilters.csvPhoneNumbers = csvPhones;
+        }
+        if (currentFilters.subCounty) {
+          apiFilters.subCounty = currentFilters.subCounty;
+        }
+        if (currentFilters.tier !== "ALL") {
+          apiFilters.tier = currentFilters.tier;
         }
 
         const result = await adminApi.previewRecipients(apiFilters);
@@ -356,6 +366,12 @@ export function SendNotification() {
       if (csvPhoneNumbers.length > 0) {
         apiFilters.csvPhoneNumbers = csvPhoneNumbers;
       }
+      if (filters.subCounty) {
+        apiFilters.subCounty = filters.subCounty;
+      }
+      if (filters.tier !== "ALL") {
+        apiFilters.tier = filters.tier;
+      }
 
       // Send notifications for each selected type
       const results = await Promise.all(
@@ -389,6 +405,8 @@ export function SendNotification() {
         subscriptionStatus: "all",
         singlePhoneNumber: "",
         csvFile: null,
+        subCounty: "",
+        tier: "ALL",
       });
       setCsvFileName("");
       setCsvError("");
@@ -695,6 +713,55 @@ export function SendNotification() {
                 </label>
               ))}
             </div>
+          </div>
+
+          {/* Sub-County */}
+          <div>
+            <label
+              htmlFor="subCounty"
+              className="block text-sm font-medium text-gray-400 mb-2"
+            >
+              Sub-County
+            </label>
+            <input
+              type="text"
+              id="subCounty"
+              value={filters.subCounty}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  subCounty: e.target.value,
+                }))
+              }
+              placeholder="e.g. Westlands"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Tier */}
+          <div>
+            <label
+              htmlFor="tier"
+              className="block text-sm font-medium text-gray-400 mb-2"
+            >
+              Tier
+            </label>
+            <select
+              id="tier"
+              value={filters.tier}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  tier: e.target.value as "ALL" | "BRONZE" | "SILVER" | "GOLD",
+                }))
+              }
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            >
+              <option value="ALL">All</option>
+              <option value="BRONZE">Bronze</option>
+              <option value="SILVER">Silver</option>
+              <option value="GOLD">Gold</option>
+            </select>
           </div>
 
           {/* Single Phone Number */}

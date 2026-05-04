@@ -93,21 +93,21 @@ export function WaitingPeriodDisplay({ memberId }: WaitingPeriodDisplayProps) {
       return {
         bg: "bg-emerald-900/20",
         border: "border-emerald-700/50",
-        text: "text-emerald-400",
+        text: "text-emerald-300",
         icon: "text-emerald-500",
       };
     } else if (daysRemaining <= 7) {
       return {
         bg: "bg-yellow-900/20",
         border: "border-yellow-700/50",
-        text: "text-yellow-400",
+        text: "text-yellow-200",
         icon: "text-yellow-500",
       };
     } else {
       return {
         bg: "bg-red-900/20",
         border: "border-red-700/50",
-        text: "text-red-400",
+        text: "text-red-300",
         icon: "text-red-500",
       };
     }
@@ -243,14 +243,16 @@ export function WaitingPeriodDisplay({ memberId }: WaitingPeriodDisplayProps) {
                       }}
                     />
                   </div>
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>
+                  <div className="flex justify-between text-xs text-gray-300 mt-1">
+                    <span className="font-medium">
                       {procedure.requiredDays - procedure.daysRemaining} days
                       passed
                     </span>
-                    <span>{procedure.requiredDays} days required</span>
+                    <span className="font-medium">
+                      {procedure.requiredDays} days required
+                    </span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-2 text-center">
+                  <p className="text-xs text-gray-300 mt-2 text-center">
                     Eligible on:{" "}
                     <span className="text-white font-medium">
                       {new Date(
@@ -288,7 +290,7 @@ export function WaitingPeriodDisplay({ memberId }: WaitingPeriodDisplayProps) {
               {/* Countdown for near-available procedures */}
               {!procedure.available && procedure.daysRemaining <= 7 && (
                 <div className="mt-4 pt-4 border-t border-gray-700">
-                  <p className="text-xs text-yellow-400 font-medium">
+                  <p className="text-xs text-yellow-200 font-semibold">
                     Almost there! Just {procedure.daysRemaining} more day
                     {procedure.daysRemaining !== 1 ? "s" : ""} to go.
                   </p>

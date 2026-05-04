@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Bell, Send, History, ArrowRight } from "lucide-react";
+import { NotificationPanel } from "../components/NotificationPanel";
 
 export default function AlertsPage() {
   return (
@@ -17,7 +18,7 @@ export default function AlertsPage() {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Send Notification Card */}
         <Link
           href="/admin/alerts/send"
@@ -65,6 +66,33 @@ export default function AlertsPage() {
             <ArrowRight className="w-4 h-4" />
           </div>
         </Link>
+
+        {/* Renewal Reminders Card */}
+        <div className="group bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-purple-500 transition-all hover:shadow-lg hover:shadow-purple-500/10">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-purple-600/20 rounded-lg group-hover:bg-purple-600/30 transition-colors">
+              <Bell className="w-6 h-6 text-purple-500" />
+            </div>
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">
+            Renewal Reminders
+          </h2>
+          <p className="text-gray-400 text-sm">
+            Trigger subscription renewal reminder SMS messages for individual
+            members or all members expiring soon
+          </p>
+          <div className="mt-4 flex items-center gap-2 text-purple-500 text-sm font-medium">
+            <span>Manage reminders below</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Renewal Reminders Panel */}
+      <div>
+        <h2 className="text-lg font-semibold text-white mb-4">
+          Renewal Reminders
+        </h2>
+        <NotificationPanel />
       </div>
     </div>
   );

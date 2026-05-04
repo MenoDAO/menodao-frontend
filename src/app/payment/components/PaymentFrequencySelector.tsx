@@ -42,6 +42,7 @@ export function PaymentFrequencySelector({
 
   // Get correct amounts from centralized config
   const configTier = mapTierToConfigTier(tier);
+  const displayTier = configTier;
   const correctMonthlyPrice = getPaymentAmount(configTier, "monthly");
   const correctYearlyPrice = getPaymentAmount(configTier, "yearly");
 
@@ -93,18 +94,18 @@ export function PaymentFrequencySelector({
           Choose Your Payment Plan
         </h2>
         <p className="text-gray-400">
-          Select how you'd like to pay for your {tier} subscription
+          Select how you'd like to pay for your {displayTier} subscription
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {options.map((option) => (
           <div
             key={option.frequency}
             onClick={() => handleSelect(option)}
-            className={`relative bg-gray-800 rounded-xl p-6 border-2 transition-all cursor-pointer ${
+            className={`relative bg-gray-800 rounded-xl p-4 sm:p-6 border-2 transition-all cursor-pointer ${
               selectedFrequency === option.frequency
-                ? "border-emerald-500 shadow-lg shadow-emerald-500/20"
+                ? "border-emerald-500 bg-emerald-900/20 shadow-lg shadow-emerald-500/20"
                 : "border-gray-700 hover:border-gray-600"
             } ${option.recommended ? "ring-2 ring-emerald-500/50" : ""}`}
           >
@@ -144,8 +145,8 @@ export function PaymentFrequencySelector({
 
               {/* Price Display */}
               <div className="py-4 border-y border-gray-700">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-white">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-3xl sm:text-4xl font-bold text-white">
                     KES {option.amount.toLocaleString()}
                   </span>
                   <span className="text-gray-400">

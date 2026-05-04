@@ -468,6 +468,27 @@ class AdminApiClient {
   async getAuditLogs(limit = 50) {
     return this.request<AuditLogEntry[]>(`/admin/audit-logs?limit=${limit}`);
   }
+
+  // Renewal Reminders
+  async triggerMemberReminder(memberId: string) {
+    return this.request<{ phoneNumber: string; templateKey: string }>(
+      "/admin/reminders/trigger-member",
+      {
+        method: "POST",
+        body: JSON.stringify({ memberId }),
+      },
+    );
+  }
+
+  async triggerBulkReminder(daysUntilExpiry: number) {
+    return this.request<{ triggered: number; skipped: number; failed: number }>(
+      "/admin/reminders/trigger-bulk",
+      {
+        method: "POST",
+        body: JSON.stringify({ daysUntilExpiry }),
+      },
+    );
+  }
 }
 
 // Types
@@ -719,6 +740,8 @@ export interface RecipientFilters {
   subscriptionStatus?: "active" | "inactive" | "all";
   singlePhoneNumber?: string;
   csvPhoneNumbers?: string[];
+  subCounty?: string;
+  tier?: string;
 }
 
 export interface SendNotificationRequest {

@@ -150,17 +150,6 @@ export default function PaymentDialog({
       const frequency: PaymentFrequency =
         selectedFrequency === "ANNUAL" ? "yearly" : "monthly";
 
-      console.log("[PaymentDialog] Initiating payment:", {
-        tier: configTier,
-        frequency,
-        amount,
-        selectedAmount,
-        displayAmount,
-        selectedFrequency,
-        isUpgrade,
-        phoneNumber,
-      });
-
       // Validate the amount matches expected (skip validation for upgrades)
       if (!isUpgrade) {
         const isValid = validatePaymentAmount(configTier, frequency, amount);
@@ -307,20 +296,6 @@ export default function PaymentDialog({
     setSelectedAmount(amount);
     // Update displayAmount as well so it shows in the UI
     setDisplayAmount(amount);
-
-    // Log the selected amount for verification
-    const configTier = mapTierToConfigTier(tier);
-    const freq: PaymentFrequency =
-      frequency === "ANNUAL" ? "yearly" : "monthly";
-    const expectedAmount = getPaymentAmount(configTier, freq);
-
-    console.log("[PaymentDialog] Frequency selected:", {
-      tier: configTier,
-      frequency: freq,
-      selectedAmount: amount,
-      expectedAmount,
-      matches: amount === expectedAmount,
-    });
   };
 
   const handleContinueToPayment = async () => {
@@ -365,7 +340,7 @@ export default function PaymentDialog({
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Frequency Selection State */}
           {paymentStatus === "FREQUENCY_SELECT" && !isUpgrade && (
             <>
@@ -392,7 +367,7 @@ export default function PaymentDialog({
               {upgradeInfo ? (
                 <>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                    Upgrade to {tier}
+                    Upgrade to {mapTierToConfigTier(tier)}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
                     {upgradeInfo.message}
@@ -435,8 +410,8 @@ export default function PaymentDialog({
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {isUpgrade
-                  ? `You've been upgraded to ${tier}! Your new claim limit is now active.`
-                  : `Your ${tier} membership payment of KES ${displayAmount.toLocaleString()} has been received.`}
+                  ? `You've been upgraded to ${mapTierToConfigTier(tier)}! Your new claim limit is now active.`
+                  : `Your ${mapTierToConfigTier(tier)} membership payment of KES ${displayAmount.toLocaleString()} has been received.`}
               </p>
               <button
                 onClick={onClose}
@@ -556,8 +531,8 @@ export default function PaymentDialog({
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {isUpgrade
-                    ? `Upgrade to ${tier}`
-                    : `${tier} Membership - ${selectedFrequency === "ANNUAL" ? "Annual" : "Monthly"} Payment`}
+                    ? `Upgrade to ${mapTierToConfigTier(tier)}`
+                    : `${mapTierToConfigTier(tier)} Membership - ${selectedFrequency === "ANNUAL" ? "Annual" : "Monthly"} Payment`}
                 </p>
                 {!isUpgrade && (
                   <button
@@ -566,6 +541,14 @@ export default function PaymentDialog({
                   >
                     Change payment plan
                   </button>
+                )}
+                {!isUpgrade && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    You will be prompted to pay KES{" "}
+                    {displayAmount.toLocaleString()} for{" "}
+                    {mapTierToConfigTier(tier)} (
+                    {selectedFrequency === "ANNUAL" ? "Annual" : "Monthly"})
+                  </p>
                 )}
               </div>
 
