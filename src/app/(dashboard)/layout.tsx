@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import NotificationPrompt from "./dashboard/NotificationPrompt";
+import DashboardFirstVisitFlow from "./dashboard/DashboardFirstVisitFlow";
 import { useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import i18n, { detectLocale, useTranslation } from "@/lib/i18n";
@@ -243,6 +244,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <LanguageSwitcher />
         </div>
       </footer>
+
+      {/* First visit: confirm language, then onboarding (see DashboardFirstVisitFlow) */}
+      <DashboardFirstVisitFlow />
 
       {/* Notification Permission Prompt */}
       <NotificationPrompt />
