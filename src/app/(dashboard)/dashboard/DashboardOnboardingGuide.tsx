@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -13,6 +14,8 @@ import { useTranslation } from "@/lib/i18n";
 
 const TOUR_PAD = 8;
 const TOOLTIP_W = 320;
+const TOUR_Z = 500;
+const HOLE_TWEEN = { type: "tween" as const, duration: 0.22, ease: "easeOut" as const };
 
 type TourStep = {
   tourId: string;
@@ -132,15 +135,29 @@ export default function DashboardOnboardingGuide({
       height: r.height + pad * 2,
     });
 
-    let tTop = r.bottom + pad + 10;
-    if (tTop + estH > window.innerHeight - 16) {
-      tTop = r.top - estH - pad - 10;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const isMobileNavHighlight =
+      vw < 768 && stepIndex > 0 && tourId.startsWith("tour-nav-");
+
+    if (isMobileNavHighlight) {
+      const bottomReserved = 20;
+      const tooltipH = 230;
+      setTooltipPos({
+        top: Math.max(16, vh - bottomReserved - tooltipH),
+        left: (vw - tw) / 2,
+      });
+    } else {
+      let tTop = r.bottom + pad + 10;
+      if (tTop + estH > vh - 16) {
+        tTop = r.top - estH - pad - 10;
+      }
+      tTop = clamp(tTop, 16, vh - estH - 16);
+      const cx = r.left + r.width / 2;
+      let tLeft = cx - tw / 2;
+      tLeft = clamp(tLeft, 16, vw - tw - 16);
+      setTooltipPos({ top: tTop, left: tLeft });
     }
-    tTop = clamp(tTop, 16, window.innerHeight - estH - 16);
-    const cx = r.left + r.width / 2;
-    let tLeft = cx - tw / 2;
-    tLeft = clamp(tLeft, 16, window.innerWidth - tw - 16);
-    setTooltipPos({ top: tTop, left: tLeft });
   }, [open, stepIndex]);
 
   /** Mobile drawer must exist in the DOM before we measure nav targets (useEffect was too late). */
@@ -208,38 +225,39 @@ export default function DashboardOnboardingGuide({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[100]"
+          className="pointer-events-none fixed inset-0 isolate"
+          style={{ zIndex: TOUR_Z }}
           aria-live="polite"
         >
           {hole ? (
-            <>
+            <Fragment key={stepIndex}>
               <motion.div
-                className="fixed left-0 right-0 top-0 z-[100] bg-black/60 pointer-events-auto"
+                className="pointer-events-auto fixed left-0 right-0 top-0 bg-black/60"
                 initial={false}
                 animate={{ height: Math.max(0, hole.top) }}
-                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                transition={HOLE_TWEEN}
               />
               <motion.div
-                className="fixed left-0 right-0 z-[100] bg-black/60 pointer-events-auto"
+                className="pointer-events-auto fixed left-0 right-0 bg-black/60"
                 initial={false}
                 animate={{
                   top: hole.top + hole.height,
                   height: Math.max(0, vh - hole.top - hole.height),
                 }}
-                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                transition={HOLE_TWEEN}
               />
               <motion.div
-                className="fixed left-0 z-[100] bg-black/60 pointer-events-auto"
+                className="pointer-events-auto fixed left-0 bg-black/60"
                 initial={false}
                 animate={{
                   top: hole.top,
                   width: Math.max(0, hole.left),
                   height: hole.height,
                 }}
-                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                transition={HOLE_TWEEN}
               />
               <motion.div
-                className="fixed z-[100] bg-black/60 pointer-events-auto"
+                className="pointer-events-auto fixed bg-black/60"
                 initial={false}
                 animate={{
                   top: hole.top,
@@ -247,10 +265,10 @@ export default function DashboardOnboardingGuide({
                   width: Math.max(0, vw - hole.left - hole.width),
                   height: hole.height,
                 }}
-                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                transition={HOLE_TWEEN}
               />
               <motion.div
-                className="fixed z-[112] rounded-xl border-2 border-emerald-400 pointer-events-none shadow-[0_0_0_4px_rgba(16,185,129,0.22)]"
+                className="pointer-events-none fixed rounded-xl border-2 border-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.22)]"
                 initial={false}
                 animate={{
                   top: hole.top,
@@ -258,11 +276,11 @@ export default function DashboardOnboardingGuide({
                   width: hole.width,
                   height: hole.height,
                 }}
-                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                transition={HOLE_TWEEN}
               />
-            </>
+            </Fragment>
           ) : (
-            <div className="fixed inset-0 z-[100] bg-black/60 pointer-events-auto" />
+            <div className="pointer-events-auto fixed inset-0 bg-black/60" />
           )}
 
           <motion.div
@@ -270,7 +288,7 @@ export default function DashboardOnboardingGuide({
             role="dialog"
             aria-modal="true"
             aria-labelledby="tour-step-title"
-            className="fixed z-[115] w-[min(100vw-2rem,320px)] rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl pointer-events-auto p-5"
+            className="pointer-events-auto fixed w-[min(100vw-2rem,320px)] rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl p-5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.22 }}
