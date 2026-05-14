@@ -13,15 +13,23 @@ import DashboardOnboardingGuide from "./DashboardOnboardingGuide";
 
 type Step = "idle" | "language" | "onboarding";
 
-export default function DashboardFirstVisitFlow() {
+type DashboardFirstVisitFlowProps = {
+  setMobileNavOpen?: (open: boolean) => void;
+};
+
+export default function DashboardFirstVisitFlow({
+  setMobileNavOpen,
+}: DashboardFirstVisitFlowProps) {
   const member = useAuthStore((s) => s.member);
   const updateMember = useAuthStore((s) => s.updateMember);
   const [step, setStep] = useState<Step>("idle");
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
     if (!member?.id || typeof window === "undefined") {
-      setStep("idle");
-      return;
+      timer = setTimeout(() => setStep("idle"), 0);
+      return () => clearTimeout(timer);
     }
     try {
       const langKey = dashboardLanguageConfirmKey(member.id);
@@ -34,16 +42,18 @@ export default function DashboardFirstVisitFlow() {
         langDone = "1";
       }
       if (!langDone) {
-        const t = window.setTimeout(() => setStep("language"), 200);
-        return () => window.clearTimeout(t);
+        timer = setTimeout(() => setStep("language"), 200);
+        return () => clearTimeout(timer);
       }
       if (!onboardDone) {
-        const t = window.setTimeout(() => setStep("onboarding"), 200);
-        return () => window.clearTimeout(t);
+        timer = setTimeout(() => setStep("onboarding"), 200);
+        return () => clearTimeout(timer);
       }
-      setStep("idle");
+      timer = setTimeout(() => setStep("idle"), 0);
+      return () => clearTimeout(timer);
     } catch {
-      setStep("idle");
+      timer = setTimeout(() => setStep("idle"), 0);
+      return () => clearTimeout(timer);
     }
   }, [member?.id]);
 
@@ -93,7 +103,7 @@ export default function DashboardFirstVisitFlow() {
       }
     }
     setStep("idle");
-  }, [member?.id]);
+  }, [member]);
 
   if (!member?.id) return null;
 
@@ -159,7 +169,11 @@ export default function DashboardFirstVisitFlow() {
         </div>
       )}
 
-      <DashboardOnboardingGuide open={step === "onboarding"} onDismiss={dismissOnboarding} />
+      <DashboardOnboardingGuide
+        open={step === "onboarding"}
+        onDismiss={dismissOnboarding}
+        setMobileNavOpen={setMobileNavOpen}
+      />
     </>
   );
 }

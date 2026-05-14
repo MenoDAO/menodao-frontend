@@ -28,26 +28,29 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { api } from "@/lib/api";
 
 const navItemDefs = [
-  { href: "/dashboard", labelKey: "nav.dashboard", icon: Home },
+  { href: "/dashboard", labelKey: "nav.dashboard", icon: Home, dataTour: "tour-nav-dashboard" },
   {
     href: "/dashboard/subscription",
     labelKey: "nav.myPackage",
     icon: CreditCard,
+    dataTour: "tour-nav-subscription",
   },
-  { href: "/dashboard/claims", labelKey: "nav.claims", icon: FileText },
+  { href: "/dashboard/claims", labelKey: "nav.claims", icon: FileText, dataTour: "tour-nav-claims" },
   {
     href: "/dashboard/history",
     labelKey: "nav.visits",
     icon: ClipboardList,
+    dataTour: "tour-nav-history",
   },
-  { href: "/dashboard/champion", labelKey: "nav.champion", icon: Trophy },
-  { href: "/dashboard/camps", labelKey: "nav.findClinic", icon: MapPin },
+  { href: "/dashboard/champion", labelKey: "nav.champion", icon: Trophy, dataTour: "tour-nav-champion" },
+  { href: "/dashboard/camps", labelKey: "nav.findClinic", icon: MapPin, dataTour: "tour-nav-camps" },
   {
     href: "/dashboard/transactions",
     labelKey: "nav.blockchain",
     icon: LinkIcon,
+    dataTour: "tour-nav-blockchain",
   },
-  { href: "/dashboard/profile", labelKey: "nav.profile", icon: User },
+  { href: "/dashboard/profile", labelKey: "nav.profile", icon: User, dataTour: "tour-nav-profile" },
 ];
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
@@ -104,6 +107,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
+                    data-tour={item.dataTour}
                     className={`flex items-center gap-1 whitespace-nowrap px-1.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                       isActive
                         ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
@@ -202,6 +206,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  data-tour={item.dataTour}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 text-sm font-medium ${
                     isActive
@@ -246,7 +251,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       </footer>
 
       {/* First visit: confirm language, then onboarding (see DashboardFirstVisitFlow) */}
-      <DashboardFirstVisitFlow />
+      <DashboardFirstVisitFlow setMobileNavOpen={setMobileMenuOpen} />
 
       {/* Notification Permission Prompt */}
       <NotificationPrompt />
