@@ -6,7 +6,7 @@ import {
   useLayoutEffect,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n";
@@ -22,8 +22,8 @@ type TourStep = {
 const TOUR_STEPS: TourStep[] = [
   { tourId: "tour-membership", route: "/dashboard" },
   { tourId: "tour-nav-subscription" },
-  { tourId: "tour-nav-history" },
   { tourId: "tour-nav-claims" },
+  { tourId: "tour-nav-history" },
   { tourId: "tour-nav-champion" },
   { tourId: "tour-nav-camps" },
   { tourId: "tour-nav-blockchain" },
@@ -95,20 +95,6 @@ export default function DashboardOnboardingGuide({
     };
   }, [open]);
 
-  const isMobileNavStep = stepIndex > 0;
-
-  useEffect(() => {
-    if (!open) return;
-    if (typeof window === "undefined") return;
-    if (window.innerWidth >= 768) return;
-    if (isMobileNavStep) setMobileNavOpen?.(true);
-  }, [open, isMobileNavStep, setMobileNavOpen, stepIndex]);
-
-  useEffect(() => {
-    if (!open) return;
-    if (stepIndex === 0) setMobileNavOpen?.(false);
-  }, [open, stepIndex, setMobileNavOpen]);
-
   useEffect(() => {
     if (!open) return;
     const route = TOUR_STEPS[stepIndex]?.route;
@@ -157,10 +143,28 @@ export default function DashboardOnboardingGuide({
     setTooltipPos({ top: tTop, left: tLeft });
   }, [open, stepIndex]);
 
+  /** Mobile drawer must exist in the DOM before we measure nav targets (useEffect was too late). */
   useLayoutEffect(() => {
-    const id = window.requestAnimationFrame(() => measure());
-    return () => window.cancelAnimationFrame(id);
-  }, [measure, pathname]);
+    if (!open || typeof window === "undefined") return;
+
+    if (window.innerWidth < 768 && setMobileNavOpen) {
+      if (stepIndex === 0) {
+        flushSync(() => setMobileNavOpen(false));
+      } else {
+        flushSync(() => setMobileNavOpen(true));
+      }
+    }
+
+    let raf1 = 0;
+    let raf2 = 0;
+    raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => measure());
+    });
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      window.cancelAnimationFrame(raf2);
+    };
+  }, [open, stepIndex, pathname, measure, setMobileNavOpen]);
 
   useEffect(() => {
     if (!open) return;
@@ -246,7 +250,7 @@ export default function DashboardOnboardingGuide({
                 transition={{ type: "spring", stiffness: 400, damping: 35 }}
               />
               <motion.div
-                className="fixed z-[101] rounded-xl border-2 border-emerald-400 pointer-events-none shadow-[0_0_0_4px_rgba(16,185,129,0.22)]"
+                className="fixed z-[112] rounded-xl border-2 border-emerald-400 pointer-events-none shadow-[0_0_0_4px_rgba(16,185,129,0.22)]"
                 initial={false}
                 animate={{
                   top: hole.top,
@@ -266,7 +270,7 @@ export default function DashboardOnboardingGuide({
             role="dialog"
             aria-modal="true"
             aria-labelledby="tour-step-title"
-            className="fixed z-[102] w-[min(100vw-2rem,320px)] rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl pointer-events-auto p-5"
+            className="fixed z-[115] w-[min(100vw-2rem,320px)] rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl pointer-events-auto p-5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.22 }}
