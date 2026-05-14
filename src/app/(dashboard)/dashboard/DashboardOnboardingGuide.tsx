@@ -1,29 +1,90 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
 import {
-  X,
-  Shield,
-  CreditCard,
-  FileText,
-  Trophy,
-  MapPin,
-  Link as LinkIcon,
-  User,
-  Sparkles,
-} from "lucide-react";
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n";
+
+const TOUR_PAD = 8;
+const TOOLTIP_W = 320;
+
+type TourStep = {
+  tourId: string;
+  route?: string;
+};
+
+const TOUR_STEPS: TourStep[] = [
+  { tourId: "tour-membership", route: "/dashboard" },
+  { tourId: "tour-nav-subscription" },
+  { tourId: "tour-nav-history" },
+  { tourId: "tour-nav-claims" },
+  { tourId: "tour-nav-champion" },
+  { tourId: "tour-nav-camps" },
+  { tourId: "tour-nav-blockchain" },
+  { tourId: "tour-nav-profile" },
+];
+
+function getVisibleTourElement(tourId: string): HTMLElement | null {
+  const list = document.querySelectorAll<HTMLElement>(`[data-tour="${tourId}"]`);
+  let fallback: HTMLElement | null = null;
+  for (const el of list) {
+    const style = window.getComputedStyle(el);
+    if (style.display === "none" || style.visibility === "hidden") continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4) continue;
+    fallback = el;
+    const inView =
+      r.bottom > 0 &&
+      r.top < window.innerHeight &&
+      r.right > 0 &&
+      r.left < window.innerWidth;
+    if (inView) return el;
+  }
+  return fallback;
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+type Rect = { top: number; left: number; width: number; height: number };
 
 export type DashboardOnboardingGuideProps = {
   open: boolean;
   onDismiss: () => void;
+  setMobileNavOpen?: (open: boolean) => void;
 };
 
 export default function DashboardOnboardingGuide({
   open,
   onDismiss,
+  setMobileNavOpen,
 }: DashboardOnboardingGuideProps) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [stepIndex, setStepIndex] = useState(0);
+  const [hole, setHole] = useState<Rect | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number }>({
+    top: 0,
+    left: 0,
+  });
+
+  const total = TOUR_STEPS.length;
+  const titleKey = `onboarding.tour.step${stepIndex}Title`;
+  const bodyKey = `onboarding.tour.step${stepIndex}Body`;
+
+  useEffect(() => {
+    if (!open) return;
+    const id = window.setTimeout(() => setStepIndex(0), 0);
+    return () => clearTimeout(id);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -34,92 +95,221 @@ export default function DashboardOnboardingGuide({
     };
   }, [open]);
 
-  const dismiss = useCallback(() => {
+  const isMobileNavStep = stepIndex > 0;
+
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === "undefined") return;
+    if (window.innerWidth >= 768) return;
+    if (isMobileNavStep) setMobileNavOpen?.(true);
+  }, [open, isMobileNavStep, setMobileNavOpen, stepIndex]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (stepIndex === 0) setMobileNavOpen?.(false);
+  }, [open, stepIndex, setMobileNavOpen]);
+
+  useEffect(() => {
+    if (!open) return;
+    const route = TOUR_STEPS[stepIndex]?.route;
+    if (route && pathname !== route) {
+      router.replace(route);
+    }
+  }, [open, stepIndex, pathname, router]);
+
+  const measure = useCallback(() => {
+    if (!open || typeof window === "undefined") return;
+    const tourId = TOUR_STEPS[stepIndex]?.tourId;
+    if (!tourId) {
+      setHole(null);
+      return;
+    }
+    const el = getVisibleTourElement(tourId);
+    const tw = Math.min(TOOLTIP_W, window.innerWidth - 32);
+    const estH = 210;
+
+    if (!el) {
+      setHole(null);
+      setTooltipPos({
+        top: Math.max(16, window.innerHeight * 0.58),
+        left: window.innerWidth / 2 - tw / 2,
+      });
+      return;
+    }
+
+    const r = el.getBoundingClientRect();
+    const pad = TOUR_PAD;
+    setHole({
+      top: r.top - pad,
+      left: r.left - pad,
+      width: r.width + pad * 2,
+      height: r.height + pad * 2,
+    });
+
+    let tTop = r.bottom + pad + 10;
+    if (tTop + estH > window.innerHeight - 16) {
+      tTop = r.top - estH - pad - 10;
+    }
+    tTop = clamp(tTop, 16, window.innerHeight - estH - 16);
+    const cx = r.left + r.width / 2;
+    let tLeft = cx - tw / 2;
+    tLeft = clamp(tLeft, 16, window.innerWidth - tw - 16);
+    setTooltipPos({ top: tTop, left: tLeft });
+  }, [open, stepIndex]);
+
+  useLayoutEffect(() => {
+    const id = window.requestAnimationFrame(() => measure());
+    return () => window.cancelAnimationFrame(id);
+  }, [measure, pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onResize = () => measure();
+    window.addEventListener("resize", onResize);
+    window.addEventListener("scroll", onResize, true);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onResize, true);
+    };
+  }, [open, measure]);
+
+  const finish = useCallback(() => {
+    setMobileNavOpen?.(false);
     onDismiss();
-  }, [onDismiss]);
+  }, [onDismiss, setMobileNavOpen]);
 
-  if (!open) return null;
+  const goNext = useCallback(() => {
+    if (stepIndex >= total - 1) {
+      finish();
+      return;
+    }
+    setStepIndex((i) => i + 1);
+  }, [stepIndex, total, finish]);
 
-  const sections: {
-    icon: typeof Shield;
-    titleKey: string;
-    bodyKey: string;
-  }[] = [
-    { icon: Shield, titleKey: "onboarding.membershipTitle", bodyKey: "onboarding.membershipBody" },
-    { icon: CreditCard, titleKey: "onboarding.packageTitle", bodyKey: "onboarding.packageBody" },
-    { icon: FileText, titleKey: "onboarding.claimsTitle", bodyKey: "onboarding.claimsBody" },
-    { icon: Trophy, titleKey: "onboarding.championTitle", bodyKey: "onboarding.championBody" },
-    { icon: MapPin, titleKey: "onboarding.clinicTitle", bodyKey: "onboarding.clinicBody" },
-    { icon: LinkIcon, titleKey: "onboarding.blockchainTitle", bodyKey: "onboarding.blockchainBody" },
-    { icon: User, titleKey: "onboarding.profileTitle", bodyKey: "onboarding.profileBody" },
-  ];
+  const goSkip = useCallback(() => {
+    finish();
+  }, [finish]);
 
-  return (
-    <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="dashboard-onboarding-title"
-    >
-      <div className="w-full sm:max-w-lg max-h-[min(90vh,640px)] sm:rounded-2xl rounded-t-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col animate-slide-up sm:animate-fade-in">
-        <div className="shrink-0 flex items-start justify-between gap-3 p-5 pb-0 border-b border-gray-100 dark:border-gray-700/80">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 shrink-0">
-              <Sparkles className="w-6 h-6" aria-hidden />
-            </div>
-            <div className="min-w-0">
-              <h2
-                id="dashboard-onboarding-title"
-                className="text-lg font-bold text-gray-900 dark:text-white font-outfit leading-tight"
-              >
-                {t("onboarding.title")}
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {t("onboarding.subtitle")}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={dismiss}
-            className="p-2 rounded-lg text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
-            aria-label={t("common.close")}
+  if (!open || typeof document === "undefined") return null;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  const overlay = (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          key="tour-root"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-[100]"
+          aria-live="polite"
+        >
+          {hole ? (
+            <>
+              <motion.div
+                className="fixed left-0 right-0 top-0 z-[100] bg-black/60 pointer-events-auto"
+                initial={false}
+                animate={{ height: Math.max(0, hole.top) }}
+                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+              />
+              <motion.div
+                className="fixed left-0 right-0 z-[100] bg-black/60 pointer-events-auto"
+                initial={false}
+                animate={{
+                  top: hole.top + hole.height,
+                  height: Math.max(0, vh - hole.top - hole.height),
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+              />
+              <motion.div
+                className="fixed left-0 z-[100] bg-black/60 pointer-events-auto"
+                initial={false}
+                animate={{
+                  top: hole.top,
+                  width: Math.max(0, hole.left),
+                  height: hole.height,
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+              />
+              <motion.div
+                className="fixed z-[100] bg-black/60 pointer-events-auto"
+                initial={false}
+                animate={{
+                  top: hole.top,
+                  left: hole.left + hole.width,
+                  width: Math.max(0, vw - hole.left - hole.width),
+                  height: hole.height,
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+              />
+              <motion.div
+                className="fixed z-[101] rounded-xl border-2 border-emerald-400 pointer-events-none shadow-[0_0_0_4px_rgba(16,185,129,0.22)]"
+                initial={false}
+                animate={{
+                  top: hole.top,
+                  left: hole.left,
+                  width: hole.width,
+                  height: hole.height,
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+              />
+            </>
+          ) : (
+            <div className="fixed inset-0 z-[100] bg-black/60 pointer-events-auto" />
+          )}
+
+          <motion.div
+            key={stepIndex}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tour-step-title"
+            className="fixed z-[102] w-[min(100vw-2rem,320px)] rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl pointer-events-auto p-5"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22 }}
+            style={{ top: tooltipPos.top, left: tooltipPos.left }}
           >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
-          {sections.map(({ icon: Icon, titleKey, bodyKey }) => (
-            <div
-              key={titleKey}
-              className="flex gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/80"
+            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-2">
+              {t("onboarding.tour.progress", {
+                current: stepIndex + 1,
+                total,
+              })}
+            </p>
+            <h2
+              id="tour-step-title"
+              className="text-lg font-bold text-gray-900 dark:text-white font-outfit leading-snug"
             >
-              <div className="p-2 h-fit rounded-lg bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 border border-gray-200 dark:border-gray-600 shrink-0">
-                <Icon className="w-4 h-4" aria-hidden />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {t(titleKey)}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
-                  {t(bodyKey)}
-                </p>
-              </div>
+              {t(titleKey)}
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">
+              {!hole ? t("onboarding.tour.targetMissing") : t(bodyKey)}
+            </p>
+            <div className="flex gap-2 mt-6">
+              <button
+                type="button"
+                onClick={goSkip}
+                className="flex-1 py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-colors"
+              >
+                {t("onboarding.tour.skip")}
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors"
+              >
+                {stepIndex >= total - 1
+                  ? t("onboarding.tour.done")
+                  : t("onboarding.tour.next")}
+              </button>
             </div>
-          ))}
-        </div>
-
-        <div className="shrink-0 p-5 pt-2 border-t border-gray-100 dark:border-gray-700/80">
-          <button
-            type="button"
-            onClick={dismiss}
-            className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors"
-          >
-            {t("onboarding.gotIt")}
-          </button>
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
+
+  return createPortal(overlay, document.body);
 }
