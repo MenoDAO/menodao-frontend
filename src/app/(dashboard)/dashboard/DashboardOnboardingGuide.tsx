@@ -3,19 +3,17 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useState,
 } from "react";
 import { createPortal, flushSync } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n";
 
 const TOUR_PAD = 8;
 const TOOLTIP_W = 320;
 const TOUR_Z = 500;
-const HOLE_TRANSITION =
-  "top 220ms ease-out, left 220ms ease-out, width 220ms ease-out, height 220ms ease-out";
 
 type TourStep = {
   tourId: string;
@@ -64,65 +62,63 @@ export type DashboardOnboardingGuideProps = {
   setMobileNavOpen?: (open: boolean) => void;
 };
 
-function HoleOverlay({
+/** One SVG layer: dim everywhere except a clear hole (no stacked scrims). */
+function SpotlightShroud({
   hole,
   vw,
   vh,
+  maskSuffix,
 }: {
   hole: Rect;
   vw: number;
   vh: number;
+  maskSuffix: string;
 }) {
-  const t = hole.top;
-  const l = hole.left;
-  const w = hole.width;
-  const h = hole.height;
-  const scrimStyle = { transition: HOLE_TRANSITION };
+  const { top, left, width, height } = hole;
+  const maskId = `menodao-tour-mask-${maskSuffix}`;
+  const rx = 12;
 
   return (
-    <div className="pointer-events-none fixed inset-0" aria-hidden>
-      <div
-        className="pointer-events-auto fixed left-0 right-0 top-0 bg-black/60"
-        style={{ ...scrimStyle, height: Math.max(0, t) }}
+    <svg
+      width={vw}
+      height={vh}
+      className="pointer-events-auto fixed left-0 top-0 shrink-0"
+      style={{ zIndex: 0 }}
+      aria-hidden
+    >
+      <defs>
+        <mask id={maskId} maskUnits="userSpaceOnUse">
+          <rect width={vw} height={vh} fill="white" />
+          <rect
+            x={left}
+            y={top}
+            width={width}
+            height={height}
+            rx={rx}
+            ry={rx}
+            fill="black"
+          />
+        </mask>
+      </defs>
+      <rect
+        width={vw}
+        height={vh}
+        fill="rgba(0,0,0,0.55)"
+        mask={`url(#${maskId})`}
       />
-      <div
-        className="pointer-events-auto fixed left-0 right-0 bg-black/60"
-        style={{
-          ...scrimStyle,
-          top: t + h,
-          height: Math.max(0, vh - t - h),
-        }}
+      <rect
+        x={left}
+        y={top}
+        width={width}
+        height={height}
+        rx={rx}
+        ry={rx}
+        fill="none"
+        stroke="rgb(16, 185, 129)"
+        strokeWidth={2}
+        vectorEffect="non-scaling-stroke"
       />
-      <div
-        className="pointer-events-auto fixed left-0 bg-black/60"
-        style={{
-          ...scrimStyle,
-          top: t,
-          width: Math.max(0, l),
-          height: h,
-        }}
-      />
-      <div
-        className="pointer-events-auto fixed bg-black/60"
-        style={{
-          ...scrimStyle,
-          top: t,
-          left: l + w,
-          width: Math.max(0, vw - l - w),
-          height: h,
-        }}
-      />
-      <div
-        className="pointer-events-none fixed rounded-xl border-2 border-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.22)]"
-        style={{
-          ...scrimStyle,
-          top: t,
-          left: l,
-          width: w,
-          height: h,
-        }}
-      />
-    </div>
+    </svg>
   );
 }
 
@@ -134,6 +130,7 @@ export default function DashboardOnboardingGuide({
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
+  const reactId = useId().replace(/:/g, "");
   const [stepIndex, setStepIndex] = useState(0);
   const [hole, setHole] = useState<Rect | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number }>({
@@ -277,74 +274,74 @@ export default function DashboardOnboardingGuide({
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  /** Unique mask id per step so SVG defs never collide in the DOM. */
+  const maskSuffix = `${reactId}-${stepIndex}`;
 
   const overlay = (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          key="tour-root"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          className="pointer-events-none fixed inset-0 isolate"
-          style={{ zIndex: TOUR_Z }}
-          aria-live="polite"
-        >
-          {hole ? (
-            <HoleOverlay key={stepIndex} hole={hole} vw={vw} vh={vh} />
-          ) : (
-            <div className="pointer-events-auto fixed inset-0 bg-black/60" />
-          )}
-
-          <motion.div
-            key={stepIndex}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="tour-step-title"
-            className="pointer-events-auto fixed w-[min(100vw-2rem,320px)] rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl p-5"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22 }}
-            style={{ top: tooltipPos.top, left: tooltipPos.left }}
-          >
-            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-2">
-              {t("onboarding.tour.progress", {
-                current: stepIndex + 1,
-                total,
-              })}
-            </p>
-            <h2
-              id="tour-step-title"
-              className="text-lg font-bold text-gray-900 dark:text-white font-outfit leading-snug"
-            >
-              {t(titleKey)}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">
-              {!hole ? t("onboarding.tour.targetMissing") : t(bodyKey)}
-            </p>
-            <div className="flex gap-2 mt-6">
-              <button
-                type="button"
-                onClick={goSkip}
-                className="flex-1 py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-colors"
-              >
-                {t("onboarding.tour.skip")}
-              </button>
-              <button
-                type="button"
-                onClick={goNext}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors"
-              >
-                {stepIndex >= total - 1
-                  ? t("onboarding.tour.done")
-                  : t("onboarding.tour.next")}
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
+    <div
+      className="pointer-events-none fixed inset-0 isolate"
+      style={{ zIndex: TOUR_Z }}
+      aria-live="polite"
+    >
+      {hole ? (
+        <SpotlightShroud
+          key={maskSuffix}
+          hole={hole}
+          vw={vw}
+          vh={vh}
+          maskSuffix={maskSuffix}
+        />
+      ) : (
+        <div
+          key="tour-full-dim"
+          className="pointer-events-auto fixed inset-0 bg-black/55"
+          style={{ zIndex: 0 }}
+        />
       )}
-    </AnimatePresence>
+
+      <div
+        key={stepIndex}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tour-step-title"
+        className="pointer-events-auto fixed z-10 w-[min(100vw-2rem,320px)] rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl p-5"
+        style={{ top: tooltipPos.top, left: tooltipPos.left }}
+      >
+        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-2">
+          {t("onboarding.tour.progress", {
+            current: stepIndex + 1,
+            total,
+          })}
+        </p>
+        <h2
+          id="tour-step-title"
+          className="text-lg font-bold text-gray-900 dark:text-white font-outfit leading-snug"
+        >
+          {t(titleKey)}
+        </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">
+          {!hole ? t("onboarding.tour.targetMissing") : t(bodyKey)}
+        </p>
+        <div className="flex gap-2 mt-6">
+          <button
+            type="button"
+            onClick={goSkip}
+            className="flex-1 py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-colors"
+          >
+            {t("onboarding.tour.skip")}
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors"
+          >
+            {stepIndex >= total - 1
+              ? t("onboarding.tour.done")
+              : t("onboarding.tour.next")}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   return createPortal(overlay, document.body);
