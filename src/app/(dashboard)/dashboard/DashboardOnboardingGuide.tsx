@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Fragment,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -15,7 +14,8 @@ import { useTranslation } from "@/lib/i18n";
 const TOUR_PAD = 8;
 const TOOLTIP_W = 320;
 const TOUR_Z = 500;
-const HOLE_TWEEN = { type: "tween" as const, duration: 0.22, ease: "easeOut" as const };
+const HOLE_TRANSITION =
+  "top 220ms ease-out, left 220ms ease-out, width 220ms ease-out, height 220ms ease-out";
 
 type TourStep = {
   tourId: string;
@@ -63,6 +63,68 @@ export type DashboardOnboardingGuideProps = {
   onDismiss: () => void;
   setMobileNavOpen?: (open: boolean) => void;
 };
+
+function HoleOverlay({
+  hole,
+  vw,
+  vh,
+}: {
+  hole: Rect;
+  vw: number;
+  vh: number;
+}) {
+  const t = hole.top;
+  const l = hole.left;
+  const w = hole.width;
+  const h = hole.height;
+  const scrimStyle = { transition: HOLE_TRANSITION };
+
+  return (
+    <div className="pointer-events-none fixed inset-0" aria-hidden>
+      <div
+        className="pointer-events-auto fixed left-0 right-0 top-0 bg-black/60"
+        style={{ ...scrimStyle, height: Math.max(0, t) }}
+      />
+      <div
+        className="pointer-events-auto fixed left-0 right-0 bg-black/60"
+        style={{
+          ...scrimStyle,
+          top: t + h,
+          height: Math.max(0, vh - t - h),
+        }}
+      />
+      <div
+        className="pointer-events-auto fixed left-0 bg-black/60"
+        style={{
+          ...scrimStyle,
+          top: t,
+          width: Math.max(0, l),
+          height: h,
+        }}
+      />
+      <div
+        className="pointer-events-auto fixed bg-black/60"
+        style={{
+          ...scrimStyle,
+          top: t,
+          left: l + w,
+          width: Math.max(0, vw - l - w),
+          height: h,
+        }}
+      />
+      <div
+        className="pointer-events-none fixed rounded-xl border-2 border-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.22)]"
+        style={{
+          ...scrimStyle,
+          top: t,
+          left: l,
+          width: w,
+          height: h,
+        }}
+      />
+    </div>
+  );
+}
 
 export default function DashboardOnboardingGuide({
   open,
@@ -160,7 +222,6 @@ export default function DashboardOnboardingGuide({
     }
   }, [open, stepIndex]);
 
-  /** Mobile drawer must exist in the DOM before we measure nav targets (useEffect was too late). */
   useLayoutEffect(() => {
     if (!open || typeof window === "undefined") return;
 
@@ -204,6 +265,7 @@ export default function DashboardOnboardingGuide({
       finish();
       return;
     }
+    setHole(null);
     setStepIndex((i) => i + 1);
   }, [stepIndex, total, finish]);
 
@@ -230,55 +292,7 @@ export default function DashboardOnboardingGuide({
           aria-live="polite"
         >
           {hole ? (
-            <Fragment key={stepIndex}>
-              <motion.div
-                className="pointer-events-auto fixed left-0 right-0 top-0 bg-black/60"
-                initial={false}
-                animate={{ height: Math.max(0, hole.top) }}
-                transition={HOLE_TWEEN}
-              />
-              <motion.div
-                className="pointer-events-auto fixed left-0 right-0 bg-black/60"
-                initial={false}
-                animate={{
-                  top: hole.top + hole.height,
-                  height: Math.max(0, vh - hole.top - hole.height),
-                }}
-                transition={HOLE_TWEEN}
-              />
-              <motion.div
-                className="pointer-events-auto fixed left-0 bg-black/60"
-                initial={false}
-                animate={{
-                  top: hole.top,
-                  width: Math.max(0, hole.left),
-                  height: hole.height,
-                }}
-                transition={HOLE_TWEEN}
-              />
-              <motion.div
-                className="pointer-events-auto fixed bg-black/60"
-                initial={false}
-                animate={{
-                  top: hole.top,
-                  left: hole.left + hole.width,
-                  width: Math.max(0, vw - hole.left - hole.width),
-                  height: hole.height,
-                }}
-                transition={HOLE_TWEEN}
-              />
-              <motion.div
-                className="pointer-events-none fixed rounded-xl border-2 border-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.22)]"
-                initial={false}
-                animate={{
-                  top: hole.top,
-                  left: hole.left,
-                  width: hole.width,
-                  height: hole.height,
-                }}
-                transition={HOLE_TWEEN}
-              />
-            </Fragment>
+            <HoleOverlay key={stepIndex} hole={hole} vw={vw} vh={vh} />
           ) : (
             <div className="pointer-events-auto fixed inset-0 bg-black/60" />
           )}
