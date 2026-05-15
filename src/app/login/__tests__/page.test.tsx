@@ -23,6 +23,21 @@ jest.mock("@/lib/api", () => ({
   },
 }));
 
+jest.mock("@/components/TurnstileWidget", () => ({
+  __esModule: true,
+  default: () => null,
+}));
+
+jest.mock("@/hooks/useCaptcha", () => ({
+  useCaptcha: () => ({
+    captchaToken: "test-captcha-token",
+    setCaptchaToken: jest.fn(),
+    clearCaptcha: jest.fn(),
+    requireCaptchaToken: () => "test-captcha-token",
+    captchaReady: true,
+  }),
+}));
+
 // Import the mocked API to access the mock functions
 import { api } from "@/lib/api";
 const mockCheckPhoneExists = api.checkPhoneExists as jest.Mock;
@@ -92,7 +107,9 @@ describe("LoginPage", () => {
 
       await waitFor(() => {
         expect(mockCheckPhoneExists).toHaveBeenCalledWith("+254712345678");
-        expect(mockRequestOtp).toHaveBeenCalledWith("+254712345678", false);
+        expect(mockRequestOtp).toHaveBeenCalledWith("+254712345678", false, {
+          captchaToken: "test-captcha-token",
+        });
         expect(mockPush).toHaveBeenCalledWith(
           "/verify-otp?flow=login&phone=%2B254712345678",
         );
