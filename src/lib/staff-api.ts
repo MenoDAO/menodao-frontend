@@ -232,15 +232,34 @@ class StaffApiClient {
 
       // Try to parse error response
       let errorMessage = `HTTP ${response.status}`;
+      let errorCode: string | undefined;
       try {
         const error = await response.json();
-        errorMessage = error.message || errorMessage;
+        const message =
+          typeof error.message === "string"
+            ? error.message
+            : Array.isArray(error.message)
+              ? error.message.join(", ")
+              : errorMessage;
+        errorMessage = message || errorMessage;
+        errorCode = error.code;
       } catch {
-        // If JSON parsing fails, use status text
         errorMessage = response.statusText || errorMessage;
       }
 
-      throw new Error(errorMessage);
+      const err = new Error(errorMessage) as Error & { code?: string };
+      err.code = errorCode;
+
+      if (
+        errorCode === "CAPTCHA_REQUIRED" &&
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/staff/security-check") &&
+        !window.location.pathname.startsWith("/staff/login")
+      ) {
+        window.location.href = "/staff/security-check";
+      }
+
+      throw err;
     }
 
     // Handle empty responses (204 No Content, etc.)
@@ -261,10 +280,21 @@ class StaffApiClient {
   }
 
   // Staff auth
-  async login(username: string, password: string): Promise<StaffLoginResponse> {
+  async login(
+    username: string,
+    password: string,
+    captchaToken?: string,
+  ): Promise<StaffLoginResponse> {
     return this.request<StaffLoginResponse>("/staff/login", {
       method: "POST",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, captchaToken }),
+    });
+  }
+
+  async refreshCaptcha(captchaToken: string): Promise<{ accessToken: string }> {
+    return this.request<{ accessToken: string }>("/staff/refresh-captcha", {
+      method: "POST",
+      body: JSON.stringify({ captchaToken }),
     });
   }
 

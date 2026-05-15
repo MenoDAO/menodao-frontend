@@ -83,9 +83,11 @@ class AdminApiClient {
     if (!response.ok) {
       // Parse error response
       let errorMessage = `HTTP ${response.status}`;
+      let errorCode: string | undefined;
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
+        errorCode = errorData.code;
       } catch {
         errorMessage = "Request failed";
       }
@@ -113,7 +115,9 @@ class AdminApiClient {
         }
       }
 
-      throw new Error(errorMessage);
+      const err = new Error(errorMessage) as Error & { code?: string };
+      err.code = errorCode;
+      throw err;
     }
 
     // Parse and return successful response
@@ -134,13 +138,13 @@ class AdminApiClient {
   }
 
   // Auth
-  async login(username: string, password: string) {
+  async login(username: string, password: string, captchaToken?: string) {
     return this.request<{
       accessToken: string;
       admin: { id: string; username: string; role: string };
     }>("/admin/login", {
       method: "POST",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, captchaToken }),
     });
   }
 

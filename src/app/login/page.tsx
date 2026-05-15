@@ -6,6 +6,9 @@ import { Phone, Loader2, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
+import TurnstileWidget from "@/components/TurnstileWidget";
+import { useCaptcha } from "@/hooks/useCaptcha";
+import { isCaptchaEnabled } from "@/lib/captcha";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +17,12 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
+  const {
+    setCaptchaToken,
+    clearCaptcha,
+    requireCaptchaToken,
+    captchaReady,
+  } = useCaptcha();
 
   const validatePhoneNumber = (phone: string): boolean => {
     // Kenyan phone number validation
@@ -35,9 +44,15 @@ export default function LoginPage() {
       return;
     }
 
+    if (isCaptchaEnabled() && !captchaReady) {
+      setError("Please complete the security check");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
+      const captchaToken = requireCaptchaToken();
       // Normalize phone number
       const normalizedPhone = phoneNumber.trim().replace(/^0/, "+254");
 
@@ -48,12 +63,13 @@ export default function LoginPage() {
         // Phone number not found - show error and sign up button
         setError("Phone number not found. Please sign up instead");
         setShowSignUpPrompt(true);
+        clearCaptcha();
         setIsLoading(false);
         return;
       }
 
       // Phone exists - send OTP (don't create new member)
-      await api.requestOtp(normalizedPhone, false);
+      await api.requestOtp(normalizedPhone, false, { captchaToken });
 
       // Navigate to OTP verification with login flow
       router.push(
@@ -61,6 +77,7 @@ export default function LoginPage() {
       );
     } catch (err) {
       console.error("Login error:", err);
+      clearCaptcha();
       const errorMessage =
         err instanceof Error ? err.message : "Failed to send OTP";
       setError(errorMessage);
@@ -128,6 +145,14 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="flex justify-center">
+              <TurnstileWidget
+                onVerify={setCaptchaToken}
+                onExpire={clearCaptcha}
+                onError={clearCaptcha}
+              />
+            </div>
+
             {/* Error Message */}
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -151,7 +176,7 @@ export default function LoginPage() {
             {/* Continue Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !captchaReady}
               className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (

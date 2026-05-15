@@ -6,6 +6,9 @@ import { Shield, Loader2, ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { useTranslation } from "@/lib/i18n";
+import TurnstileWidget from "@/components/TurnstileWidget";
+import { useCaptcha } from "@/hooks/useCaptcha";
+import { isCaptchaEnabled } from "@/lib/captcha";
 
 function VerifyOTPContent() {
   const router = useRouter();
@@ -18,6 +21,12 @@ function VerifyOTPContent() {
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const { updateMember } = useAuthStore();
+  const {
+    setCaptchaToken,
+    clearCaptcha,
+    requireCaptchaToken,
+    captchaReady,
+  } = useCaptcha();
 
   useEffect(() => {
     // Validate that we have required parameters
@@ -34,12 +43,22 @@ function VerifyOTPContent() {
       return;
     }
 
+    if (isCaptchaEnabled() && !captchaReady) {
+      setError("Please complete the security check");
+      return;
+    }
+
     setIsVerifying(true);
     setError(null);
 
     try {
+      const captchaToken = requireCaptchaToken();
       // Verify OTP with backend
-      const { accessToken, member } = await api.verifyOtp(phone!, otp);
+      const { accessToken, member } = await api.verifyOtp(
+        phone!,
+        otp,
+        captchaToken,
+      );
       api.setToken(accessToken);
 
       // If this is a signup flow, update the account with additional details
@@ -71,6 +90,7 @@ function VerifyOTPContent() {
       window.location.href = "/dashboard";
     } catch (err) {
       console.error("OTP verification error:", err);
+      clearCaptcha();
       const errorMessage =
         err instanceof Error ? err.message : "Invalid OTP. Please try again.";
       setError(errorMessage);
@@ -82,15 +102,22 @@ function VerifyOTPContent() {
   const handleResendOtp = async () => {
     if (!phone) return;
 
+    if (isCaptchaEnabled() && !captchaReady) {
+      setError("Please complete the security check before resending");
+      return;
+    }
+
     setError(null);
     try {
+      const captchaToken = requireCaptchaToken();
       // Use the same createIfNotExists value based on flow
       const createIfNotExists = flow === "signup";
-      await api.requestOtp(phone, createIfNotExists);
+      await api.requestOtp(phone, createIfNotExists, { captchaToken });
       setError("OTP resent successfully");
       setTimeout(() => setError(null), 3000);
     } catch (err) {
       console.error("Resend OTP error:", err);
+      clearCaptcha();
       const errorMessage =
         err instanceof Error ? err.message : "Failed to resend OTP";
       setError(errorMessage);
@@ -164,6 +191,14 @@ function VerifyOTPContent() {
               />
             </div>
 
+            <div className="flex justify-center">
+              <TurnstileWidget
+                onVerify={setCaptchaToken}
+                onExpire={clearCaptcha}
+                onError={clearCaptcha}
+              />
+            </div>
+
             {/* Error Message */}
             {error && (
               <div
@@ -180,7 +215,7 @@ function VerifyOTPContent() {
             {/* Verify Button */}
             <button
               type="submit"
-              disabled={isVerifying || otp.length !== 6}
+              disabled={isVerifying || otp.length !== 6 || !captchaReady}
               className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isVerifying ? (

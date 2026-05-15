@@ -1,30 +1,51 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useStaffStore } from '@/lib/staff-store';
-import { staffApi } from '@/lib/staff-api';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useStaffStore } from "@/lib/staff-store";
+import { staffApi } from "@/lib/staff-api";
+import TurnstileWidget from "@/components/TurnstileWidget";
+import { useCaptcha } from "@/hooks/useCaptcha";
+import { isCaptchaEnabled } from "@/lib/captcha";
 
 export default function StaffLoginPage() {
   const router = useRouter();
   const { setStaff } = useStaffStore();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const {
+    setCaptchaToken,
+    clearCaptcha,
+    requireCaptchaToken,
+    captchaReady,
+  } = useCaptcha();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
+
+    if (isCaptchaEnabled() && !captchaReady) {
+      setError("Please complete the security check");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await staffApi.login(username, password);
+      const captchaToken = requireCaptchaToken();
+      const response = await staffApi.login(username, password, captchaToken);
       staffApi.setToken(response.accessToken);
       setStaff(response.staff, response.accessToken);
-      router.push('/staff');
-    } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      router.push("/staff");
+    } catch (err: unknown) {
+      clearCaptcha();
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Login failed. Please check your credentials.",
+      );
     } finally {
       setLoading(false);
     }
@@ -50,7 +71,10 @@ export default function StaffLoginPage() {
           )}
 
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               Username
             </label>
             <input
@@ -65,7 +89,10 @@ export default function StaffLoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               Password
             </label>
             <input
@@ -79,12 +106,21 @@ export default function StaffLoginPage() {
             />
           </div>
 
+          <div className="flex justify-center">
+            <TurnstileWidget
+              onVerify={setCaptchaToken}
+              onExpire={clearCaptcha}
+              onError={clearCaptcha}
+              theme="auto"
+            />
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !captchaReady}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
       </div>

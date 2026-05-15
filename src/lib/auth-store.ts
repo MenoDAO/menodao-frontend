@@ -72,7 +72,15 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
-        } catch {
+        } catch (err) {
+          const code = (err as Error & { code?: string }).code;
+          if (code === 'CAPTCHA_REQUIRED') {
+            set({ isLoading: false });
+            if (typeof window !== 'undefined') {
+              window.location.href = '/security-check';
+            }
+            return;
+          }
           api.setToken(null);
           set({
             member: null,

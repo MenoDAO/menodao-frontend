@@ -38,3 +38,4 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.menodao.org' || 'https://dev-api.menodao.org' }}
           NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}

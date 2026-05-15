@@ -6,6 +6,9 @@ import { useMutation } from "@tanstack/react-query";
 import { adminApi } from "@/lib/admin-api";
 import { useAdminStore } from "@/lib/admin-store";
 import { Shield, Loader2, Eye, EyeOff, Lock, User } from "lucide-react";
+import TurnstileWidget from "@/components/TurnstileWidget";
+import { useCaptcha } from "@/hooks/useCaptcha";
+import { isCaptchaEnabled } from "@/lib/captcha";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -14,6 +17,12 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const {
+    setCaptchaToken,
+    clearCaptcha,
+    requireCaptchaToken,
+    captchaReady,
+  } = useCaptcha();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -22,13 +31,14 @@ export default function AdminLoginPage() {
   }, [isAuthenticated, router]);
 
   const loginMutation = useMutation({
-    mutationFn: () => adminApi.login(username, password),
+    mutationFn: () => adminApi.login(username, password, requireCaptchaToken()),
     onSuccess: (data) => {
       adminApi.setToken(data.accessToken);
       login(data.admin, data.accessToken);
       router.push("/admin");
     },
     onError: (error: Error) => {
+      clearCaptcha();
       setError(error.message || "Login failed");
     },
   });
@@ -38,6 +48,10 @@ export default function AdminLoginPage() {
     setError(null);
     if (!username.trim() || !password.trim()) {
       setError("Please enter username and password");
+      return;
+    }
+    if (isCaptchaEnabled() && !captchaReady) {
+      setError("Please complete the security check");
       return;
     }
     loginMutation.mutate();
@@ -99,6 +113,15 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
+            <div className="flex justify-center">
+              <TurnstileWidget
+                onVerify={setCaptchaToken}
+                onExpire={clearCaptcha}
+                onError={clearCaptcha}
+                theme="dark"
+              />
+            </div>
+
             {error && (
               <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
                 {error}
@@ -107,7 +130,7 @@ export default function AdminLoginPage() {
 
             <button
               type="submit"
-              disabled={loginMutation.isPending}
+              disabled={loginMutation.isPending || !captchaReady}
               className="w-full py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loginMutation.isPending ? (

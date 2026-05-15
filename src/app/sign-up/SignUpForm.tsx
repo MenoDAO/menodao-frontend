@@ -7,6 +7,9 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { KENYAN_COUNTIES } from "@/lib/counties";
 import { useTranslation } from "@/lib/i18n";
+import TurnstileWidget from "@/components/TurnstileWidget";
+import { useCaptcha } from "@/hooks/useCaptcha";
+import { isCaptchaEnabled } from "@/lib/captcha";
 
 function SignUpFormInner() {
   const { t } = useTranslation();
@@ -22,6 +25,12 @@ function SignUpFormInner() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const {
+    setCaptchaToken,
+    clearCaptcha,
+    requireCaptchaToken,
+    captchaReady,
+  } = useCaptcha();
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -64,9 +73,15 @@ function SignUpFormInner() {
       return;
     }
 
+    if (isCaptchaEnabled() && !captchaReady) {
+      setErrors({ submit: "Please complete the security check" });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      const captchaToken = requireCaptchaToken();
       // Normalize phone number
       const normalizedPhone = formData.phoneNumber.trim().replace(/^0/, "+254");
 
@@ -99,6 +114,7 @@ function SignUpFormInner() {
       await api.requestOtp(normalizedPhone, true, {
         fullName: formData.fullName.trim(),
         location: formData.location.trim(),
+        captchaToken,
         ...(referredBy && { referredBy }),
       });
 
@@ -108,6 +124,7 @@ function SignUpFormInner() {
       );
     } catch (error) {
       console.error("Signup error:", error);
+      clearCaptcha();
       const errorMessage =
         error instanceof Error ? error.message : t("common.error");
       setErrors({ submit: errorMessage });
@@ -283,6 +300,14 @@ function SignUpFormInner() {
           )}
         </div>
 
+        <div className="flex justify-center">
+          <TurnstileWidget
+            onVerify={setCaptchaToken}
+            onExpire={clearCaptcha}
+            onError={clearCaptcha}
+          />
+        </div>
+
         {/* Submit Error */}
         {errors.submit && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -306,7 +331,7 @@ function SignUpFormInner() {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !captchaReady}
           className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (

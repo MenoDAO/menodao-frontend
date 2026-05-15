@@ -77,19 +77,31 @@ class ApiClient {
       const error = await response
         .json()
         .catch(() => ({ message: "Request failed" }));
-      throw new Error(error.message || `HTTP ${response.status}`);
+      const message =
+        typeof error.message === "string"
+          ? error.message
+          : Array.isArray(error.message)
+            ? error.message.join(", ")
+            : `HTTP ${response.status}`;
+      const err = new Error(message || error.code || `HTTP ${response.status}`) as Error & {
+        code?: string;
+        status?: number;
+      };
+      err.code = error.code;
+      err.status = response.status;
+      throw err;
     }
 
     return response.json();
   }
 
   // Auth endpoints
-  async checkPhoneExists(phoneNumber: string) {
+  async checkPhoneExists(phoneNumber: string, captchaToken?: string) {
     return this.request<{ exists: boolean; phoneNumber: string }>(
       "/auth/check-phone",
       {
         method: "POST",
-        body: JSON.stringify({ phoneNumber }),
+        body: JSON.stringify({ phoneNumber, captchaToken }),
       },
     );
   }
@@ -97,26 +109,44 @@ class ApiClient {
   async requestOtp(
     phoneNumber: string,
     createIfNotExists: boolean = false,
-    signupData?: { fullName?: string; location?: string; referredBy?: string },
+    signupData?: {
+      fullName?: string;
+      location?: string;
+      referredBy?: string;
+      captchaToken?: string;
+    },
   ) {
+    const { captchaToken, ...profile } = signupData ?? {};
     return this.request<{ message: string }>("/auth/request-otp", {
       method: "POST",
       body: JSON.stringify({
         phoneNumber,
         createIfNotExists,
-        ...signupData,
+        captchaToken,
+        ...profile,
       }),
     });
   }
 
-  async verifyOtp(phoneNumber: string, code: string) {
+  async verifyOtp(
+    phoneNumber: string,
+    code: string,
+    captchaToken?: string,
+  ) {
     return this.request<{ accessToken: string; member: Member }>(
       "/auth/verify-otp",
       {
         method: "POST",
-        body: JSON.stringify({ phoneNumber, code }),
+        body: JSON.stringify({ phoneNumber, code, captchaToken }),
       },
     );
+  }
+
+  async refreshCaptcha(captchaToken: string) {
+    return this.request<{ accessToken: string }>("/auth/refresh-captcha", {
+      method: "POST",
+      body: JSON.stringify({ captchaToken }),
+    });
   }
 
   async getMe() {

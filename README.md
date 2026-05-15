@@ -37,6 +37,9 @@ Create `.env.local`:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001
+
+# Cloudflare Turnstile (optional locally; required in production)
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-turnstile-site-key
 ```
 
 ### 3. Run Development Server

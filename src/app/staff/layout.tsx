@@ -16,19 +16,25 @@ export default function StaffLayout({
   const { isAuthenticated, staff, logout } = useStaffStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const isPublicStaffRoute =
+    pathname === "/staff/login" || pathname === "/staff/security-check";
+
   useEffect(() => {
-    // Check authentication on mount and route changes
-    if (!isAuthenticated && pathname !== "/staff/login") {
+    if (!isAuthenticated && !isPublicStaffRoute) {
       router.push("/staff/login");
       return;
-    } else if (isAuthenticated && pathname === "/staff/login") {
+    }
+    if (isAuthenticated && pathname === "/staff/login") {
       router.push("/staff");
       return;
     }
 
-    // Verify token is still valid only on mount, not on every route change
-    if (isAuthenticated && staffApi.getToken() && pathname !== "/staff/login") {
-      staffApi.getProfile().catch((error) => {
+    if (isAuthenticated && staffApi.getToken() && !isPublicStaffRoute) {
+      staffApi.getProfile().catch((error: Error & { code?: string }) => {
+        if (error.code === "CAPTCHA_REQUIRED") {
+          router.push("/staff/security-check");
+          return;
+        }
         console.error("Token validation failed:", error);
         logout();
         router.push("/staff/login");
@@ -37,11 +43,11 @@ export default function StaffLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, pathname]);
 
-  if (!isAuthenticated && pathname !== "/staff/login") {
+  if (!isAuthenticated && !isPublicStaffRoute) {
     return null;
   }
 
-  if (pathname === "/staff/login") {
+  if (isPublicStaffRoute) {
     return <>{children}</>;
   }
 
