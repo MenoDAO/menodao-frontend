@@ -38,6 +38,7 @@ interface PaymentDialogProps {
   isUpgrade?: boolean;
   isRenewal?: boolean;
   currentTier?: "BRONZE" | "SILVER" | "GOLD";
+  subscriptionEndDate?: string | null; // ISO date — used to enforce 2-year annual advance limit
   onSubscribe?: (
     tier: "BRONZE" | "SILVER" | "GOLD",
     frequency: "MONTHLY" | "ANNUAL",
@@ -65,6 +66,7 @@ export default function PaymentDialog({
   isUpgrade = false,
   isRenewal = false,
   currentTier,
+  subscriptionEndDate,
   onSubscribe,
 }: PaymentDialogProps) {
   const member = useAuthStore((state) => state.member);
@@ -85,6 +87,17 @@ export default function PaymentDialog({
     displayAmount: number;
     message: string;
   } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "error" | "info";
+  } | null>(null);
+
+  // Auto-dismiss toast after 5s
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   // Fetch upgrade info when dialog opens for upgrade
   // Only fetch if this is truly an upgrade (not same tier) and we're in the right state
@@ -303,6 +316,21 @@ export default function PaymentDialog({
   const handleContinueToPayment = async () => {
     if (!selectedFrequency) return;
 
+    // Enforce 2-year advance limit for annual renewals
+    if (isRenewal && selectedFrequency === "ANNUAL" && subscriptionEndDate) {
+      const endDate = new Date(subscriptionEndDate);
+      const twoYearsFromNow = new Date();
+      twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
+      if (endDate > twoYearsFromNow) {
+        setToast({
+          message:
+            "Annual subscriptions can only be paid up to 2 years in advance. Your subscription is already covered beyond that limit.",
+          type: "error",
+        });
+        return;
+      }
+    }
+
     // For new subscriptions (not upgrades, not renewals), create the subscription
     if (!isUpgrade && !isRenewal && onSubscribe) {
       try {
@@ -347,6 +375,25 @@ export default function PaymentDialog({
 
         {/* Content */}
         <div className="p-4 sm:p-6">
+          {/* Toast notification */}
+          {toast && (
+            <div
+              className={`mb-4 flex items-start gap-3 p-3 rounded-lg text-sm ${
+                toast.type === "error"
+                  ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300"
+                  : "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300"
+              }`}
+            >
+              <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{toast.message}</span>
+              <button
+                onClick={() => setToast(null)}
+                className="ml-auto shrink-0 opacity-60 hover:opacity-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           {/* Frequency Selection State */}
           {paymentStatus === "FREQUENCY_SELECT" && !isUpgrade && (
             <>
@@ -355,14 +402,6 @@ export default function PaymentDialog({
                 monthlyPrice={amount}
                 onSelect={handleFrequencySelect}
               />
-              {/* Advance payment limit notice for renewals */}
-              {isRenewal && (
-                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-700 dark:text-blue-300">
-                  <p className="font-medium mb-0.5">Advance payment limits</p>
-                  <p>Monthly: pay as many months ahead as you like.</p>
-                  <p>Annual: maximum 2 years in advance.</p>
-                </div>
-              )}
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={handleContinueToPayment}

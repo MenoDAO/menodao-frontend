@@ -473,6 +473,29 @@ class AdminApiClient {
     return this.request<AuditLogEntry[]>(`/admin/audit-logs?limit=${limit}`);
   }
 
+  // Subscriptions list for renewal management
+  async listSubscriptions(
+    params: {
+      sortBy?: "daysToExpiry" | "tier" | "startDate" | "renewalDate";
+      order?: "asc" | "desc";
+      tier?: string;
+      status?: "active" | "inactive" | "all";
+      limit?: number;
+      offset?: number;
+    } = {},
+  ) {
+    const searchParams = new URLSearchParams();
+    if (params.sortBy) searchParams.set("sortBy", params.sortBy);
+    if (params.order) searchParams.set("order", params.order);
+    if (params.tier) searchParams.set("tier", params.tier);
+    if (params.status) searchParams.set("status", params.status);
+    if (params.limit) searchParams.set("limit", String(params.limit));
+    if (params.offset) searchParams.set("offset", String(params.offset));
+    return this.request<{ data: SubscriptionRow[]; total: number }>(
+      `/admin/subscriptions?${searchParams}`,
+    );
+  }
+
   // Renewal Reminders
   async triggerMemberReminder(memberId: string) {
     return this.request<{ phoneNumber: string; templateKey: string }>(
@@ -905,4 +928,16 @@ export interface Web3Stats {
     verifiedAt: string;
     explorerUrl: string | null;
   }[];
+}
+
+export interface SubscriptionRow {
+  memberId: string;
+  memberName: string | null;
+  phoneNumber: string | null;
+  tier: "BRONZE" | "SILVER" | "GOLD";
+  isActive: boolean;
+  paymentFrequency: "MONTHLY" | "ANNUAL";
+  firstSubscriptionDate: string | null;
+  renewalDate: string | null;
+  daysToExpiry: number | null;
 }

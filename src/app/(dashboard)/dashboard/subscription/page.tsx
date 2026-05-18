@@ -358,6 +358,7 @@ export default function SubscriptionPage() {
               selectedTier === subscription?.tier
             }
             currentTier={subscription?.tier}
+            subscriptionEndDate={subscription?.endDate ?? null}
             onSubscribe={async (tier, frequency) => {
               await subscribeMutation.mutateAsync({
                 tier,
