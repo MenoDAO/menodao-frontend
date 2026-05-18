@@ -21,12 +21,8 @@ function VerifyOTPContent() {
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const { updateMember } = useAuthStore();
-  const {
-    setCaptchaToken,
-    clearCaptcha,
-    requireCaptchaToken,
-    captchaReady,
-  } = useCaptcha();
+  const { setCaptchaToken, clearCaptcha, requireCaptchaToken, captchaReady } =
+    useCaptcha();
 
   useEffect(() => {
     // Validate that we have required parameters
@@ -86,8 +82,9 @@ function VerifyOTPContent() {
         updateMember(member);
       }
 
-      // Navigate to dashboard - use window.location for a hard navigation
-      window.location.href = "/dashboard";
+      // Navigate to dashboard - use callbackUrl if present, otherwise default to dashboard
+      const destination = searchParams.get("callbackUrl") ?? "/dashboard";
+      window.location.href = destination;
     } catch (err) {
       console.error("OTP verification error:", err);
       clearCaptcha();

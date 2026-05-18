@@ -27,17 +27,21 @@ interface RecipientFilters {
 
 export function SendNotification({
   initialPhone,
+  initialPhones,
   initialTier,
   initialStatus,
+  initialMessage,
 }: {
   initialPhone?: string;
+  initialPhones?: string; // comma-separated list for bulk pre-population
   initialTier?: "ALL" | "BRONZE" | "SILVER" | "GOLD";
   initialStatus?: "active" | "inactive" | "all";
+  initialMessage?: string;
 } = {}) {
   const [notificationTypes, setNotificationTypes] = useState<
     ("SMS" | "PUSH")[]
   >(["SMS"]);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage ?? "");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [recipientCount, setRecipientCount] = useState(0);
   const [filters, setFilters] = useState<RecipientFilters>({
@@ -64,6 +68,21 @@ export function SendNotification({
     notificationId: string;
     recipientCount: number;
   } | null>(null);
+
+  // Pre-populate CSV phone list when initialPhones is provided
+  useEffect(() => {
+    if (!initialPhones) return;
+    const phones = initialPhones
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    if (phones.length > 0) {
+      setCsvPhoneNumbers(phones);
+      setCsvValidPhoneCount(phones.length);
+      setCsvFileName(`${phones.length} pre-selected recipients`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Phone number validation
   const validatePhoneNumber = (phone: string): boolean => {

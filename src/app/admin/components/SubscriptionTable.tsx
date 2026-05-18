@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Loader2,
   Send,
+  ChevronDown as ExpandIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { adminApi, type SubscriptionRow } from "@/lib/admin-api";
@@ -23,6 +24,41 @@ const TIER_COLORS: Record<string, string> = {
   SILVER: "text-slate-300 bg-slate-400/10",
   GOLD: "text-yellow-400 bg-yellow-400/10",
 };
+
+const SUBSCRIPTION_URL = "https://app.menodao.org/dashboard/subscription";
+
+/** Generate a bilingual renewal reminder message based on member's preferred language */
+function buildRenewalMessage(
+  memberName: string | null,
+  tier: string,
+  renewalDate: string | null,
+  lang: "en" | "sw" = "en",
+): string {
+  const name = memberName ?? "Member";
+  const tierLabel = tier.charAt(0) + tier.slice(1).toLowerCase(); // e.g. "Bronze"
+  const dateStr = renewalDate
+    ? new Date(renewalDate).toLocaleDateString("en-KE", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "soon";
+
+  if (lang === "sw") {
+    return (
+      `Habari ${name}! Ukumbusho wa upya wa usajili wako wa MenoDAO ${tierLabel}. ` +
+      `Usajili wako unakaribia kumalizika tarehe ${dateStr}. ` +
+      `Tafadhali fanya upya sasa ili kuendelea kupata huduma za meno: ${SUBSCRIPTION_URL} ` +
+      `Asante kwa kuwa sehemu ya MenoDAO! 🦷`
+    );
+  }
+  return (
+    `Hi ${name}! This is a friendly reminder about your MenoDAO ${tierLabel} subscription renewal. ` +
+    `Your subscription is due for renewal on ${dateStr}. ` +
+    `Please renew now to continue enjoying your dental benefits: ${SUBSCRIPTION_URL} ` +
+    `Thank you for being part of MenoDAO! 🦷`
+  );
+}
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -60,6 +96,8 @@ function DaysChip({ days }: { days: number | null }) {
   );
 }
 
+const MOBILE_INITIAL_ROWS = 3;
+
 export function SubscriptionTable() {
   const router = useRouter();
 
@@ -71,6 +109,10 @@ export function SubscriptionTable() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [tierFilter, setTierFilter] = useState<TierFilter>("ALL");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
+  const [showAll, setShowAll] = useState(false);
+  // Track which row's Alert button is in-flight to prevent double clicks
+  const [alertingId, setAlertingId] = useState<string | null>(null);
+  const [bulkAlerting, setBulkAlerting] = useState(false);
 
   const loadSubscriptions = useCallback(async () => {
     setTableLoading(true);
@@ -117,47 +159,76 @@ export function SubscriptionTable() {
     );
   };
 
-  /** Navigate to the send-notification page pre-filled with a single phone */
+  /** Navigate to send-notification pre-filled for a single member */
   const handleSendAlertToMember = (row: SubscriptionRow) => {
-    if (!row.phoneNumber) return;
+    if (!row.phoneNumber || alertingId) return;
+    setAlertingId(row.memberId);
+    const message = buildRenewalMessage(
+      row.memberName,
+      row.tier,
+      row.renewalDate,
+      "en", // default; admin can edit before sending
+    );
     const params = new URLSearchParams({
       phone: row.phoneNumber,
+      message,
     });
     router.push(`/admin/alerts/send?${params.toString()}`);
+    // Reset after navigation (small delay so button stays disabled during nav)
+    setTimeout(() => setAlertingId(null), 2000);
   };
 
-  /** Navigate to send-notification pre-filled with current filter criteria */
+  /** Navigate to send-notification with the full filtered phone list pre-populated */
   const handleSendAlertToFiltered = () => {
-    const params = new URLSearchParams();
-    if (tierFilter !== "ALL") params.set("tier", tierFilter);
-    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (bulkAlerting || rows.length === 0) return;
+    setBulkAlerting(true);
+
+    const phones = rows
+      .filter((r) => r.phoneNumber)
+      .map((r) => r.phoneNumber as string);
+
+    // Build a generic bulk renewal message
+    const message =
+      `Hi! This is a renewal reminder for your MenoDAO subscription. ` +
+      `Please renew to continue enjoying your dental benefits: ${SUBSCRIPTION_URL} 🦷`;
+
+    const params = new URLSearchParams({
+      phones: phones.join(","),
+      message,
+    });
     router.push(`/admin/alerts/send?${params.toString()}`);
+    setTimeout(() => setBulkAlerting(false), 2000);
   };
+
+  const visibleRows = showAll ? rows : rows.slice(0, MOBILE_INITIAL_ROWS);
 
   return (
     <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-700 gap-3">
         <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-purple-400" />
-          <h3 className="text-lg font-semibold text-white">
+          <Users className="w-5 h-5 text-purple-400 shrink-0" />
+          <h3 className="text-base sm:text-lg font-semibold text-white">
             Member Subscriptions
           </h3>
           {!tableLoading && (
-            <span className="text-xs text-gray-400 ml-1">
-              ({total} members)
-            </span>
+            <span className="text-xs text-gray-400">({total})</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {/* Bulk send alert button */}
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleSendAlertToFiltered}
-            disabled={tableLoading || rows.length === 0}
+            disabled={tableLoading || rows.length === 0 || bulkAlerting}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-colors"
           >
-            <Send className="w-3.5 h-3.5" />
-            Send Alert to Filtered ({total})
+            {bulkAlerting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Send className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden sm:inline">Send Alert to Filtered</span>
+            <span className="sm:hidden">Alert All</span>
+            <span>({total})</span>
           </button>
           <button
             onClick={loadSubscriptions}
@@ -173,14 +244,14 @@ export function SubscriptionTable() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-gray-700 bg-gray-800/50">
-        <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 border-b border-gray-700 bg-gray-800/50">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs text-gray-400">Tier:</span>
           {(["ALL", "BRONZE", "SILVER", "GOLD"] as TierFilter[]).map((t) => (
             <button
               key={t}
               onClick={() => setTierFilter(t)}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+              className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
                 tierFilter === t
                   ? "bg-purple-600 text-white"
                   : "bg-gray-700 text-gray-300 hover:bg-gray-600"
@@ -190,13 +261,13 @@ export function SubscriptionTable() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs text-gray-400">Status:</span>
           {(["all", "active", "inactive"] as StatusFilter[]).map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-colors ${
+              className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize transition-colors ${
                 statusFilter === s
                   ? "bg-purple-600 text-white"
                   : "bg-gray-700 text-gray-300 hover:bg-gray-600"
@@ -208,7 +279,7 @@ export function SubscriptionTable() {
         </div>
       </div>
 
-      {/* Table body */}
+      {/* Content */}
       {tableError ? (
         <div className="flex items-center gap-2 p-6 text-red-400 text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -223,114 +294,193 @@ export function SubscriptionTable() {
           No subscriptions match the selected filters.
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-700 text-left">
-                <th className="px-4 py-3 text-gray-400 font-medium">Member</th>
-                <th className="px-4 py-3 text-gray-400 font-medium">
-                  <button
-                    onClick={() => handleSort("tier")}
-                    className="flex items-center gap-1 hover:text-white transition-colors"
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-700 text-left">
+                  <th className="px-4 py-3 text-gray-400 font-medium">
+                    Member
+                  </th>
+                  <th className="px-4 py-3 text-gray-400 font-medium">
+                    <button
+                      onClick={() => handleSort("tier")}
+                      className="flex items-center gap-1 hover:text-white transition-colors"
+                    >
+                      Tier <SortIcon field="tier" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-gray-400 font-medium">Freq.</th>
+                  <th className="px-4 py-3 text-gray-400 font-medium">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-gray-400 font-medium">
+                    <button
+                      onClick={() => handleSort("startDate")}
+                      className="flex items-center gap-1 hover:text-white transition-colors"
+                    >
+                      First Sub <SortIcon field="startDate" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-gray-400 font-medium">
+                    <button
+                      onClick={() => handleSort("renewalDate")}
+                      className="flex items-center gap-1 hover:text-white transition-colors"
+                    >
+                      Next Renewal <SortIcon field="renewalDate" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-gray-400 font-medium">
+                    <button
+                      onClick={() => handleSort("daysToExpiry")}
+                      className="flex items-center gap-1 hover:text-white transition-colors"
+                    >
+                      Expiry <SortIcon field="daysToExpiry" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-gray-400 font-medium">Alert</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700/50">
+                {rows.map((row) => (
+                  <tr
+                    key={row.memberId}
+                    className="hover:bg-gray-700/30 transition-colors"
                   >
-                    Tier <SortIcon field="tier" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-gray-400 font-medium">
-                  Frequency
-                </th>
-                <th className="px-4 py-3 text-gray-400 font-medium">Status</th>
-                <th className="px-4 py-3 text-gray-400 font-medium">
-                  <button
-                    onClick={() => handleSort("startDate")}
-                    className="flex items-center gap-1 hover:text-white transition-colors"
-                  >
-                    First Subscribed <SortIcon field="startDate" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-gray-400 font-medium">
-                  <button
-                    onClick={() => handleSort("renewalDate")}
-                    className="flex items-center gap-1 hover:text-white transition-colors"
-                  >
-                    Next Renewal <SortIcon field="renewalDate" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-gray-400 font-medium">
-                  <button
-                    onClick={() => handleSort("daysToExpiry")}
-                    className="flex items-center gap-1 hover:text-white transition-colors"
-                  >
-                    Days to Expiry <SortIcon field="daysToExpiry" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-gray-400 font-medium">Alert</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700/50">
-              {rows.map((row) => (
-                <tr
-                  key={row.memberId}
-                  className="hover:bg-gray-700/30 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <p className="text-white font-medium truncate max-w-[160px]">
+                    <td className="px-4 py-3">
+                      <p className="text-white font-medium truncate max-w-[140px]">
+                        {row.memberName ?? "—"}
+                      </p>
+                      <p className="text-gray-400 text-xs">
+                        {row.phoneNumber ?? row.memberId.slice(0, 8) + "…"}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${TIER_COLORS[row.tier] ?? ""}`}
+                      >
+                        {row.tier}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-300 capitalize text-xs">
+                      {row.paymentFrequency.toLowerCase()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          row.isActive
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-gray-600/40 text-gray-400"
+                        }`}
+                      >
+                        {row.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-300 text-xs">
+                      {formatDate(row.firstSubscriptionDate)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-300 text-xs">
+                      {formatDate(row.renewalDate)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <DaysChip days={row.daysToExpiry} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => handleSendAlertToMember(row)}
+                        disabled={
+                          !row.phoneNumber || alertingId === row.memberId
+                        }
+                        title={
+                          row.phoneNumber
+                            ? `Send alert to ${row.phoneNumber}`
+                            : "No phone number"
+                        }
+                        className="flex items-center gap-1 px-2.5 py-1 bg-purple-600/20 hover:bg-purple-600/40 disabled:opacity-40 disabled:cursor-not-allowed text-purple-300 text-xs font-medium rounded-lg transition-colors"
+                      >
+                        {alertingId === row.memberId ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Send className="w-3 h-3" />
+                        )}
+                        Alert
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y divide-gray-700/50">
+            {visibleRows.map((row) => (
+              <div
+                key={row.memberId}
+                className="px-4 py-3 hover:bg-gray-700/20 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-white font-medium text-sm truncate">
                       {row.memberName ?? "—"}
                     </p>
-                    <p className="text-gray-400 text-xs">
+                    <p className="text-gray-400 text-xs mt-0.5">
                       {row.phoneNumber ?? row.memberId.slice(0, 8) + "…"}
                     </p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${TIER_COLORS[row.tier] ?? ""}`}
-                    >
-                      {row.tier}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-300 capitalize">
-                    {row.paymentFrequency.toLowerCase()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        row.isActive
-                          ? "bg-emerald-500/20 text-emerald-400"
-                          : "bg-gray-600/40 text-gray-400"
-                      }`}
-                    >
-                      {row.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-300">
-                    {formatDate(row.firstSubscriptionDate)}
-                  </td>
-                  <td className="px-4 py-3 text-gray-300">
-                    {formatDate(row.renewalDate)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <DaysChip days={row.daysToExpiry} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleSendAlertToMember(row)}
-                      disabled={!row.phoneNumber}
-                      title={
-                        row.phoneNumber
-                          ? `Send alert to ${row.phoneNumber}`
-                          : "No phone number"
-                      }
-                      className="flex items-center gap-1 px-2.5 py-1 bg-purple-600/20 hover:bg-purple-600/40 disabled:opacity-40 disabled:cursor-not-allowed text-purple-300 text-xs font-medium rounded-lg transition-colors"
-                    >
+                  </div>
+                  <button
+                    onClick={() => handleSendAlertToMember(row)}
+                    disabled={!row.phoneNumber || alertingId === row.memberId}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-purple-600/20 hover:bg-purple-600/40 disabled:opacity-40 disabled:cursor-not-allowed text-purple-300 text-xs font-medium rounded-lg transition-colors shrink-0"
+                  >
+                    {alertingId === row.memberId ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
                       <Send className="w-3 h-3" />
-                      Alert
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    )}
+                    Alert
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${TIER_COLORS[row.tier] ?? ""}`}
+                  >
+                    {row.tier}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      row.isActive
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : "bg-gray-600/40 text-gray-400"
+                    }`}
+                  >
+                    {row.isActive ? "Active" : "Inactive"}
+                  </span>
+                  <DaysChip days={row.daysToExpiry} />
+                  <span className="text-gray-500 text-xs">
+                    Renews {formatDate(row.renewalDate)}
+                  </span>
+                </div>
+              </div>
+            ))}
+
+            {/* Show more / less */}
+            {rows.length > MOBILE_INITIAL_ROWS && (
+              <button
+                onClick={() => setShowAll((v) => !v)}
+                className="w-full flex items-center justify-center gap-1.5 py-3 text-sm text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                <ExpandIcon
+                  className={`w-4 h-4 transition-transform ${showAll ? "rotate-180" : ""}`}
+                />
+                {showAll
+                  ? "Show less"
+                  : `Show ${rows.length - MOBILE_INITIAL_ROWS} more`}
+              </button>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

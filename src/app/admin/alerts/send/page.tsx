@@ -6,8 +6,11 @@ import { SendNotification } from "../../components/SendNotification";
 export default function SendNotificationPage() {
   const searchParams = useSearchParams();
   const initialPhone = searchParams.get("phone") ?? undefined;
+  // Bulk: comma-separated phone list pre-populates the CSV field
+  const initialPhones = searchParams.get("phones") ?? undefined;
   const initialTier = searchParams.get("tier") ?? undefined;
   const initialStatus = searchParams.get("status") ?? undefined;
+  const initialMessage = searchParams.get("message") ?? undefined;
 
   return (
     <div className="space-y-6">
@@ -22,8 +25,10 @@ export default function SendNotificationPage() {
       {/* Send Notification Component */}
       <SendNotification
         initialPhone={initialPhone}
+        initialPhones={initialPhones}
         initialTier={initialTier as any}
         initialStatus={initialStatus as any}
+        initialMessage={initialMessage}
       />
     </div>
   );

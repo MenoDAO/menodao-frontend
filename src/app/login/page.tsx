@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Phone, Loader2, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
@@ -12,17 +12,15 @@ import { isCaptchaEnabled } from "@/lib/captcha";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams?.get("callbackUrl") ?? null;
   const { t } = useTranslation();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
-  const {
-    setCaptchaToken,
-    clearCaptcha,
-    requireCaptchaToken,
-    captchaReady,
-  } = useCaptcha();
+  const { setCaptchaToken, clearCaptcha, requireCaptchaToken, captchaReady } =
+    useCaptcha();
 
   const validatePhoneNumber = (phone: string): boolean => {
     // Kenyan phone number validation
@@ -72,9 +70,8 @@ export default function LoginPage() {
       await api.requestOtp(normalizedPhone, false, { captchaToken });
 
       // Navigate to OTP verification with login flow
-      router.push(
-        `/verify-otp?flow=login&phone=${encodeURIComponent(normalizedPhone)}`,
-      );
+      const otpUrl = `/verify-otp?flow=login&phone=${encodeURIComponent(normalizedPhone)}${callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`;
+      router.push(otpUrl);
     } catch (err) {
       console.error("Login error:", err);
       clearCaptcha();

@@ -48,6 +48,7 @@ export default function UsersPage() {
   const [searchInput, setSearchInput] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [showAllUsers, setShowAllUsers] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -160,7 +161,8 @@ export default function UsersPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-700">
@@ -225,7 +227,6 @@ export default function UsersPage() {
                               Inactive
                             </span>
                           )}
-
                           {user.subscription && (
                             <div className="flex items-center gap-2">
                               {deleteConfirmId === user.id ? (
@@ -277,6 +278,65 @@ export default function UsersPage() {
               </table>
             </div>
 
+            {/* Mobile cards — show 3 rows with "Show more" */}
+            <div className="sm:hidden divide-y divide-gray-700/50">
+              {(showAllUsers
+                ? (data?.data ?? [])
+                : (data?.data ?? []).slice(0, 3)
+              ).map((user: AdminUser) => (
+                <div key={user.id} className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-white font-medium text-sm truncate">
+                        {user.fullName || "—"}
+                      </p>
+                      <p className="text-gray-500 text-xs mt-0.5">
+                        {user.phoneNumber}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      {user.subscription ? (
+                        <TierBadge tier={user.subscription.tier} />
+                      ) : (
+                        <span className="text-gray-500 text-xs">No sub</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-400">
+                    {user.subscription?.isActive ? (
+                      <span className="text-emerald-400 flex items-center gap-0.5">
+                        <Check className="w-3 h-3" />
+                        Active
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 flex items-center gap-0.5">
+                        <X className="w-3 h-3" />
+                        Inactive
+                      </span>
+                    )}
+                    <span>{user._count.contributions} payments</span>
+                    <span>{user._count.claims} claims</span>
+                    <span>
+                      Joined {new Date(user.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {(data?.data?.length ?? 0) > 3 && (
+                <button
+                  onClick={() => setShowAllUsers((v) => !v)}
+                  className="w-full flex items-center justify-center gap-1.5 py-3 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                >
+                  <ChevronRight
+                    className={`w-4 h-4 transition-transform ${showAllUsers ? "rotate-90" : ""}`}
+                  />
+                  {showAllUsers
+                    ? "Show less"
+                    : `Show ${(data?.data?.length ?? 0) - 3} more`}
+                </button>
+              )}
+            </div>
+
             {/* Empty state */}
             {data?.data.length === 0 && (
               <div className="text-center py-12">
@@ -286,9 +346,9 @@ export default function UsersPage() {
 
             {/* Pagination */}
             {data && data.meta.totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700">
-                <p className="text-gray-500 text-sm">
-                  Showing {(page - 1) * limit + 1} to{" "}
+              <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-t border-gray-700">
+                <p className="text-gray-500 text-xs sm:text-sm">
+                  {(page - 1) * limit + 1}–
                   {Math.min(page * limit, data.meta.total)} of {data.meta.total}
                 </p>
                 <div className="flex items-center gap-2">
@@ -300,7 +360,7 @@ export default function UsersPage() {
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <span className="text-gray-400 text-sm px-2">
-                    Page {page} of {data.meta.totalPages}
+                    {page}/{data.meta.totalPages}
                   </span>
                   <button
                     onClick={() => setPage(page + 1)}
