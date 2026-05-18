@@ -36,6 +36,7 @@ interface PaymentDialogProps {
   tier: "BRONZE" | "SILVER" | "GOLD";
   onPaymentComplete: () => void;
   isUpgrade?: boolean;
+  isRenewal?: boolean;
   currentTier?: "BRONZE" | "SILVER" | "GOLD";
   onSubscribe?: (
     tier: "BRONZE" | "SILVER" | "GOLD",
@@ -62,6 +63,7 @@ export default function PaymentDialog({
   tier,
   onPaymentComplete,
   isUpgrade = false,
+  isRenewal = false,
   currentTier,
   onSubscribe,
 }: PaymentDialogProps) {
@@ -121,9 +123,9 @@ export default function PaymentDialog({
     // Only reset if dialog is opening (was closed, now open)
     if (isOpen && !prevIsOpenRef.current) {
       setPayerPhone("");
-      // For active subscriptions (regular payments), skip frequency selection
-      // For new subscriptions or upgrades, show frequency selection
-      setPaymentStatus(!isUpgrade && onSubscribe ? "FREQUENCY_SELECT" : "IDLE");
+      // Show frequency selection for: new subscriptions, renewals
+      // Upgrades go to FREQUENCY_SELECT too (they show the upgrade cost screen there)
+      setPaymentStatus("FREQUENCY_SELECT");
       setStatusMessage("");
       setContributionId(null);
       setErrorMessage(null);
@@ -134,7 +136,7 @@ export default function PaymentDialog({
       setUpgradeInfo(null);
     }
     prevIsOpenRef.current = isOpen;
-  }, [isOpen, amount, isUpgrade, onSubscribe]);
+  }, [isOpen, amount, isUpgrade, isRenewal, onSubscribe]);
 
   // Payment initiation mutation
   const paymentMutation = useMutation({
@@ -301,8 +303,8 @@ export default function PaymentDialog({
   const handleContinueToPayment = async () => {
     if (!selectedFrequency) return;
 
-    // For new subscriptions (not upgrades), create the subscription with the selected frequency
-    if (!isUpgrade && onSubscribe) {
+    // For new subscriptions (not upgrades, not renewals), create the subscription
+    if (!isUpgrade && !isRenewal && onSubscribe) {
       try {
         await onSubscribe(tier, selectedFrequency);
       } catch (error) {
@@ -328,8 +330,12 @@ export default function PaymentDialog({
               : paymentStatus === "FAILED"
                 ? "Payment Failed"
                 : paymentStatus === "FREQUENCY_SELECT"
-                  ? "Choose Payment Plan"
-                  : "Confirm Payment"}
+                  ? isRenewal
+                    ? "Renew Your Plan"
+                    : "Choose Payment Plan"
+                  : isRenewal
+                    ? "Confirm Renewal"
+                    : "Confirm Payment"}
           </h2>
           <button
             onClick={handleClose}
@@ -349,6 +355,14 @@ export default function PaymentDialog({
                 monthlyPrice={amount}
                 onSelect={handleFrequencySelect}
               />
+              {/* Advance payment limit notice for renewals */}
+              {isRenewal && (
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-700 dark:text-blue-300">
+                  <p className="font-medium mb-0.5">Advance payment limits</p>
+                  <p>Monthly: pay as many months ahead as you like.</p>
+                  <p>Annual: maximum 2 years in advance.</p>
+                </div>
+              )}
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={handleContinueToPayment}
@@ -406,12 +420,18 @@ export default function PaymentDialog({
                 <CheckCircle2 className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                {isUpgrade ? "Upgrade Successful!" : "Payment Successful!"}
+                {isUpgrade
+                  ? "Upgrade Successful!"
+                  : isRenewal
+                    ? "Renewal Successful!"
+                    : "Payment Successful!"}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {isUpgrade
                   ? `You've been upgraded to ${mapTierToConfigTier(tier)}! Your new claim limit is now active.`
-                  : `Your ${mapTierToConfigTier(tier)} membership payment of KES ${displayAmount.toLocaleString()} has been received.`}
+                  : isRenewal
+                    ? `Your ${mapTierToConfigTier(tier)} subscription has been renewed. Thank you!`
+                    : `Your ${mapTierToConfigTier(tier)} membership payment of KES ${displayAmount.toLocaleString()} has been received.`}
               </p>
               <button
                 onClick={onClose}
