@@ -25,7 +25,15 @@ interface RecipientFilters {
   tier: "ALL" | "BRONZE" | "SILVER" | "GOLD";
 }
 
-export function SendNotification() {
+export function SendNotification({
+  initialPhone,
+  initialTier,
+  initialStatus,
+}: {
+  initialPhone?: string;
+  initialTier?: "ALL" | "BRONZE" | "SILVER" | "GOLD";
+  initialStatus?: "active" | "inactive" | "all";
+} = {}) {
   const [notificationTypes, setNotificationTypes] = useState<
     ("SMS" | "PUSH")[]
   >(["SMS"]);
@@ -38,11 +46,11 @@ export function SendNotification() {
     dateJoinedTo: "",
     balanceMin: "",
     balanceMax: "",
-    subscriptionStatus: "all",
-    singlePhoneNumber: "",
+    subscriptionStatus: initialStatus ?? "all",
+    singlePhoneNumber: initialPhone ?? "",
     csvFile: null,
     subCounty: "",
-    tier: "ALL",
+    tier: initialTier ?? "ALL",
   });
   const [csvFileName, setCsvFileName] = useState<string>("");
   const [csvError, setCsvError] = useState<string>("");

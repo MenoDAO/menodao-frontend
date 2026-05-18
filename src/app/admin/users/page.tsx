@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { useEffect } from "react";
+import { SubscriptionTable } from "../components/SubscriptionTable";
 
 function TierBadge({ tier }: { tier: string }) {
   const colors = {
@@ -313,6 +314,13 @@ export default function UsersPage() {
             )}
           </>
         )}
+      </div>
+      {/* Subscription details table */}
+      <div>
+        <h2 className="text-lg font-semibold text-white mb-4">
+          Subscription Details
+        </h2>
+        <SubscriptionTable />
       </div>
     </div>
   );

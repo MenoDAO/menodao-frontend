@@ -1,8 +1,14 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { SendNotification } from "../../components/SendNotification";
 
 export default function SendNotificationPage() {
+  const searchParams = useSearchParams();
+  const initialPhone = searchParams.get("phone") ?? undefined;
+  const initialTier = searchParams.get("tier") ?? undefined;
+  const initialStatus = searchParams.get("status") ?? undefined;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -14,7 +20,11 @@ export default function SendNotificationPage() {
       </div>
 
       {/* Send Notification Component */}
-      <SendNotification />
+      <SendNotification
+        initialPhone={initialPhone}
+        initialTier={initialTier as any}
+        initialStatus={initialStatus as any}
+      />
     </div>
   );
 }
