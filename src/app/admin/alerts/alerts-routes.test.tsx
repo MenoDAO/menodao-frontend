@@ -11,6 +11,13 @@ jest.mock("next/link", () => {
   };
 });
 
+// Mock Next.js navigation (useSearchParams returns null in Jest without a router)
+jest.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+  usePathname: () => "/admin/alerts/send",
+}));
+
 // Mock the components
 jest.mock("../components/NotificationHistory", () => ({
   NotificationHistory: () => (
