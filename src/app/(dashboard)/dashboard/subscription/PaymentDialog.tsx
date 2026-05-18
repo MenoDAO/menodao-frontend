@@ -36,7 +36,9 @@ interface PaymentDialogProps {
   tier: "BRONZE" | "SILVER" | "GOLD";
   onPaymentComplete: () => void;
   isUpgrade?: boolean;
+  isRenewal?: boolean;
   currentTier?: "BRONZE" | "SILVER" | "GOLD";
+  subscriptionEndDate?: string | null; // ISO date — used to enforce 2-year annual advance limit
   onSubscribe?: (
     tier: "BRONZE" | "SILVER" | "GOLD",
     frequency: "MONTHLY" | "ANNUAL",
@@ -62,7 +64,9 @@ export default function PaymentDialog({
   tier,
   onPaymentComplete,
   isUpgrade = false,
+  isRenewal = false,
   currentTier,
+  subscriptionEndDate,
   onSubscribe,
 }: PaymentDialogProps) {
   const member = useAuthStore((state) => state.member);
@@ -83,6 +87,17 @@ export default function PaymentDialog({
     displayAmount: number;
     message: string;
   } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "error" | "info";
+  } | null>(null);
+
+  // Auto-dismiss toast after 5s
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   // Fetch upgrade info when dialog opens for upgrade
   // Only fetch if this is truly an upgrade (not same tier) and we're in the right state
@@ -121,9 +136,9 @@ export default function PaymentDialog({
     // Only reset if dialog is opening (was closed, now open)
     if (isOpen && !prevIsOpenRef.current) {
       setPayerPhone("");
-      // For active subscriptions (regular payments), skip frequency selection
-      // For new subscriptions or upgrades, show frequency selection
-      setPaymentStatus(!isUpgrade && onSubscribe ? "FREQUENCY_SELECT" : "IDLE");
+      // Show frequency selection for: new subscriptions, renewals
+      // Upgrades go to FREQUENCY_SELECT too (they show the upgrade cost screen there)
+      setPaymentStatus("FREQUENCY_SELECT");
       setStatusMessage("");
       setContributionId(null);
       setErrorMessage(null);
@@ -134,7 +149,7 @@ export default function PaymentDialog({
       setUpgradeInfo(null);
     }
     prevIsOpenRef.current = isOpen;
-  }, [isOpen, amount, isUpgrade, onSubscribe]);
+  }, [isOpen, amount, isUpgrade, isRenewal, onSubscribe]);
 
   // Payment initiation mutation
   const paymentMutation = useMutation({
@@ -301,8 +316,23 @@ export default function PaymentDialog({
   const handleContinueToPayment = async () => {
     if (!selectedFrequency) return;
 
-    // For new subscriptions (not upgrades), create the subscription with the selected frequency
-    if (!isUpgrade && onSubscribe) {
+    // Enforce 2-year advance limit for annual renewals
+    if (isRenewal && selectedFrequency === "ANNUAL" && subscriptionEndDate) {
+      const endDate = new Date(subscriptionEndDate);
+      const twoYearsFromNow = new Date();
+      twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
+      if (endDate > twoYearsFromNow) {
+        setToast({
+          message:
+            "Annual subscriptions can only be paid up to 2 years in advance. Your subscription is already covered beyond that limit.",
+          type: "error",
+        });
+        return;
+      }
+    }
+
+    // For new subscriptions (not upgrades, not renewals), create the subscription
+    if (!isUpgrade && !isRenewal && onSubscribe) {
       try {
         await onSubscribe(tier, selectedFrequency);
       } catch (error) {
@@ -328,8 +358,12 @@ export default function PaymentDialog({
               : paymentStatus === "FAILED"
                 ? "Payment Failed"
                 : paymentStatus === "FREQUENCY_SELECT"
-                  ? "Choose Payment Plan"
-                  : "Confirm Payment"}
+                  ? isRenewal
+                    ? "Renew Your Plan"
+                    : "Choose Payment Plan"
+                  : isRenewal
+                    ? "Confirm Renewal"
+                    : "Confirm Payment"}
           </h2>
           <button
             onClick={handleClose}
@@ -341,6 +375,25 @@ export default function PaymentDialog({
 
         {/* Content */}
         <div className="p-4 sm:p-6">
+          {/* Toast notification */}
+          {toast && (
+            <div
+              className={`mb-4 flex items-start gap-3 p-3 rounded-lg text-sm ${
+                toast.type === "error"
+                  ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300"
+                  : "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300"
+              }`}
+            >
+              <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{toast.message}</span>
+              <button
+                onClick={() => setToast(null)}
+                className="ml-auto shrink-0 opacity-60 hover:opacity-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           {/* Frequency Selection State */}
           {paymentStatus === "FREQUENCY_SELECT" && !isUpgrade && (
             <>
@@ -406,12 +459,18 @@ export default function PaymentDialog({
                 <CheckCircle2 className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                {isUpgrade ? "Upgrade Successful!" : "Payment Successful!"}
+                {isUpgrade
+                  ? "Upgrade Successful!"
+                  : isRenewal
+                    ? "Renewal Successful!"
+                    : "Payment Successful!"}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {isUpgrade
                   ? `You've been upgraded to ${mapTierToConfigTier(tier)}! Your new claim limit is now active.`
-                  : `Your ${mapTierToConfigTier(tier)} membership payment of KES ${displayAmount.toLocaleString()} has been received.`}
+                  : isRenewal
+                    ? `Your ${mapTierToConfigTier(tier)} subscription has been renewed. Thank you!`
+                    : `Your ${mapTierToConfigTier(tier)} membership payment of KES ${displayAmount.toLocaleString()} has been received.`}
               </p>
               <button
                 onClick={onClose}

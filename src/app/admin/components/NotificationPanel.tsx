@@ -5,7 +5,7 @@ import { Bell, Send, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { adminApi } from "@/lib/admin-api";
 
 export function NotificationPanel() {
-  // Single member reminder state
+  // ── Single member reminder state ──────────────────────────────────────────
   const [memberId, setMemberId] = useState("");
   const [memberLoading, setMemberLoading] = useState(false);
   const [memberSuccess, setMemberSuccess] = useState<{
@@ -14,7 +14,7 @@ export function NotificationPanel() {
   } | null>(null);
   const [memberError, setMemberError] = useState("");
 
-  // Bulk reminder state
+  // ── Bulk reminder state ───────────────────────────────────────────────────
   const [daysUntilExpiry, setDaysUntilExpiry] = useState(7);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkSuccess, setBulkSuccess] = useState<{
@@ -59,7 +59,7 @@ export function NotificationPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Single Member Reminder */}
+      {/* ── Single Member Reminder ────────────────────────────────────────── */}
       <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
         <div className="flex items-center gap-2 mb-4">
           <Bell className="w-5 h-5 text-emerald-500" />
@@ -108,7 +108,7 @@ export function NotificationPanel() {
         )}
       </div>
 
-      {/* Bulk Reminder */}
+      {/* ── Bulk Reminder ─────────────────────────────────────────────────── */}
       <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
         <div className="flex items-center gap-2 mb-4">
           <Bell className="w-5 h-5 text-blue-500" />
@@ -118,7 +118,15 @@ export function NotificationPanel() {
         </div>
         <p className="text-sm text-gray-400 mb-4">
           Send renewal reminders to all members whose subscriptions expire
-          within the specified number of days.
+          within the specified number of days. View the full subscription list
+          under{" "}
+          <a
+            href="/admin/users"
+            className="text-purple-400 hover:text-purple-300 underline"
+          >
+            Users → Subscription Details
+          </a>
+          .
         </p>
         <div className="flex gap-3 items-end">
           <div className="flex-1">

@@ -138,7 +138,8 @@ export default function SubscriptionPage() {
             const isLowerTier =
               hasActiveSub && tierOrder[tier] < tierOrder[subscription!.tier];
             const isRecommended = tier === "GOLD" && !hasActiveSub;
-            const isDisabled = isCurrentTier || isLowerTier;
+            // Only disable lower tiers — current tier is always renewable
+            const isDisabled = isLowerTier;
 
             return (
               <div
@@ -302,17 +303,17 @@ export default function SubscriptionPage() {
                   onClick={() => !isDisabled && handleCardAction(tier)}
                   disabled={isDisabled}
                   className={`mt-6 w-full py-2.5 rounded-xl font-semibold text-sm transition-colors ${
-                    isCurrentTier
-                      ? "bg-white/10 text-gray-400 cursor-not-allowed"
-                      : isLowerTier
-                        ? "bg-white/5 text-gray-600 cursor-not-allowed border border-white/5"
+                    isLowerTier
+                      ? "bg-white/5 text-gray-600 cursor-not-allowed border border-white/5"
+                      : isCurrentTier
+                        ? `bg-gradient-to-r ${color.icon} text-white hover:opacity-90`
                         : `bg-gradient-to-r ${color.icon} text-white hover:opacity-90`
                   }`}
                 >
-                  {isCurrentTier
-                    ? t("subscription.currentPlan")
-                    : isLowerTier
-                      ? "Not Available"
+                  {isLowerTier
+                    ? "Not Available"
+                    : isCurrentTier
+                      ? t("subscription.renew") || "Renew"
                       : isHigherTier
                         ? t("subscription.upgrade")
                         : t("subscription.selectPlan")}
@@ -348,8 +349,16 @@ export default function SubscriptionPage() {
             amount={PACKAGES.find((p) => p.tier === selectedTier)?.price || 0}
             tier={selectedTier}
             onPaymentComplete={handlePaymentComplete}
-            isUpgrade={subscription?.isActive === true}
+            isUpgrade={
+              subscription?.isActive === true &&
+              selectedTier !== subscription?.tier
+            }
+            isRenewal={
+              subscription?.isActive === true &&
+              selectedTier === subscription?.tier
+            }
             currentTier={subscription?.tier}
+            subscriptionEndDate={subscription?.endDate ?? null}
             onSubscribe={async (tier, frequency) => {
               await subscribeMutation.mutateAsync({
                 tier,
