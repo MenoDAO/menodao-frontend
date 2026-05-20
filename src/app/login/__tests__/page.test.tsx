@@ -7,12 +7,13 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LoginPage from "../page";
 
-// Mock next/navigation
+// Mock next/navigation (useSearchParams is null in Jest without a router)
 const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // Mock the API
