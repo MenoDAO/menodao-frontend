@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
-  const { setCaptchaToken, clearCaptcha, requireCaptchaToken, captchaReady } =
+  const { setCaptchaToken, clearCaptcha, requireCaptchaToken, captchaReady, captchaWidgetKey } =
     useCaptcha();
 
   const validatePhoneNumber = (phone: string): boolean => {
@@ -144,6 +144,8 @@ export default function LoginPage() {
 
             <div className="flex justify-center">
               <TurnstileWidget
+                key={captchaWidgetKey}
+                resetKey={captchaWidgetKey}
                 onVerify={setCaptchaToken}
                 onExpire={clearCaptcha}
                 onError={clearCaptcha}

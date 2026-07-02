@@ -1,4 +1,5 @@
 import { getApiUrl } from "./api";
+import { parseApiError } from "./parse-api-error";
 
 const API_BASE_URL = getApiUrl();
 
@@ -235,14 +236,9 @@ class StaffApiClient {
       let errorCode: string | undefined;
       try {
         const error = await response.json();
-        const message =
-          typeof error.message === "string"
-            ? error.message
-            : Array.isArray(error.message)
-              ? error.message.join(", ")
-              : errorMessage;
-        errorMessage = message || errorMessage;
-        errorCode = error.code;
+        const parsed = parseApiError(error, response.status, errorMessage);
+        errorMessage = parsed.message;
+        errorCode = parsed.code;
       } catch {
         errorMessage = response.statusText || errorMessage;
       }

@@ -7,7 +7,10 @@ export function isCaptchaEnabled(): boolean {
 
 export function isCaptchaRequiredError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
+  const code = (error as Error & { code?: string }).code;
   return (
+    code === "CAPTCHA_REQUIRED" ||
+    code === "CAPTCHA_INVALID" ||
     error.message.includes("CAPTCHA_REQUIRED") ||
     error.message.includes("CAPTCHA verification required") ||
     error.message.includes("CAPTCHA verification failed")

@@ -30,6 +30,7 @@ function SignUpFormInner() {
     clearCaptcha,
     requireCaptchaToken,
     captchaReady,
+    captchaWidgetKey,
   } = useCaptcha();
 
   useEffect(() => {
@@ -302,6 +303,8 @@ function SignUpFormInner() {
 
         <div className="flex justify-center">
           <TurnstileWidget
+            key={captchaWidgetKey}
+            resetKey={captchaWidgetKey}
             onVerify={setCaptchaToken}
             onExpire={clearCaptcha}
             onError={clearCaptcha}

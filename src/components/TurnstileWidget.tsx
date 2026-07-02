@@ -64,6 +64,7 @@ interface TurnstileWidgetProps {
   onError?: () => void;
   theme?: "light" | "dark" | "auto";
   className?: string;
+  resetKey?: number;
 }
 
 export default function TurnstileWidget({
@@ -72,6 +73,7 @@ export default function TurnstileWidget({
   onError,
   theme = "light",
   className,
+  resetKey = 0,
 }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
@@ -120,7 +122,7 @@ export default function TurnstileWidget({
         widgetIdRef.current = null;
       }
     };
-  }, [handleVerify, onExpire, onError, theme]);
+  }, [handleVerify, onExpire, onError, theme, resetKey]);
 
   if (!isCaptchaEnabled()) {
     return null;
