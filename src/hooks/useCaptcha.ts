@@ -5,8 +5,13 @@ import { isCaptchaEnabled } from "@/lib/captcha";
 
 export function useCaptcha() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaWidgetKey, setCaptchaWidgetKey] = useState(0);
 
-  const clearCaptcha = useCallback(() => setCaptchaToken(null), []);
+  const clearCaptcha = useCallback(() => {
+    setCaptchaToken(null);
+    // Turnstile tokens are single-use; remount to issue a fresh challenge.
+    setCaptchaWidgetKey((key) => key + 1);
+  }, []);
 
   const requireCaptchaToken = useCallback((): string | undefined => {
     if (!isCaptchaEnabled()) {
@@ -20,6 +25,7 @@ export function useCaptcha() {
 
   return {
     captchaToken,
+    captchaWidgetKey,
     setCaptchaToken,
     clearCaptcha,
     requireCaptchaToken,

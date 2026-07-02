@@ -22,6 +22,7 @@ export default function AdminLoginPage() {
     clearCaptcha,
     requireCaptchaToken,
     captchaReady,
+    captchaWidgetKey,
   } = useCaptcha();
 
   useEffect(() => {
@@ -115,6 +116,8 @@ export default function AdminLoginPage() {
 
             <div className="flex justify-center">
               <TurnstileWidget
+                key={captchaWidgetKey}
+                resetKey={captchaWidgetKey}
                 onVerify={setCaptchaToken}
                 onExpire={clearCaptcha}
                 onError={clearCaptcha}

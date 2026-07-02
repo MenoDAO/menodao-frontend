@@ -21,7 +21,7 @@ function VerifyOTPContent() {
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const { updateMember } = useAuthStore();
-  const { setCaptchaToken, clearCaptcha, requireCaptchaToken, captchaReady } =
+  const { setCaptchaToken, clearCaptcha, requireCaptchaToken, captchaReady, captchaWidgetKey } =
     useCaptcha();
 
   useEffect(() => {
@@ -190,6 +190,8 @@ function VerifyOTPContent() {
 
             <div className="flex justify-center">
               <TurnstileWidget
+                key={captchaWidgetKey}
+                resetKey={captchaWidgetKey}
                 onVerify={setCaptchaToken}
                 onExpire={clearCaptcha}
                 onError={clearCaptcha}

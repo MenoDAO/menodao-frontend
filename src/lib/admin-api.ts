@@ -1,5 +1,7 @@
 import { getApiUrl } from "./api";
 
+import { parseApiError } from "./parse-api-error";
+
 const API_BASE_URL = getApiUrl();
 
 class AdminApiClient {
@@ -81,13 +83,13 @@ class AdminApiClient {
     });
 
     if (!response.ok) {
-      // Parse error response
       let errorMessage = `HTTP ${response.status}`;
       let errorCode: string | undefined;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-        errorCode = errorData.code;
+        const parsed = parseApiError(errorData, response.status, errorMessage);
+        errorMessage = parsed.message;
+        errorCode = parsed.code;
       } catch {
         errorMessage = "Request failed";
       }

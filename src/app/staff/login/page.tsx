@@ -20,6 +20,7 @@ export default function StaffLoginPage() {
     clearCaptcha,
     requireCaptchaToken,
     captchaReady,
+    captchaWidgetKey,
   } = useCaptcha();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,6 +109,8 @@ export default function StaffLoginPage() {
 
           <div className="flex justify-center">
             <TurnstileWidget
+              key={captchaWidgetKey}
+              resetKey={captchaWidgetKey}
               onVerify={setCaptchaToken}
               onExpire={clearCaptcha}
               onError={clearCaptcha}

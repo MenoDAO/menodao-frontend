@@ -12,7 +12,7 @@ import { isCaptchaEnabled } from "@/lib/captcha";
 export default function SecurityCheckPage() {
   const router = useRouter();
   const { loadUser } = useAuthStore();
-  const { captchaToken, setCaptchaToken, clearCaptcha, captchaReady } =
+  const { captchaToken, setCaptchaToken, clearCaptcha, captchaReady, captchaWidgetKey } =
     useCaptcha();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,6 +60,8 @@ export default function SecurityCheckPage() {
 
         <div className="flex justify-center mb-6">
           <TurnstileWidget
+            key={captchaWidgetKey}
+            resetKey={captchaWidgetKey}
             onVerify={setCaptchaToken}
             onExpire={clearCaptcha}
             onError={clearCaptcha}

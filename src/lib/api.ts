@@ -1,3 +1,5 @@
+import { parseApiError } from "./parse-api-error";
+
 export const getApiUrl = (): string => {
   // Check for environment variable first (works for SSR and build-time)
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -74,20 +76,17 @@ class ApiClient {
           this.setToken(null);
         }
       }
-      const error = await response
-        .json()
-        .catch(() => ({ message: "Request failed" }));
-      const message =
-        typeof error.message === "string"
-          ? error.message
-          : Array.isArray(error.message)
-            ? error.message.join(", ")
-            : `HTTP ${response.status}`;
-      const err = new Error(message || error.code || `HTTP ${response.status}`) as Error & {
+      const errorBody = await response.json().catch(() => null);
+      const { message, code } = parseApiError(
+        errorBody,
+        response.status,
+        "Request failed",
+      );
+      const err = new Error(message) as Error & {
         code?: string;
         status?: number;
       };
-      err.code = error.code;
+      err.code = code;
       err.status = response.status;
       throw err;
     }
