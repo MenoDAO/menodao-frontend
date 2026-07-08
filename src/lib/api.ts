@@ -268,6 +268,7 @@ class ApiClient {
     phoneNumber?: string,
     isUpgrade?: boolean,
     newTier?: "BRONZE" | "SILVER" | "GOLD",
+    paymentFrequency?: "MONTHLY" | "ANNUAL",
   ) {
     return this.request<PaymentInitiation>("/contributions/pay", {
       method: "POST",
@@ -277,6 +278,7 @@ class ApiClient {
         phoneNumber,
         isUpgrade,
         newTier,
+        paymentFrequency,
       }),
     });
   }
@@ -465,6 +467,8 @@ export interface ContributionSummary {
 export interface PaymentInitiation {
   contributionId: string;
   amount: number;
+  displayAmount?: number;
+  paymentFrequency?: "MONTHLY" | "ANNUAL";
   paymentMethod: string;
   status: string;
   reference?: string;
