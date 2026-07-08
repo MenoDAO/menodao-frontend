@@ -182,6 +182,7 @@ export default function PaymentDialog({
         phoneNumber,
         isUpgrade,
         isUpgrade ? tier : undefined,
+        !isUpgrade ? (selectedFrequency ?? undefined) : undefined,
       );
     },
     onSuccess: (data) => {
