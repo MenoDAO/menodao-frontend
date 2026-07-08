@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getApiUrl } from "@/lib/api";
+import { parseApiError } from "@/lib/parse-api-error";
 import { ClinicLocationPicker } from "@/components/ClinicLocationPicker";
 
 const API_URL = getApiUrl();
@@ -108,21 +109,46 @@ export default function RegisterClinicPage() {
     setError(null);
 
     try {
+      // Omit empty optional strings — Nest's @IsOptional() does not skip ""
+      // (notably @IsEmail() rejects blank email).
+      const payload = {
+        name: form.name,
+        subCounty: form.subCounty,
+        physicalLocation: form.physicalLocation,
+        googleMapsLink: form.googleMapsLink || undefined,
+        operatingHours: form.operatingHours,
+        operatesOnWeekends: form.operatesOnWeekends,
+        latitude:
+          form.latitude !== "" ? parseFloat(form.latitude) : undefined,
+        longitude:
+          form.longitude !== "" ? parseFloat(form.longitude) : undefined,
+        leadDentistName: form.leadDentistName,
+        ownerPhone: form.ownerPhone,
+        managerName: form.managerName || undefined,
+        whatsappNumber: form.whatsappNumber,
+        email: form.email || undefined,
+        mpesaTillOrPaybill: form.mpesaTillOrPaybill,
+        tillPaybillName: form.tillPaybillName,
+        bankAccountName: form.bankAccountName || undefined,
+        bankAccountNumber: form.bankAccountNumber || undefined,
+        kmpdcRegNumber: form.kmpdcRegNumber || undefined,
+        activeDentalChairs: form.activeDentalChairs,
+        xrayCapability: form.xrayCapability,
+        specializedServices: form.specializedServices,
+        agreedToRateCard: form.agreedToRateCard,
+        agreedToNoChargePolicy: form.agreedToNoChargePolicy,
+      };
+
       const res = await fetch(`${API_URL}/clinics/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          latitude:
-            form.latitude !== "" ? parseFloat(form.latitude) : undefined,
-          longitude:
-            form.longitude !== "" ? parseFloat(form.longitude) : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Registration failed");
+        const data = await res.json().catch(() => null);
+        const { message } = parseApiError(data, res.status, "Registration failed");
+        throw new Error(message);
       }
 
       setSubmitted(true);
