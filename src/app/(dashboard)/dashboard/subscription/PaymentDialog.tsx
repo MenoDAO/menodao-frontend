@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { useTranslation } from "@/lib/i18n";
 import { PaymentFrequencySelector } from "@/app/payment/components/PaymentFrequencySelector";
 import {
   getPaymentAmount,
@@ -70,6 +71,7 @@ export default function PaymentDialog({
   onSubscribe,
 }: PaymentDialogProps) {
   const member = useAuthStore((state) => state.member);
+  const { t } = useTranslation();
   const [payerPhone, setPayerPhone] = useState("");
   const [paymentStatus, setPaymentStatus] =
     useState<PaymentStatus>("FREQUENCY_SELECT");
@@ -361,10 +363,14 @@ export default function PaymentDialog({
                 : paymentStatus === "FREQUENCY_SELECT"
                   ? isRenewal
                     ? "Renew Your Plan"
-                    : "Choose Payment Plan"
+                    : isUpgrade
+                      ? "Choose Payment Plan"
+                      : t("contribution.title")
                   : isRenewal
                     ? "Confirm Renewal"
-                    : "Confirm Payment"}
+                    : isUpgrade
+                      ? "Confirm Payment"
+                      : t("contribution.title")}
           </h2>
           <button
             onClick={handleClose}
@@ -376,6 +382,11 @@ export default function PaymentDialog({
 
         {/* Content */}
         <div className="p-4 sm:p-6">
+          {!isUpgrade && !isRenewal && paymentStatus === "FREQUENCY_SELECT" && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {t("contribution.description")}
+            </p>
+          )}
           {/* Toast notification */}
           {toast && (
             <div

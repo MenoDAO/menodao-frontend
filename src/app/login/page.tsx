@@ -209,6 +209,15 @@ export default function LoginPage() {
               >
                 Register MenoHub
               </Link>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <Link href="/terms" className="hover:text-gray-700 transition-colors">
+                  {t("auth.signUp.terms")}
+                </Link>
+                <span aria-hidden="true">·</span>
+                <Link href="/compliance" className="hover:text-gray-700 transition-colors">
+                  {t("nav.compliance")}
+                </Link>
+              </div>
               <a
                 href="/staff/login"
                 className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"

@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { NFTSection } from "@/components/NFTSection";
 import { KENYA_COUNTIES } from "@/lib/kenya-counties";
 import {
   User,
@@ -281,9 +280,6 @@ export default function ProfilePage() {
           <LanguageSwitcher />
         </div>
       </div>
-
-      {/* Wallet & NFT Section */}
-      <NFTSection />
     </div>
   );
 }

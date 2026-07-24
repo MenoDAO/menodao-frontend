@@ -15,7 +15,6 @@ import {
   XCircle,
   Loader2,
   AlertCircle,
-  ExternalLink,
   X,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
@@ -282,17 +281,6 @@ export default function ClaimsPage() {
                       <p className="font-semibold text-gray-900 dark:text-white">
                         KES {claim.amount.toLocaleString()}
                       </p>
-                      {claim.txHash && (
-                        <a
-                          href={`https://polygonscan.com/tx/${claim.txHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1 justify-end mt-1"
-                        >
-                          {t("claims.viewOnChain")}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
                     </div>
                   </div>
                 </div>

@@ -11,7 +11,7 @@ import {
   Users,
   DollarSign,
   TrendingUp,
-  Wallet,
+  HandCoins,
   ArrowDownToLine,
   CheckCircle,
   Clock,
@@ -252,7 +252,7 @@ export default function ChampionPage() {
         <StatCard
           label={t("champion.commissionsBalance")}
           value={`KES ${stats.commissionsBalance.toLocaleString()}`}
-          icon={Wallet}
+          icon={HandCoins}
           highlight
         />
         <StatCard
@@ -316,7 +316,7 @@ export default function ChampionPage() {
           {t("champion.withdrawTitle")}
         </h2>
         <div className="flex items-center gap-3">
-          <Wallet className="w-6 h-6 text-emerald-600" />
+          <HandCoins className="w-6 h-6 text-emerald-600" />
           <div>
             <p className="text-sm text-gray-500">
               {t("champion.currentBalance")}

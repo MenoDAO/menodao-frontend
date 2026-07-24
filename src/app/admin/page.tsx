@@ -174,7 +174,7 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* Web3 Impact Stats */}
+      {/* Web3 Impact Stats — admin-only */}
       <Web3ImpactStats />
 
       {/* SMS Metrics */}

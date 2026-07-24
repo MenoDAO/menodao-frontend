@@ -27,7 +27,7 @@ const TOUR_STEPS: TourStep[] = [
   { tourId: "tour-nav-history" },
   { tourId: "tour-nav-champion" },
   { tourId: "tour-nav-camps" },
-  { tourId: "tour-nav-blockchain" },
+  { tourId: "tour-nav-activity" },
   { tourId: "tour-nav-profile" },
 ];
 
