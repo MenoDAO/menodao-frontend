@@ -15,7 +15,7 @@ export function ConnectWalletButton({
   showBalance = false,
   showChainSelector = true,
   size = "md",
-  label = "Connect Wallet",
+  label = "Connect Account",
 }: ConnectWalletButtonProps) {
   const { address, chainId, chainName, balance, isConnecting, error, connect, disconnect } =
     useWalletStore();

@@ -293,6 +293,14 @@ function SignUpFormInner() {
               >
                 {t("auth.signUp.privacy")}
               </Link>{" "}
+              {t("auth.signUp.and")}{" "}
+              <Link
+                href="/compliance"
+                className="text-emerald-600 hover:text-emerald-700 underline"
+                target="_blank"
+              >
+                {t("nav.compliance")}
+              </Link>{" "}
               <span className="text-red-500">*</span>
             </span>
           </label>

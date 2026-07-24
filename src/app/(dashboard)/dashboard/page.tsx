@@ -12,7 +12,7 @@ import {
   MapPin,
   Calendar,
   ArrowRight,
-  Wallet,
+  HandCoins,
   Shield,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
@@ -97,8 +97,8 @@ export default function DashboardPage() {
       {/* Quick Stats - 2x2 grid on mobile, 4 columns on large screens */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
-          icon={<Wallet className="w-5 h-5 sm:w-6 sm:h-6" />}
-          label={t("dashboard.totalContributed")}
+          icon={<HandCoins className="w-5 h-5 sm:w-6 sm:h-6" />}
+          label={t("dashboard.contributionBalance")}
           value={`KES ${(contributionSummary?.totalContributed || 0).toLocaleString()}`}
           color="emerald"
         />

@@ -55,12 +55,12 @@ export const useWalletStore = create<WalletState>()(
 
         try {
           if (typeof window === "undefined" || !window.ethereum) {
-            throw new Error("Please install MetaMask or another Web3 wallet");
+            throw new Error("Please install MetaMask or another browser extension");
           }
 
           const provider = getProvider();
           if (!provider) {
-            throw new Error("Could not initialize wallet provider");
+            throw new Error("Could not initialize browser extension provider");
           }
 
           // Request accounts
@@ -107,7 +107,7 @@ export const useWalletStore = create<WalletState>()(
           });
 
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : "Failed to connect wallet";
+          const message = err instanceof Error ? err.message : "Failed to connect account";
           set({ error: message, isConnecting: false });
           throw err;
         }
@@ -126,7 +126,7 @@ export const useWalletStore = create<WalletState>()(
       switchChain: async (targetChainId: number) => {
         try {
           if (!window.ethereum) {
-            throw new Error("Wallet not connected");
+            throw new Error("Account not connected");
           }
 
           const chainIdHex = `0x${targetChainId.toString(16)}`;

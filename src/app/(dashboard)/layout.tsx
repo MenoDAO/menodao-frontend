@@ -10,7 +10,7 @@ import {
   CreditCard,
   FileText,
   MapPin,
-  Link as LinkIcon,
+  History,
   User,
   LogOut,
   Menu,
@@ -46,9 +46,9 @@ const navItemDefs = [
   { href: "/dashboard/camps", labelKey: "nav.findClinic", icon: MapPin, dataTour: "tour-nav-camps" },
   {
     href: "/dashboard/transactions",
-    labelKey: "nav.blockchain",
-    icon: LinkIcon,
-    dataTour: "tour-nav-blockchain",
+    labelKey: "nav.activity",
+    icon: History,
+    dataTour: "tour-nav-activity",
   },
   { href: "/dashboard/profile", labelKey: "nav.profile", icon: User, dataTour: "tour-nav-profile" },
 ];
