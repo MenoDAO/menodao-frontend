@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { staffApi, StaffAppointment } from "@/lib/staff-api";
 import { Loader2 } from "lucide-react";
 
@@ -12,6 +13,7 @@ function todayEat() {
 }
 
 export default function StaffAppointmentsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [date, setDate] = useState(todayEat());
   const [action, setAction] = useState<{
@@ -54,7 +56,7 @@ export default function StaffAppointmentsPage() {
     mutationFn: () =>
       staffApi.rescheduleAppointment(
         action!.id,
-        new Date(newTimeLocal).toISOString(),
+        new Date(`${newTimeLocal}:00+03:00`).toISOString(),
         reason,
       ),
     onSuccess: () => {
@@ -74,8 +76,8 @@ export default function StaffAppointmentsPage() {
         hasConsent: row.hasConsent,
         appointmentId: row.id,
       });
-      alert("Checked in. Continue treatment from Check-In.");
       invalidate();
+      router.push("/staff");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Check-in failed");
     }

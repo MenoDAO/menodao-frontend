@@ -10,7 +10,7 @@ const OPEN = new Set(["BOOKED", "RESCHEDULED"]);
 
 export default function AppointmentsPage() {
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["my-appointments"],
     queryFn: () => api.listAppointments(),
   });
@@ -56,6 +56,12 @@ export default function AppointmentsPage() {
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
         </div>
+      )}
+
+      {isError && (
+        <p className="text-sm text-red-500">
+          {(error as Error).message || "Could not load appointments."}
+        </p>
       )}
 
       <Section title="Upcoming" items={upcoming} onCancel={setCancelId} />

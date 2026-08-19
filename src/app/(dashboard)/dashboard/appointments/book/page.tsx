@@ -1,21 +1,39 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 
+function todayEat() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Nairobi" }).format(
+    new Date(),
+  );
+}
+
 export default function BookAppointmentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+        </div>
+      }
+    >
+      <BookAppointmentForm />
+    </Suspense>
+  );
+}
+
+function BookAppointmentForm() {
   const router = useRouter();
   const params = useSearchParams();
   const clinicId = params.get("clinicId") || "";
   const rescheduleId = params.get("reschedule");
 
-  const today = useMemo(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }, []);
+  const today = useMemo(() => todayEat(), []);
 
   const [date, setDate] = useState(today);
   const [scheduledAt, setScheduledAt] = useState("");
@@ -66,7 +84,11 @@ export default function BookAppointmentPage() {
   if (!clinicId) {
     return (
       <p className="text-sm text-gray-500">
-        Choose a clinic first from Find a Clinic.
+        Choose a clinic first from{" "}
+        <Link href="/dashboard/camps" className="text-emerald-600 underline">
+          Find a Clinic
+        </Link>
+        .
       </p>
     );
   }
@@ -124,6 +146,7 @@ export default function BookAppointmentPage() {
                   {new Date(slot.scheduledAt).toLocaleTimeString("en-KE", {
                     hour: "2-digit",
                     minute: "2-digit",
+                    timeZone: "Africa/Nairobi",
                   })}
                 </button>
               ))}
