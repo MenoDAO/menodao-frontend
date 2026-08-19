@@ -150,6 +150,55 @@ class AdminApiClient {
     });
   }
 
+  async webauthnLoginOptions(username?: string) {
+    return this.request<import("@simplewebauthn/browser").PublicKeyCredentialRequestOptionsJSON>(
+      "/admin/webauthn/login/options",
+      { method: "POST", body: JSON.stringify({ username: username || undefined }) },
+    );
+  }
+
+  async webauthnLoginVerify(
+    credential: import("@simplewebauthn/browser").AuthenticationResponseJSON,
+  ) {
+    return this.request<{
+      accessToken: string;
+      admin: { id: string; username: string; role: string };
+    }>("/admin/webauthn/login/verify", {
+      method: "POST",
+      body: JSON.stringify({ credential }),
+    });
+  }
+
+  async webauthnRegisterOptions() {
+    return this.request<import("@simplewebauthn/browser").PublicKeyCredentialCreationOptionsJSON>(
+      "/admin/webauthn/register/options",
+      { method: "POST", body: JSON.stringify({}) },
+    );
+  }
+
+  async webauthnRegisterVerify(
+    credential: import("@simplewebauthn/browser").RegistrationResponseJSON,
+    label?: string,
+  ) {
+    return this.request("/admin/webauthn/register/verify", {
+      method: "POST",
+      body: JSON.stringify({ credential, label }),
+    });
+  }
+
+  async listPasskeys() {
+    return this.request<import("@/lib/passkeys").PasskeyDevice[]>(
+      "/admin/webauthn/credentials",
+    );
+  }
+
+  async deletePasskey(id: string) {
+    return this.request(`/admin/webauthn/credentials/${id}/delete`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  }
+
   async getProfile() {
     return this.request<{
       id: string;
@@ -516,6 +565,93 @@ class AdminApiClient {
         method: "POST",
         body: JSON.stringify({ daysUntilExpiry }),
       },
+    );
+  }
+
+  async getCareIntelligence(params: {
+    from?: string;
+    to?: string;
+    county?: string;
+    subCounty?: string;
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.from) searchParams.set("from", params.from);
+    if (params.to) searchParams.set("to", params.to);
+    if (params.county) searchParams.set("county", params.county);
+    if (params.subCounty) searchParams.set("subCounty", params.subCounty);
+    const qs = searchParams.toString();
+    return this.request<import("./care-intelligence").CareIntelligenceDashboard>(
+      `/admin/care-intelligence${qs ? `?${qs}` : ""}`,
+    );
+  }
+
+  async getCareDataRoom(params: { from?: string; to?: string } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.from) searchParams.set("from", params.from);
+    if (params.to) searchParams.set("to", params.to);
+    const qs = searchParams.toString();
+    return this.request<import("./care-intelligence").CareDataRoom>(
+      `/admin/care-intelligence/data-room${qs ? `?${qs}` : ""}`,
+    );
+  }
+
+  async getCareTargets() {
+    return this.request<import("./care-intelligence").CareLoopTarget[]>(
+      "/admin/care-intelligence/targets",
+    );
+  }
+
+  async updateCareTarget(
+    metricId: string,
+    body: { targetValue: number; minSampleSize?: number; notes?: string },
+  ) {
+    return this.request(`/admin/care-intelligence/targets/${metricId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getCareExperiments() {
+    return this.request<import("./care-intelligence").CareExperiment[]>(
+      "/admin/care-intelligence/experiments",
+    );
+  }
+
+  async createCareExperiment(body: {
+    name: string;
+    hypothesis: string;
+    metricId: string;
+    baseline?: number;
+    target?: number;
+    startDate: string;
+    endDate?: string;
+    owner?: string;
+  }) {
+    return this.request("/admin/care-intelligence/experiments", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async updateCareExperiment(
+    id: string,
+    body: { status?: string; result?: string; decision?: string },
+  ) {
+    return this.request(`/admin/care-intelligence/experiments/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getCareInsights() {
+    return this.request<import("./care-intelligence").CareInsight[]>(
+      "/admin/care-intelligence/insights",
+    );
+  }
+
+  async getCareCohort(key: string) {
+    return this.request<import("./care-intelligence").CareCohort>(
+      `/admin/care-intelligence/cohorts/${key}`,
     );
   }
 }

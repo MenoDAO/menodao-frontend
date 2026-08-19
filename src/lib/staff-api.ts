@@ -172,6 +172,7 @@ export interface CheckInDto {
   clinicalNotes?: string;
   hasConsent: boolean;
   questionnaire?: QuestionnaireData;
+  appointmentId?: string;
 }
 
 class StaffApiClient {
@@ -287,6 +288,52 @@ class StaffApiClient {
     });
   }
 
+  async webauthnLoginOptions(username?: string) {
+    return this.request<import("@simplewebauthn/browser").PublicKeyCredentialRequestOptionsJSON>(
+      "/staff/webauthn/login/options",
+      { method: "POST", body: JSON.stringify({ username: username || undefined }) },
+    );
+  }
+
+  async webauthnLoginVerify(
+    credential: import("@simplewebauthn/browser").AuthenticationResponseJSON,
+  ) {
+    return this.request<StaffLoginResponse>("/staff/webauthn/login/verify", {
+      method: "POST",
+      body: JSON.stringify({ credential }),
+    });
+  }
+
+  async webauthnRegisterOptions() {
+    return this.request<import("@simplewebauthn/browser").PublicKeyCredentialCreationOptionsJSON>(
+      "/staff/webauthn/register/options",
+      { method: "POST", body: JSON.stringify({}) },
+    );
+  }
+
+  async webauthnRegisterVerify(
+    credential: import("@simplewebauthn/browser").RegistrationResponseJSON,
+    label?: string,
+  ) {
+    return this.request("/staff/webauthn/register/verify", {
+      method: "POST",
+      body: JSON.stringify({ credential, label }),
+    });
+  }
+
+  async listPasskeys() {
+    return this.request<import("@/lib/passkeys").PasskeyDevice[]>(
+      "/staff/webauthn/credentials",
+    );
+  }
+
+  async deletePasskey(id: string) {
+    return this.request(`/staff/webauthn/credentials/${id}/delete`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  }
+
   async refreshCaptcha(captchaToken: string): Promise<{ accessToken: string }> {
     return this.request<{ accessToken: string }>("/staff/refresh-captcha", {
       method: "POST",
@@ -369,6 +416,39 @@ class StaffApiClient {
   async dischargeVisit(visitId: string): Promise<DischargeResponse> {
     return this.request<DischargeResponse>(`/visits/discharge/${visitId}`, {
       method: "POST",
+    });
+  }
+
+  async listAppointments(date?: string) {
+    const qs = date ? `?date=${date}` : "";
+    return this.request<StaffAppointment[]>(`/staff/appointments${qs}`);
+  }
+
+  async cancelAppointment(id: string, reason: string) {
+    return this.request<StaffAppointment>(`/staff/appointments/${id}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async rescheduleAppointment(id: string, scheduledAt: string, reason: string) {
+    return this.request<StaffAppointment>(`/staff/appointments/${id}/reschedule`, {
+      method: "POST",
+      body: JSON.stringify({ scheduledAt, reason }),
+    });
+  }
+
+  async markNoShow(id: string, note: string) {
+    return this.request<StaffAppointment>(`/staff/appointments/${id}/no-show`, {
+      method: "POST",
+      body: JSON.stringify({ note }),
+    });
+  }
+
+  async addAppointmentNote(id: string, note: string) {
+    return this.request<StaffAppointment>(`/staff/appointments/${id}/note`, {
+      method: "POST",
+      body: JSON.stringify({ note }),
     });
   }
 
@@ -685,6 +765,26 @@ export interface PatientHistory {
 }
 
 export const staffApi = new StaffApiClient();
+
+export interface StaffAppointment {
+  id: string;
+  scheduledAt: string;
+  status: string;
+  intakeReason: string;
+  painLevel: number | null;
+  allergies: string | null;
+  currentMedications: string | null;
+  medicalConditions: string | null;
+  hasConsent: boolean;
+  cancelReason: string | null;
+  clinicNotes: string | null;
+  member: {
+    id: string;
+    fullName: string | null;
+    phoneNumber: string;
+  };
+  clinic: { id: string; name: string };
+}
 
 // Web3 / Filecoin / Hypercert types
 export interface Web3UploadResult {

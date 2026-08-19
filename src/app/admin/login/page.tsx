@@ -9,6 +9,7 @@ import { Shield, Loader2, Eye, EyeOff, Lock, User } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { isCaptchaEnabled } from "@/lib/captcha";
+import { PasskeyLoginButton } from "@/components/PasskeyLoginButton";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -83,9 +84,9 @@ export default function AdminLoginPage() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="username webauthn"
                   placeholder="Enter username"
                   className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  autoComplete="username"
                 />
               </div>
             </div>
@@ -146,6 +147,21 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
+
+          <div className="mt-4">
+            <PasskeyLoginButton
+              username={username}
+              getOptions={(name) => adminApi.webauthnLoginOptions(name)}
+              verify={(credential) => adminApi.webauthnLoginVerify(credential)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-600 py-3 text-sm font-semibold text-gray-100 hover:bg-gray-700 disabled:opacity-50"
+              onSuccess={(data) => {
+                adminApi.setToken(data.accessToken);
+                login(data.admin, data.accessToken);
+                router.push("/admin");
+              }}
+              onError={setError}
+            />
+          </div>
 
           {/* Footer */}
           <div className="mt-6 text-center">

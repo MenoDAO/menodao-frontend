@@ -7,6 +7,7 @@ import { staffApi } from "@/lib/staff-api";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { isCaptchaEnabled } from "@/lib/captcha";
+import { PasskeyLoginButton } from "@/components/PasskeyLoginButton";
 
 export default function StaffLoginPage() {
   const router = useRouter();
@@ -85,6 +86,7 @@ export default function StaffLoginPage() {
               onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              autoComplete="username webauthn"
               placeholder="Enter your username"
             />
           </div>
@@ -126,6 +128,19 @@ export default function StaffLoginPage() {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
+        <div className="mt-4">
+          <PasskeyLoginButton
+            username={username}
+            getOptions={(name) => staffApi.webauthnLoginOptions(name)}
+            verify={(credential) => staffApi.webauthnLoginVerify(credential)}
+            onSuccess={(response) => {
+              staffApi.setToken(response.accessToken);
+              setStaff(response.staff, response.accessToken);
+              router.push("/staff");
+            }}
+            onError={setError}
+          />
+        </div>
       </div>
     </div>
   );

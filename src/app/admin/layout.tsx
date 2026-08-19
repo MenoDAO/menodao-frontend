@@ -5,7 +5,6 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAdminStore } from "@/lib/admin-store";
 import {
-  LayoutDashboard,
   Users,
   CreditCard,
   Bell,
@@ -17,12 +16,19 @@ import {
   BarChart3,
   Building2,
   Wallet,
+  HeartPulse,
+  Landmark,
+  Wrench,
 } from "lucide-react";
 import { useState } from "react";
+import { PasskeyManager } from "@/components/PasskeyManager";
+import { adminApi } from "@/lib/admin-api";
 
 const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/metrics", label: "Metrics", icon: BarChart3 },
+  { href: "/admin", label: "Care Intelligence", icon: HeartPulse },
+  { href: "/admin/data-room", label: "Impact Room", icon: Landmark },
+  { href: "/admin/operations", label: "Operations", icon: Wrench },
+  { href: "/admin/metrics", label: "Site traffic", icon: BarChart3 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/clinics", label: "Clinics", icon: Building2 },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
@@ -98,7 +104,7 @@ export default function AdminLayout({
             <div className="flex items-center gap-2">
               <Shield className="w-8 h-8 text-emerald-500" />
               <span className="font-bold text-white text-lg">
-                MenoDAO Admin
+              MenoDAO Care
               </span>
             </div>
             <button
@@ -120,7 +126,12 @@ export default function AdminLayout({
               })
               .map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive =
+                  item.href === "/admin"
+                    ? pathname === "/admin" ||
+                      pathname.startsWith("/admin/care-intelligence")
+                    : pathname === item.href ||
+                      pathname.startsWith(`${item.href}/`);
                 return (
                   <Link
                     key={item.href}
@@ -157,6 +168,18 @@ export default function AdminLayout({
                     : "Administrator"}
                 </p>
               </div>
+            </div>
+            <div className="px-3 mb-2">
+              <PasskeyManager
+                queryKey="admin"
+                tone="dark"
+                list={() => adminApi.listPasskeys()}
+                getOptions={() => adminApi.webauthnRegisterOptions()}
+                verify={(credential, label) =>
+                  adminApi.webauthnRegisterVerify(credential, label)
+                }
+                remove={(id) => adminApi.deletePasskey(id)}
+              />
             </div>
             <button
               onClick={handleLogout}
