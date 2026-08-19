@@ -5,8 +5,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fingerprint, Loader2, Trash2 } from "lucide-react";
 import {
   browserSupportsWebAuthn,
+  clearPasskeyOnThisDevice,
+  markPasskeyOnThisDevice,
   registerThisDevice,
   type PasskeyDevice,
+  type PasskeyKind,
 } from "@/lib/passkeys";
 import type {
   PublicKeyCredentialCreationOptionsJSON,
@@ -15,6 +18,7 @@ import type {
 
 export function PasskeyManager({
   queryKey,
+  kind,
   list,
   getOptions,
   verify,
@@ -22,6 +26,7 @@ export function PasskeyManager({
   tone = "light",
 }: {
   queryKey: string;
+  kind: PasskeyKind;
   list: () => Promise<PasskeyDevice[]>;
   getOptions: () => Promise<PublicKeyCredentialCreationOptionsJSON>;
   verify: (
@@ -46,6 +51,12 @@ export function PasskeyManager({
     enabled: supported,
   });
 
+  useEffect(() => {
+    if (data && data.length > 0) {
+      markPasskeyOnThisDevice(kind);
+    }
+  }, [data, kind]);
+
   const text = tone === "dark" ? "text-gray-300" : "text-gray-600 dark:text-gray-300";
   const btn =
     tone === "dark"
@@ -59,6 +70,7 @@ export function PasskeyManager({
     setMessage(null);
     try {
       await registerThisDevice(getOptions, verify);
+      markPasskeyOnThisDevice(kind);
       await queryClient.invalidateQueries({ queryKey: ["passkeys", queryKey] });
       setMessage("This device can now sign in with fingerprint or Face ID.");
     } catch (err) {
@@ -96,6 +108,10 @@ export function PasskeyManager({
                 type="button"
                 onClick={async () => {
                   await remove(row.id);
+                  const remaining = (data || []).filter((item) => item.id !== row.id);
+                  if (remaining.length === 0) {
+                    clearPasskeyOnThisDevice(kind);
+                  }
                   await queryClient.invalidateQueries({ queryKey: ["passkeys", queryKey] });
                 }}
                 className="text-red-500 hover:text-red-400"

@@ -152,6 +152,59 @@ class ApiClient {
     return this.request<Member>("/auth/me");
   }
 
+  async webauthnLoginOptions(username?: string) {
+    return this.request<
+      import("@simplewebauthn/browser").PublicKeyCredentialRequestOptionsJSON
+    >("/auth/webauthn/login/options", {
+      method: "POST",
+      body: JSON.stringify({ username: username || undefined }),
+    });
+  }
+
+  async webauthnLoginVerify(
+    credential: import("@simplewebauthn/browser").AuthenticationResponseJSON,
+  ) {
+    return this.request<{ accessToken: string; member: Member }>(
+      "/auth/webauthn/login/verify",
+      {
+        method: "POST",
+        body: JSON.stringify({ credential }),
+      },
+    );
+  }
+
+  async webauthnRegisterOptions() {
+    return this.request<
+      import("@simplewebauthn/browser").PublicKeyCredentialCreationOptionsJSON
+    >("/auth/webauthn/register/options", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  }
+
+  async webauthnRegisterVerify(
+    credential: import("@simplewebauthn/browser").RegistrationResponseJSON,
+    label?: string,
+  ) {
+    return this.request("/auth/webauthn/register/verify", {
+      method: "POST",
+      body: JSON.stringify({ credential, label }),
+    });
+  }
+
+  async listPasskeys() {
+    return this.request<import("@/lib/passkeys").PasskeyDevice[]>(
+      "/auth/webauthn/credentials",
+    );
+  }
+
+  async deletePasskey(id: string) {
+    return this.request(`/auth/webauthn/credentials/${id}/delete`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  }
+
   // Member endpoints
   async getProfile() {
     return this.request<MemberProfile>("/members/profile");

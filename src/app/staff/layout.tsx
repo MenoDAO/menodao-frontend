@@ -137,6 +137,7 @@ export default function StaffLayout({
               <div className="hidden md:block">
                 <PasskeyManager
                   queryKey="staff"
+                  kind="staff"
                   list={() => staffApi.listPasskeys()}
                   getOptions={() => staffApi.webauthnRegisterOptions()}
                   verify={(credential, label) =>

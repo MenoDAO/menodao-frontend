@@ -13,6 +13,7 @@ interface AuthState {
   setPhoneNumber: (phone: string) => void;
   requestOtp: (phoneNumber: string) => Promise<void>;
   verifyOtp: (code: string) => Promise<void>;
+  loginWithSession: (accessToken: string, member: Member) => void;
   logout: () => void;
   loadUser: () => Promise<void>;
   updateMember: (member: Member) => void;
@@ -43,6 +44,16 @@ export const useAuthStore = create<AuthState>()(
         set({
           member,
           isAuthenticated: true,
+          otpSent: false,
+        });
+      },
+
+      loginWithSession: (accessToken: string, member: Member) => {
+        api.setToken(accessToken);
+        set({
+          member,
+          isAuthenticated: true,
+          phoneNumber: member.phoneNumber,
           otpSent: false,
         });
       },

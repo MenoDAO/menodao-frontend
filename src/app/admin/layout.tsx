@@ -170,9 +170,10 @@ export default function AdminLayout({
               </div>
             </div>
             <div className="px-3 mb-2">
-              <PasskeyManager
-                queryKey="admin"
-                tone="dark"
+                <PasskeyManager
+                  queryKey="admin"
+                  kind="admin"
+                  tone="dark"
                 list={() => adminApi.listPasskeys()}
                 getOptions={() => adminApi.webauthnRegisterOptions()}
                 verify={(credential, label) =>
