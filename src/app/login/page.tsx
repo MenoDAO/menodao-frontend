@@ -206,13 +206,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Error Message */}
-            {showSignUpPrompt && error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-
             {/* Sign Up Button (shown when phone not found) */}
             {showSignUpPrompt && (
               <Link href="/sign-up">
