@@ -17,10 +17,12 @@ import {
   X,
   ClipboardList,
   Trophy,
+  Calendar,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import NotificationPrompt from "./dashboard/NotificationPrompt";
 import DashboardFirstVisitFlow from "./dashboard/DashboardFirstVisitFlow";
+import { PasskeyManager } from "@/components/PasskeyManager";
 import { useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import i18n, { detectLocale, useTranslation } from "@/lib/i18n";
@@ -44,6 +46,12 @@ const navItemDefs = [
   },
   { href: "/dashboard/champion", labelKey: "nav.champion", icon: Trophy, dataTour: "tour-nav-champion" },
   { href: "/dashboard/camps", labelKey: "nav.findClinic", icon: MapPin, dataTour: "tour-nav-camps" },
+  {
+    href: "/dashboard/appointments",
+    labelKey: "nav.appointments",
+    icon: Calendar,
+    dataTour: "tour-nav-appointments",
+  },
   {
     href: "/dashboard/transactions",
     labelKey: "nav.activity",
@@ -156,6 +164,16 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   <option value="sw">SW</option>
                 </select>
                 <ThemeToggle />
+                <PasskeyManager
+                  queryKey="member"
+                  kind="member"
+                  list={() => api.listPasskeys()}
+                  getOptions={() => api.webauthnRegisterOptions()}
+                  verify={(credential, label) =>
+                    api.webauthnRegisterVerify(credential, label)
+                  }
+                  remove={(id) => api.deletePasskey(id)}
+                />
                 <button
                   onClick={handleLogout}
                   className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -197,6 +215,18 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {member?.phoneNumber}
               </p>
+              <div className="mt-2">
+                <PasskeyManager
+                  queryKey="member"
+                  kind="member"
+                  list={() => api.listPasskeys()}
+                  getOptions={() => api.webauthnRegisterOptions()}
+                  verify={(credential, label) =>
+                    api.webauthnRegisterVerify(credential, label)
+                  }
+                  remove={(id) => api.deletePasskey(id)}
+                />
+              </div>
             </div>
 
             {navItemDefs.map((item) => {

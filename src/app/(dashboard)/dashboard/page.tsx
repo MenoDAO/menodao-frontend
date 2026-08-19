@@ -222,6 +222,12 @@ export default function DashboardPage() {
             description={t("dashboard.findClinicDesc")}
             href="/dashboard/camps"
           />
+          <QuickActionCard
+            icon={<Calendar className="w-5 h-5" />}
+            label={t("dashboard.bookAppointment")}
+            description={t("dashboard.bookAppointmentDesc")}
+            href="/dashboard/appointments"
+          />
         </div>
       </div>
 

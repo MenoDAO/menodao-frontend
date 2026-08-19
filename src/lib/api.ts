@@ -152,6 +152,59 @@ class ApiClient {
     return this.request<Member>("/auth/me");
   }
 
+  async webauthnLoginOptions(username?: string) {
+    return this.request<
+      import("@simplewebauthn/browser").PublicKeyCredentialRequestOptionsJSON
+    >("/auth/webauthn/login/options", {
+      method: "POST",
+      body: JSON.stringify({ username: username || undefined }),
+    });
+  }
+
+  async webauthnLoginVerify(
+    credential: import("@simplewebauthn/browser").AuthenticationResponseJSON,
+  ) {
+    return this.request<{ accessToken: string; member: Member }>(
+      "/auth/webauthn/login/verify",
+      {
+        method: "POST",
+        body: JSON.stringify({ credential }),
+      },
+    );
+  }
+
+  async webauthnRegisterOptions() {
+    return this.request<
+      import("@simplewebauthn/browser").PublicKeyCredentialCreationOptionsJSON
+    >("/auth/webauthn/register/options", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  }
+
+  async webauthnRegisterVerify(
+    credential: import("@simplewebauthn/browser").RegistrationResponseJSON,
+    label?: string,
+  ) {
+    return this.request("/auth/webauthn/register/verify", {
+      method: "POST",
+      body: JSON.stringify({ credential, label }),
+    });
+  }
+
+  async listPasskeys() {
+    return this.request<import("@/lib/passkeys").PasskeyDevice[]>(
+      "/auth/webauthn/credentials",
+    );
+  }
+
+  async deletePasskey(id: string) {
+    return this.request(`/auth/webauthn/credentials/${id}/delete`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  }
+
   // Member endpoints
   async getProfile() {
     return this.request<MemberProfile>("/members/profile");
@@ -411,6 +464,45 @@ class ApiClient {
       `/clinics/nearby?lat=${lat}&lng=${lng}&radius=${radius}`,
     );
   }
+
+  async getPublicClinic(id: string) {
+    return this.request<PublicClinic>(`/clinics/${id}`);
+  }
+
+  async getAppointmentSlots(clinicId: string, date: string) {
+    return this.request<AppointmentSlotsResponse>(
+      `/appointments/slots?clinicId=${clinicId}&date=${date}`,
+    );
+  }
+
+  async listAppointments() {
+    return this.request<MemberAppointment[]>("/appointments");
+  }
+
+  async getAppointment(id: string) {
+    return this.request<MemberAppointment>(`/appointments/${id}`);
+  }
+
+  async bookAppointment(body: BookAppointmentRequest) {
+    return this.request<MemberAppointment>("/appointments", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async cancelAppointment(id: string, reason: string) {
+    return this.request<MemberAppointment>(`/appointments/${id}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async rescheduleAppointment(id: string, scheduledAt: string, reason: string) {
+    return this.request<MemberAppointment>(`/appointments/${id}/reschedule`, {
+      method: "POST",
+      body: JSON.stringify({ scheduledAt, reason }),
+    });
+  }
 }
 
 // Types
@@ -551,6 +643,65 @@ export interface ClinicMapItem {
 
 export interface ClinicWithDistance extends ClinicMapItem {
   distanceKm: number;
+}
+
+export interface PublicClinic extends ClinicMapItem {
+  operatesOnWeekends: boolean;
+  leadDentistName: string;
+  activeDentalChairs: number;
+}
+
+export type AppointmentStatus =
+  | "BOOKED"
+  | "RESCHEDULED"
+  | "CANCELLED_BY_MEMBER"
+  | "CANCELLED_BY_CLINIC"
+  | "ATTENDED"
+  | "NO_SHOW";
+
+export interface MemberAppointment {
+  id: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  status: AppointmentStatus;
+  intakeReason: string;
+  painLevel: number | null;
+  cancelReason: string | null;
+  rescheduleReason: string | null;
+  clinic: {
+    id: string;
+    name: string;
+    physicalLocation: string;
+    subCounty: string;
+    leadDentistName: string;
+    whatsappNumber: string;
+  };
+}
+
+export interface AppointmentSlot {
+  scheduledAt: string;
+  label: string;
+  available: boolean;
+}
+
+export interface AppointmentSlotsResponse {
+  clinicId: string;
+  date: string;
+  durationMinutes: number;
+  chairs: number;
+  slots: AppointmentSlot[];
+}
+
+export interface BookAppointmentRequest {
+  clinicId: string;
+  scheduledAt: string;
+  intakeReason: string;
+  painLevel?: number;
+  allergies?: string;
+  currentMedications?: string;
+  medicalConditions?: string;
+  memberNotes?: string;
+  hasConsent: boolean;
 }
 
 export interface CampRegistration {

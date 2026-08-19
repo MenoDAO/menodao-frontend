@@ -248,6 +248,91 @@ describe("API Client", () => {
     });
   });
 
+  describe("Appointments", () => {
+    it("lists member appointments", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+      const { api } = await import("../api");
+      await api.listAppointments();
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/appointments"),
+        expect.anything(),
+      );
+    });
+
+    it("loads clinic slots by clinic and date", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ slots: [] }),
+      });
+      const { api } = await import("../api");
+      await api.getAppointmentSlots("clinic-1", "2026-08-20");
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/appointments/slots?clinicId=clinic-1&date=2026-08-20"),
+        expect.anything(),
+      );
+    });
+
+    it("books an appointment with intake and consent", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: "appt-1" }),
+      });
+      const { api } = await import("../api");
+      await api.bookAppointment({
+        clinicId: "clinic-1",
+        scheduledAt: "2026-08-20T07:00:00.000Z",
+        intakeReason: "Pain",
+        hasConsent: true,
+      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/appointments"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            clinicId: "clinic-1",
+            scheduledAt: "2026-08-20T07:00:00.000Z",
+            intakeReason: "Pain",
+            hasConsent: true,
+          }),
+        }),
+      );
+    });
+
+    it("cancels and reschedules through the member appointment routes", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: "appt-1" }),
+      });
+      const { api } = await import("../api");
+      await api.cancelAppointment("appt-1", "Cannot attend");
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/appointments/appt-1/cancel"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ reason: "Cannot attend" }),
+        }),
+      );
+      await api.rescheduleAppointment(
+        "appt-1",
+        "2026-08-21T07:00:00.000Z",
+        "Need later slot",
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/appointments/appt-1/reschedule"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            scheduledAt: "2026-08-21T07:00:00.000Z",
+            reason: "Need later slot",
+          }),
+        }),
+      );
+    });
+  });
+
   describe("Error Handling", () => {
     it("should handle network errors", async () => {
       mockFetch.mockRejectedValueOnce(new Error("Network error"));

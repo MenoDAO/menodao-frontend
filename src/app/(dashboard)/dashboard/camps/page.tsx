@@ -384,6 +384,12 @@ export default function CampsPage() {
                                   <ExternalLink className="w-3.5 h-3.5" />Get Directions
                                 </a>
                               )}
+                              <a
+                                href={`/dashboard/appointments/book?clinicId=${(selectedMapItem as ClinicMapItem).id}`}
+                                className="mt-1 inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
+                              >
+                                Book appointment
+                              </a>
                             </div>
                           </>
                         ) : (
@@ -549,6 +555,13 @@ export default function CampsPage() {
                             <ExternalLink className="w-4 h-4" />Get Directions
                           </a>
                         )}
+                        <a
+                          href={`/dashboard/appointments/book?clinicId=${clinic.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="ml-auto rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500"
+                        >
+                          Book
+                        </a>
                         {!clinic.whatsappNumber && !clinic.googleMapsLink && (
                           <span className="text-xs text-gray-400 dark:text-gray-500">No contact info available</span>
                         )}

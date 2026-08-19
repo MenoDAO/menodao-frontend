@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Phone, Loader2, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
@@ -9,18 +9,30 @@ import { useTranslation } from "@/lib/i18n";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { isCaptchaEnabled } from "@/lib/captcha";
+import { PasskeyLoginButton } from "@/components/PasskeyLoginButton";
+import { hasPasskeyOnThisDevice } from "@/lib/passkeys";
+import { useAuthStore } from "@/lib/auth-store";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get("callbackUrl") ?? null;
   const { t } = useTranslation();
+  const { loginWithSession } = useAuthStore();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
+  const [showFallback, setShowFallback] = useState(true);
   const { setCaptchaToken, clearCaptcha, requireCaptchaToken, captchaReady, captchaWidgetKey } =
     useCaptcha();
+
+  useEffect(() => {
+    const has = hasPasskeyOnThisDevice("member");
+    setEnrolled(has);
+    setShowFallback(!has);
+  }, []);
 
   const validatePhoneNumber = (phone: string): boolean => {
     // Kenyan phone number validation
@@ -116,10 +128,52 @@ export default function LoginPage() {
             <h2 className="text-2xl font-bold text-gray-900 font-outfit">
               {t("auth.login.title")}
             </h2>
-            <p className="text-gray-600 mt-2">{t("auth.login.subtitle")}</p>
+            <p className="text-gray-600 mt-2">
+              {enrolled ? t("auth.login.fingerprint") : t("auth.login.subtitle")}
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
+          <PasskeyLoginButton
+            kind="member"
+            autoStart={enrolled}
+            username={phoneNumber}
+            label={t("auth.login.fingerprint")}
+            getOptions={(name) => api.webauthnLoginOptions(name)}
+            verify={(credential) => api.webauthnLoginVerify(credential)}
+            onSuccess={(data) => {
+              loginWithSession(data.accessToken, data.member);
+              const next = callbackUrl || "/dashboard";
+              router.push(next);
+            }}
+            onError={(message) => {
+              setError(message);
+              setShowFallback(true);
+            }}
+          />
+
+          {!showFallback && (
+            <button
+              type="button"
+              onClick={() => setShowFallback(true)}
+              className="mt-4 w-full text-sm text-gray-500 hover:text-gray-700"
+            >
+              {t("auth.login.usePhoneInstead")}
+            </button>
+          )}
+
+          {showFallback && (
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            <div className="flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+              <span className="h-px flex-1 bg-gray-200" />
+              {t("auth.login.orPhone")}
+              <span className="h-px flex-1 bg-gray-200" />
+            </div>
             <div>
               <label
                 htmlFor="phoneNumber"
@@ -136,7 +190,7 @@ export default function LoginPage() {
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   placeholder={t("auth.login.phonePlaceholder")}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-gray-900 placeholder-gray-400"
-                  autoFocus
+                  autoFocus={!enrolled}
                   required
                 />
               </div>
@@ -151,13 +205,6 @@ export default function LoginPage() {
                 onError={clearCaptcha}
               />
             </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {error}
-              </div>
-            )}
 
             {/* Sign Up Button (shown when phone not found) */}
             {showSignUpPrompt && (
@@ -176,7 +223,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading || !captchaReady}
-              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
@@ -191,6 +238,7 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+          )}
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-3">
             <p className="text-sm text-gray-600">

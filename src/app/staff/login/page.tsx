@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStaffStore } from "@/lib/staff-store";
 import { staffApi } from "@/lib/staff-api";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { isCaptchaEnabled } from "@/lib/captcha";
+import { PasskeyLoginButton } from "@/components/PasskeyLoginButton";
+import { hasPasskeyOnThisDevice } from "@/lib/passkeys";
 
 export default function StaffLoginPage() {
   const router = useRouter();
@@ -15,6 +17,8 @@ export default function StaffLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
+  const [showFallback, setShowFallback] = useState(true);
   const {
     setCaptchaToken,
     clearCaptcha,
@@ -22,6 +26,12 @@ export default function StaffLoginPage() {
     captchaReady,
     captchaWidgetKey,
   } = useCaptcha();
+
+  useEffect(() => {
+    const has = hasPasskeyOnThisDevice("staff");
+    setEnrolled(has);
+    setShowFallback(!has);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,72 +70,112 @@ export default function StaffLoginPage() {
             Staff Portal
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Sign in to access the clinic dashboard
+            {enrolled
+              ? "Use this device to sign in"
+              : "Sign in to access the clinic dashboard"}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            >
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              placeholder="Enter your username"
-            />
+        {error && (
+          <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
+            {error}
           </div>
+        )}
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              placeholder="Enter your password"
-            />
-          </div>
+        <PasskeyLoginButton
+          kind="staff"
+          autoStart={enrolled}
+          username={username}
+          getOptions={(name) => staffApi.webauthnLoginOptions(name)}
+          verify={(credential) => staffApi.webauthnLoginVerify(credential)}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          onSuccess={(response) => {
+            staffApi.setToken(response.accessToken);
+            setStaff(response.staff, response.accessToken);
+            router.push("/staff");
+          }}
+          onError={(message) => {
+            setError(message);
+            setShowFallback(true);
+          }}
+        />
 
-          <div className="flex justify-center">
-            <TurnstileWidget
-              key={captchaWidgetKey}
-              resetKey={captchaWidgetKey}
-              onVerify={setCaptchaToken}
-              onExpire={clearCaptcha}
-              onError={clearCaptcha}
-              theme="auto"
-            />
-          </div>
-
+        {!showFallback && (
           <button
-            type="submit"
-            disabled={loading || !captchaReady}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            type="button"
+            onClick={() => setShowFallback(true)}
+            className="mt-4 w-full text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            Use username and password instead
           </button>
-        </form>
+        )}
+
+        {showFallback && (
+          <>
+            <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+              <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+              or use password
+              <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Username
+                </label>
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  autoComplete="username webauthn"
+                  placeholder="Enter your username"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="Enter your password"
+                />
+              </div>
+
+              <div className="flex justify-center">
+                <TurnstileWidget
+                  key={captchaWidgetKey}
+                  resetKey={captchaWidgetKey}
+                  onVerify={setCaptchaToken}
+                  onExpire={clearCaptcha}
+                  onError={clearCaptcha}
+                  theme="auto"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !captchaReady}
+                className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Signing in..." : "Sign in with password"}
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );

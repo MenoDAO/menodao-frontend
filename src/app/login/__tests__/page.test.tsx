@@ -21,7 +21,14 @@ jest.mock("@/lib/api", () => ({
   api: {
     checkPhoneExists: jest.fn(),
     requestOtp: jest.fn(),
+    webauthnLoginOptions: jest.fn(),
+    webauthnLoginVerify: jest.fn(),
   },
+}));
+
+jest.mock("@/lib/passkeys", () => ({
+  hasPasskeyOnThisDevice: () => false,
+  browserSupportsWebAuthn: () => false,
 }));
 
 jest.mock("@/components/TurnstileWidget", () => ({
