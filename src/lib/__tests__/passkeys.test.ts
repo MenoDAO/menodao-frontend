@@ -3,6 +3,8 @@ import {
   isAlreadyRegisteredError,
   isThisDeviceRegistered,
   markPasskeyOnThisDevice,
+  shouldOfferPasskeyEnroll,
+  skipPasskeyEnrollPrompt,
   type PasskeyDevice,
 } from "../passkeys";
 
@@ -54,5 +56,22 @@ describe("isAlreadyRegisteredError", () => {
       isAlreadyRegisteredError(new Error("The authenticator was previously registered.")),
     ).toBe(true);
     expect(isAlreadyRegisteredError(new Error("Cancelled"))).toBe(false);
+  });
+});
+
+describe("shouldOfferPasskeyEnroll", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it("does not offer enroll after this session is skipped", () => {
+    skipPasskeyEnrollPrompt("member");
+    expect(shouldOfferPasskeyEnroll("member")).toBe(false);
+  });
+
+  it("does not offer enroll when this device already has a passkey", () => {
+    markPasskeyOnThisDevice("member");
+    expect(shouldOfferPasskeyEnroll("member")).toBe(false);
   });
 });

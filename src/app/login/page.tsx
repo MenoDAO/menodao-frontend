@@ -139,23 +139,25 @@ export default function LoginPage() {
             </div>
           )}
 
-          <PasskeyLoginButton
-            kind="member"
-            autoStart={enrolled}
-            username={phoneNumber}
-            label={t("auth.login.fingerprint")}
-            getOptions={(name) => api.webauthnLoginOptions(name)}
-            verify={(credential) => api.webauthnLoginVerify(credential)}
-            onSuccess={(data) => {
-              loginWithSession(data.accessToken, data.member);
-              const next = callbackUrl || "/dashboard";
-              router.push(next);
-            }}
-            onError={(message) => {
-              setError(message);
-              setShowFallback(true);
-            }}
-          />
+          {enrolled && (
+            <PasskeyLoginButton
+              kind="member"
+              autoStart={enrolled}
+              username={phoneNumber}
+              label={t("auth.login.fingerprint")}
+              getOptions={(name) => api.webauthnLoginOptions(name)}
+              verify={(credential) => api.webauthnLoginVerify(credential)}
+              onSuccess={(data) => {
+                loginWithSession(data.accessToken, data.member);
+                const next = callbackUrl || "/dashboard";
+                router.push(next);
+              }}
+              onError={(message) => {
+                setError(message);
+                setShowFallback(true);
+              }}
+            />
+          )}
 
           {!showFallback && (
             <button
@@ -238,6 +240,24 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+          )}
+
+          {!enrolled && (
+            <PasskeyLoginButton
+              kind="member"
+              autoStart={false}
+              username={phoneNumber}
+              label={t("auth.login.useFingerprint")}
+              className="mt-4 w-full text-sm text-gray-500 hover:text-gray-700 inline-flex items-center justify-center gap-2 py-2"
+              getOptions={(name) => api.webauthnLoginOptions(name)}
+              verify={(credential) => api.webauthnLoginVerify(credential)}
+              onSuccess={(data) => {
+                loginWithSession(data.accessToken, data.member);
+                const next = callbackUrl || "/dashboard";
+                router.push(next);
+              }}
+              onError={(message) => setError(message)}
+            />
           )}
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-3">

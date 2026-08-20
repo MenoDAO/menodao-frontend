@@ -99,18 +99,20 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          <PasskeyLoginButton
-            kind="admin"
-            autoStart={enrolled}
-            username={username}
-            getOptions={(name) => adminApi.webauthnLoginOptions(name)}
-            verify={(credential) => adminApi.webauthnLoginVerify(credential)}
-            onSuccess={onPasskeySuccess}
-            onError={(message) => {
-              setError(message);
-              setShowFallback(true);
-            }}
-          />
+          {enrolled && (
+            <PasskeyLoginButton
+              kind="admin"
+              autoStart={enrolled}
+              username={username}
+              getOptions={(name) => adminApi.webauthnLoginOptions(name)}
+              verify={(credential) => adminApi.webauthnLoginVerify(credential)}
+              onSuccess={onPasskeySuccess}
+              onError={(message) => {
+                setError(message);
+                setShowFallback(true);
+              }}
+            />
+          )}
 
           {!showFallback && (
             <button
@@ -198,6 +200,19 @@ export default function AdminLoginPage() {
                 </button>
               </form>
             </>
+          )}
+
+          {!enrolled && (
+            <PasskeyLoginButton
+              kind="admin"
+              autoStart={false}
+              username={username}
+              getOptions={(name) => adminApi.webauthnLoginOptions(name)}
+              verify={(credential) => adminApi.webauthnLoginVerify(credential)}
+              className="mt-4 w-full text-sm text-gray-400 hover:text-gray-200 inline-flex items-center justify-center gap-2 py-2"
+              onSuccess={onPasskeySuccess}
+              onError={(message) => setError(message)}
+            />
           )}
 
           <div className="mt-6 text-center">

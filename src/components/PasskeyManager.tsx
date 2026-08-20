@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Fingerprint, Loader2, Trash2, X } from "lucide-react";
+import { Check, Fingerprint, Loader2, Trash2 } from "lucide-react";
+import { PasskeyToast } from "@/components/PasskeyToast";
 import {
   browserSupportsWebAuthn,
   clearPasskeyOnThisDevice,
@@ -160,22 +161,7 @@ export function PasskeyManager({
 
   return (
     <>
-      {toast && (
-        <div
-          role="status"
-          aria-live="polite"
-          className={`fixed top-6 left-1/2 z-[100] flex max-w-[min(92vw,28rem)] -translate-x-1/2 items-start gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-white shadow-xl ${
-            toast.type === "success" ? "bg-emerald-600" : "bg-red-600"
-          }`}
-        >
-          {toast.type === "success" ? (
-            <Check className="mt-0.5 h-5 w-5 shrink-0" />
-          ) : (
-            <X className="mt-0.5 h-5 w-5 shrink-0" />
-          )}
-          <span>{toast.message}</span>
-        </div>
-      )}
+      <PasskeyToast toast={toast} />
 
       <section className={card}>
         <div className={`px-6 py-4 border-b ${divider}`}>

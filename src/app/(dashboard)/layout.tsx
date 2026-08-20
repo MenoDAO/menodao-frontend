@@ -22,6 +22,7 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import NotificationPrompt from "./dashboard/NotificationPrompt";
 import DashboardFirstVisitFlow from "./dashboard/DashboardFirstVisitFlow";
+import MemberPasskeyEnrollPrompt from "./dashboard/MemberPasskeyEnrollPrompt";
 import { useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import i18n, { detectLocale, useTranslation } from "@/lib/i18n";
@@ -259,6 +260,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* First visit: confirm language, then onboarding (see DashboardFirstVisitFlow) */}
       <DashboardFirstVisitFlow setMobileNavOpen={setMobileMenuOpen} />
+
+      <MemberPasskeyEnrollPrompt />
 
       {/* Notification Permission Prompt */}
       <NotificationPrompt />

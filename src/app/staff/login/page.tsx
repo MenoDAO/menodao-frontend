@@ -82,23 +82,25 @@ export default function StaffLoginPage() {
           </div>
         )}
 
-        <PasskeyLoginButton
-          kind="staff"
-          autoStart={enrolled}
-          username={username}
-          getOptions={(name) => staffApi.webauthnLoginOptions(name)}
-          verify={(credential) => staffApi.webauthnLoginVerify(credential)}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-          onSuccess={(response) => {
-            staffApi.setToken(response.accessToken);
-            setStaff(response.staff, response.accessToken);
-            router.push("/staff");
-          }}
-          onError={(message) => {
-            setError(message);
-            setShowFallback(true);
-          }}
-        />
+        {enrolled && (
+          <PasskeyLoginButton
+            kind="staff"
+            autoStart={enrolled}
+            username={username}
+            getOptions={(name) => staffApi.webauthnLoginOptions(name)}
+            verify={(credential) => staffApi.webauthnLoginVerify(credential)}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            onSuccess={(response) => {
+              staffApi.setToken(response.accessToken);
+              setStaff(response.staff, response.accessToken);
+              router.push("/staff");
+            }}
+            onError={(message) => {
+              setError(message);
+              setShowFallback(true);
+            }}
+          />
+        )}
 
         {!showFallback && (
           <button
@@ -175,6 +177,23 @@ export default function StaffLoginPage() {
               </button>
             </form>
           </>
+        )}
+
+        {!enrolled && (
+          <PasskeyLoginButton
+            kind="staff"
+            autoStart={false}
+            username={username}
+            getOptions={(name) => staffApi.webauthnLoginOptions(name)}
+            verify={(credential) => staffApi.webauthnLoginVerify(credential)}
+            className="mt-4 w-full text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 inline-flex items-center justify-center gap-2 py-2"
+            onSuccess={(response) => {
+              staffApi.setToken(response.accessToken);
+              setStaff(response.staff, response.accessToken);
+              router.push("/staff");
+            }}
+            onError={(message) => setError(message)}
+          />
         )}
       </div>
     </div>
