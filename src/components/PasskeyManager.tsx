@@ -6,8 +6,11 @@ import { Check, Fingerprint, Loader2, Trash2, X } from "lucide-react";
 import {
   browserSupportsWebAuthn,
   clearPasskeyOnThisDevice,
+  isAlreadyRegisteredError,
+  isThisDeviceRegistered,
   markPasskeyOnThisDevice,
   registerThisDevice,
+  thisDeviceCredentialId,
   type PasskeyDevice,
   type PasskeyKind,
 } from "@/lib/passkeys";
@@ -89,25 +92,46 @@ export function PasskeyManager({
     ? "bg-gray-900/50 border-gray-700"
     : "bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700";
 
+  const alreadyAdded = isThisDeviceRegistered(kind, data || []);
+  const thisCredId = thisDeviceCredentialId(kind);
+
   const enroll = async () => {
+    if (alreadyAdded) return;
     setBusy(true);
     setError(null);
     try {
-      await registerThisDevice(getOptions, verify);
-      markPasskeyOnThisDevice(kind);
+      const result = await registerThisDevice(getOptions, verify);
+      const credentialId =
+        result &&
+        typeof result === "object" &&
+        "id" in result &&
+        typeof result.id === "string"
+          ? result.id
+          : undefined;
+      markPasskeyOnThisDevice(kind, credentialId);
       await queryClient.invalidateQueries({ queryKey: ["passkeys", queryKey] });
       setToast({
         type: "success",
         message: t("profile.signIn.success"),
       });
     } catch (err) {
-      const name = err instanceof Error ? err.name : "";
-      if (name === "NotAllowedError") {
-        setError(t("profile.signIn.cancelled"));
+      if (isAlreadyRegisteredError(err)) {
+        markPasskeyOnThisDevice(kind);
+        await queryClient.invalidateQueries({ queryKey: ["passkeys", queryKey] });
+        setError(null);
+        setToast({
+          type: "success",
+          message: t("profile.signIn.alreadyAdded"),
+        });
       } else {
-        const message =
-          err instanceof Error ? err.message : t("profile.signIn.failed");
-        setError(message);
+        const name = err instanceof Error ? err.name : "";
+        if (name === "NotAllowedError") {
+          setError(t("profile.signIn.cancelled"));
+        } else {
+          const message =
+            err instanceof Error ? err.message : t("profile.signIn.failed");
+          setError(message);
+        }
       }
     } finally {
       setBusy(false);
@@ -122,7 +146,7 @@ export function PasskeyManager({
     try {
       await remove(id);
       const remaining = (data || []).filter((item) => item.id !== id);
-      if (remaining.length === 0) {
+      if (remaining.length === 0 || id === thisDeviceCredentialId(kind)) {
         clearPasskeyOnThisDevice(kind);
       }
       await queryClient.invalidateQueries({ queryKey: ["passkeys", queryKey] });
@@ -181,21 +205,34 @@ export function PasskeyManager({
             <p className={`text-sm ${muted}`}>{t("profile.signIn.unsupported")}</p>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={enroll}
-                disabled={busy}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Fingerprint className="h-4 w-4" />
-                )}
-                {data?.length
-                  ? t("profile.signIn.addDevice")
-                  : t("profile.signIn.enable")}
-              </button>
+              {alreadyAdded ? (
+                <p
+                  className={`inline-flex items-center gap-2 text-sm font-medium ${
+                    dark
+                      ? "text-emerald-300"
+                      : "text-emerald-700 dark:text-emerald-400"
+                  }`}
+                >
+                  <Check className="h-4 w-4" />
+                  {t("profile.signIn.alreadyAdded")}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={enroll}
+                  disabled={busy}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Fingerprint className="h-4 w-4" />
+                  )}
+                  {data?.length
+                    ? t("profile.signIn.addDevice")
+                    : t("profile.signIn.enable")}
+                </button>
+              )}
 
               {error && (
                 <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
@@ -227,6 +264,11 @@ export function PasskeyManager({
                           <div className="min-w-0">
                             <p className={`truncate text-sm font-medium ${heading}`}>
                               {row.label || t("profile.signIn.thisDevice")}
+                              {thisCredId === row.id ? (
+                                <span className={`ml-2 text-xs font-normal ${muted}`}>
+                                  {t("profile.signIn.thisDevice")}
+                                </span>
+                              ) : null}
                             </p>
                             <p className={`mt-0.5 text-xs ${muted}`}>
                               {added

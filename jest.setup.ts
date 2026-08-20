@@ -1,19 +1,37 @@
 import '@testing-library/jest-dom';
 
-// Mock localStorage
+const store = new Map<string, string>();
 const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
+  get length() {
+    return store.size;
+  },
+  key: jest.fn((index: number) => Array.from(store.keys())[index] ?? null),
+  getItem: jest.fn((key: string) => store.get(key) ?? null),
+  setItem: jest.fn((key: string, value: string) => {
+    store.set(key, String(value));
+  }),
+  removeItem: jest.fn((key: string) => {
+    store.delete(key);
+  }),
+  clear: jest.fn(() => {
+    store.clear();
+  }),
 };
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
-// Mock fetch globally
 global.fetch = jest.fn();
 
-// Reset mocks before each test
 beforeEach(() => {
-  jest.clearAllMocks();
+  store.clear();
+  localStorageMock.getItem.mockImplementation((key: string) => store.get(key) ?? null);
+  localStorageMock.setItem.mockImplementation((key: string, value: string) => {
+    store.set(key, String(value));
+  });
+  localStorageMock.removeItem.mockImplementation((key: string) => {
+    store.delete(key);
+  });
+  localStorageMock.clear.mockImplementation(() => {
+    store.clear();
+  });
   (global.fetch as jest.Mock).mockReset();
 });

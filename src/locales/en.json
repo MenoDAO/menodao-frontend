@@ -112,6 +112,7 @@
   "profile.signIn.description": "Use fingerprint or Face ID instead of a code on this device. We never store your fingerprint — only a public key for this login.",
   "profile.signIn.enable": "Enable fingerprint / Face ID",
   "profile.signIn.addDevice": "Add this device",
+  "profile.signIn.alreadyAdded": "This device is already added",
   "profile.signIn.success": "This device can now sign in with fingerprint or Face ID.",
   "profile.signIn.cancelled": "Cancelled.",
   "profile.signIn.failed": "Could not update device login",

@@ -24,6 +24,10 @@ function enrolledKey(kind: PasskeyKind) {
   return `menodao.passkey.${kind}`;
 }
 
+function credentialIdKey(kind: PasskeyKind) {
+  return `menodao.passkey.cred.${kind}`;
+}
+
 function autoStartKey(kind: PasskeyKind) {
   return `menodao.passkey.autostart.${kind}`;
 }
@@ -33,14 +37,42 @@ export function hasPasskeyOnThisDevice(kind: PasskeyKind): boolean {
   return localStorage.getItem(enrolledKey(kind)) === "1";
 }
 
-export function markPasskeyOnThisDevice(kind: PasskeyKind) {
+export function thisDeviceCredentialId(kind: PasskeyKind): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(credentialIdKey(kind));
+}
+
+export function markPasskeyOnThisDevice(kind: PasskeyKind, credentialId?: string) {
   if (typeof window === "undefined") return;
   localStorage.setItem(enrolledKey(kind), "1");
+  if (credentialId) {
+    localStorage.setItem(credentialIdKey(kind), credentialId);
+  }
 }
 
 export function clearPasskeyOnThisDevice(kind: PasskeyKind) {
   if (typeof window === "undefined") return;
   localStorage.removeItem(enrolledKey(kind));
+  localStorage.removeItem(credentialIdKey(kind));
+}
+
+export function isThisDeviceRegistered(
+  kind: PasskeyKind,
+  devices: PasskeyDevice[],
+): boolean {
+  if (devices.length === 0) return false;
+  const credId = thisDeviceCredentialId(kind);
+  if (credId && devices.some((device) => device.id === credId)) return true;
+  return hasPasskeyOnThisDevice(kind);
+}
+
+export function isAlreadyRegisteredError(err: unknown): boolean {
+  const name = err instanceof Error ? err.name : "";
+  const message = err instanceof Error ? err.message : String(err);
+  return (
+    name === "InvalidStateError" ||
+    /previously registered/i.test(message)
+  );
 }
 
 export function shouldAutoStartPasskey(kind: PasskeyKind): boolean {
@@ -66,17 +98,17 @@ export async function completePasskeyLogin<T>(
   return verify(credential);
 }
 
-export async function registerThisDevice(
+export async function registerThisDevice<T>(
   getOptions: () => Promise<PublicKeyCredentialCreationOptionsJSON>,
   verify: (
     credential: RegistrationResponseJSON,
     label?: string,
-  ) => Promise<unknown>,
-): Promise<void> {
+  ) => Promise<T>,
+): Promise<T> {
   if (!browserSupportsWebAuthn()) {
     throw new Error("This browser does not support fingerprint or Face ID login.");
   }
   const optionsJSON = await getOptions();
   const credential = await startRegistration({ optionsJSON });
-  await verify(credential, navigator.platform || "This device");
+  return verify(credential, navigator.platform || "This device");
 }
