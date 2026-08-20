@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { PasskeyManager } from "@/components/PasskeyManager";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -280,6 +281,17 @@ export default function ProfilePage() {
           <LanguageSwitcher />
         </div>
       </div>
+
+      <PasskeyManager
+        queryKey="member"
+        kind="member"
+        list={() => api.listPasskeys()}
+        getOptions={() => api.webauthnRegisterOptions()}
+        verify={(credential, label) =>
+          api.webauthnRegisterVerify(credential, label)
+        }
+        remove={(id) => api.deletePasskey(id)}
+      />
     </div>
   );
 }

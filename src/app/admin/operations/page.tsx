@@ -10,6 +10,8 @@ import {
 import { SMSMetrics } from "../components/SMSMetrics";
 import { AuditLog } from "../components/AuditLog";
 import { Web3ImpactStats } from "../components/Web3ImpactStats";
+import { useAdminStore } from "@/lib/admin-store";
+import Link from "next/link";
 import {
   Users,
   CreditCard,
@@ -109,6 +111,8 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function OperationsDashboard() {
+  const admin = useAdminStore((state) => state.admin);
+  const isMasterAdmin = admin?.role === "SUPER_ADMIN";
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["admin", "stats", "overview"],
@@ -348,8 +352,22 @@ export default function OperationsDashboard() {
           </div>
         </div>
       </div>
-      {/* Activity Log */}
-      <AuditLog limit={20} />
+      {isMasterAdmin && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-400">
+              Cross-admin actions across the platform
+            </p>
+            <Link
+              href="/admin/audit"
+              className="text-sm font-medium text-emerald-400 hover:text-emerald-300"
+            >
+              Open full log
+            </Link>
+          </div>
+          <AuditLog limit={20} enabled={isMasterAdmin} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,223 +1,181 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/lib/admin-api";
 import { useAdminStore } from "@/lib/admin-store";
+import { PasskeyManager } from "@/components/PasskeyManager";
+import { ActivityTimeline } from "@/components/settings/ActivityTimeline";
+import { ChangePasswordCard } from "@/components/settings/ChangePasswordCard";
+import { formatDateTime } from "@/lib/activity";
 import {
-  Lock,
+  Clock,
+  Landmark,
   Loader2,
-  Check,
-  Eye,
-  EyeOff,
+  Shield,
   User,
-  Calendar,
 } from "lucide-react";
+
+function roleLabel(role?: string) {
+  if (role === "CUSTOMER_SERVICE") return "Customer service";
+  if (role === "SUPER_ADMIN") return "Super admin";
+  return "Administrator";
+}
+
+function accessCopy(role?: string) {
+  if (role === "CUSTOMER_SERVICE") {
+    return "Member support, operations, and read access across Care Intelligence";
+  }
+  return "Full platform access, including sensitive member and payment actions";
+}
 
 export default function SettingsPage() {
   const { admin } = useAdminStore();
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPasswords, setShowPasswords] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["admin", "profile"],
     queryFn: () => adminApi.getProfile(),
   });
 
-  const changePasswordMutation = useMutation({
-    mutationFn: () => adminApi.changePassword(currentPassword, newPassword),
-    onSuccess: () => {
-      setSuccess(true);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setError(null);
-      setTimeout(() => setSuccess(false), 3000);
-    },
-    onError: (error: Error) => {
-      setError(error.message || "Failed to change password");
-      setSuccess(false);
-    },
+  const activity = useQuery({
+    queryKey: ["admin", "my-activity"],
+    queryFn: () => adminApi.getMyActivity(20),
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setError("Please fill in all fields");
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setError("New password must be at least 8 characters");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError("New passwords do not match");
-      return;
-    }
-
-    changePasswordMutation.mutate();
-  };
+  const role = profile?.role || admin?.role;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-gray-400 mt-1">Manage your admin account settings</p>
+        <p className="mt-1 text-gray-400">
+          Your profile, organization, sign-in, and a log of your recent actions
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Profile Info */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h2 className="text-lg font-semibold text-white mb-4">Profile Information</h2>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <section className="rounded-xl border border-gray-700 bg-gray-800 p-6">
+          <h2 className="mb-4 text-lg font-semibold text-white">Your profile</h2>
           {profileLoading ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
             </div>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-emerald-600 flex items-center justify-center">
-                  <span className="text-white font-bold text-2xl">
-                    {admin?.username?.charAt(0).toUpperCase()}
-                  </span>
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-2xl font-bold text-white">
+                  {(profile?.username || admin?.username || "A")
+                    .charAt(0)
+                    .toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-white font-medium text-lg">{admin?.username}</p>
-                  <p className="text-gray-400">Administrator</p>
+                  <p className="text-lg font-medium text-white">
+                    {profile?.username || admin?.username}
+                  </p>
+                  <p className="text-gray-400">{roleLabel(role)}</p>
                 </div>
               </div>
-              
-              <div className="pt-4 border-t border-gray-700 space-y-3">
-                <div className="flex items-center gap-3 text-gray-400">
-                  <User className="w-5 h-5" />
-                  <span>Username: {profile?.username}</span>
+              <dl className="space-y-3 border-t border-gray-700 pt-4 text-sm">
+                <div className="flex items-start gap-3 text-gray-300">
+                  <User className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
+                  <div>
+                    <dt className="text-xs text-gray-500">Username</dt>
+                    <dd>{profile?.username}</dd>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-gray-400">
-                  <Calendar className="w-5 h-5" />
-                  <span>
-                    Last login:{" "}
-                    {profile?.lastLogin
-                      ? new Date(profile.lastLogin).toLocaleString()
-                      : "Never"}
-                  </span>
+                <div className="flex items-start gap-3 text-gray-300">
+                  <Shield className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
+                  <div>
+                    <dt className="text-xs text-gray-500">Access</dt>
+                    <dd>{accessCopy(role)}</dd>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-gray-400">
-                  <Calendar className="w-5 h-5" />
-                  <span>
-                    Created: {profile?.createdAt && new Date(profile.createdAt).toLocaleDateString()}
-                  </span>
+                <div className="flex items-start gap-3 text-gray-300">
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
+                  <div>
+                    <dt className="text-xs text-gray-500">Last sign-in</dt>
+                    <dd>{formatDateTime(profile?.lastLogin)}</dd>
+                  </div>
                 </div>
-              </div>
+                <div className="flex items-start gap-3 text-gray-300">
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
+                  <div>
+                    <dt className="text-xs text-gray-500">Account created</dt>
+                    <dd>{formatDateTime(profile?.createdAt)}</dd>
+                  </div>
+                </div>
+              </dl>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Change Password */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h2 className="text-lg font-semibold text-white mb-4">Change Password</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <section className="rounded-xl border border-gray-700 bg-gray-800 p-6">
+          <h2 className="mb-1 text-lg font-semibold text-white">
+            Organization
+          </h2>
+          <p className="mb-4 text-sm text-gray-400">
+            Admins operate MenoDAO at the platform layer, not a single clinic
+          </p>
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-300">
+              <Landmark className="h-5 w-5" />
+            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Current Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <input
-                  type={showPasswords ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
+              <p className="font-medium text-white">MenoDAO Care</p>
+              <p className="text-sm text-gray-400">
+                Platform operations · Kenya
+              </p>
             </div>
-
+          </div>
+          <dl className="mt-4 space-y-3 border-t border-gray-700 pt-4 text-sm text-gray-300">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                New Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <input
-                  type={showPasswords ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
+              <dt className="text-xs text-gray-500">Workspace</dt>
+              <dd>Care Intelligence, clinics, members, and payouts</dd>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Confirm New Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <input
-                  type={showPasswords ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
+              <dt className="text-xs text-gray-500">Your seat</dt>
+              <dd>{roleLabel(role)}</dd>
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowPasswords(!showPasswords)}
-                className="flex items-center gap-2 text-gray-400 hover:text-white text-sm"
-              >
-                {showPasswords ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
-                {showPasswords ? "Hide passwords" : "Show passwords"}
-              </button>
+            <div>
+              <dt className="text-xs text-gray-500">Sensitive actions</dt>
+              <dd>
+                Member suspends, payment verification, and similar ops are
+                recorded on your activity timeline
+              </dd>
             </div>
-
-            {error && (
-              <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-emerald-400 text-sm flex items-center gap-2">
-                <Check className="w-4 h-4" />
-                Password changed successfully
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={changePasswordMutation.isPending}
-              className="w-full py-2.5 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {changePasswordMutation.isPending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Lock className="w-5 h-5" />
-                  Change Password
-                </>
-              )}
-            </button>
-          </form>
-        </div>
+          </dl>
+        </section>
       </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ChangePasswordCard
+          tone="dark"
+          minLength={8}
+          onSubmit={(currentPassword, newPassword) =>
+            adminApi.changePassword(currentPassword, newPassword)
+          }
+        />
+        <PasskeyManager
+          queryKey="admin"
+          kind="admin"
+          tone="dark"
+          list={() => adminApi.listPasskeys()}
+          getOptions={() => adminApi.webauthnRegisterOptions()}
+          verify={(credential, label) =>
+            adminApi.webauthnRegisterVerify(credential, label)
+          }
+          remove={(id) => adminApi.deletePasskey(id)}
+        />
+      </div>
+
+      <ActivityTimeline
+        tone="dark"
+        title="Your activity"
+        subtitle="Actions you took on members, payments, and subscriptions"
+        items={activity.data?.items}
+        isLoading={activity.isLoading}
+        error={activity.isError}
+        empty="No recorded actions on this admin account yet. Sensitive ops you perform will appear here."
+      />
     </div>
   );
 }

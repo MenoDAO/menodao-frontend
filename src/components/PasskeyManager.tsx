@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Fingerprint, Loader2, Trash2 } from "lucide-react";
+import { Check, Fingerprint, Loader2, Trash2, X } from "lucide-react";
 import {
   browserSupportsWebAuthn,
   clearPasskeyOnThisDevice,
@@ -15,6 +15,16 @@ import type {
   PublicKeyCredentialCreationOptionsJSON,
   RegistrationResponseJSON,
 } from "@simplewebauthn/browser";
+import { useTranslation } from "@/lib/i18n";
+
+function formatDate(value: string | null) {
+  if (!value) return null;
+  return new Date(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export function PasskeyManager({
   queryKey,
@@ -36,93 +46,217 @@ export function PasskeyManager({
   remove: (id: string) => Promise<unknown>;
   tone?: "light" | "dark";
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [supported, setSupported] = useState(false);
 
   useEffect(() => {
     setSupported(browserSupportsWebAuthn());
   }, []);
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["passkeys", queryKey],
     queryFn: list,
     enabled: supported,
   });
 
   useEffect(() => {
-    if (data && data.length > 0) {
-      markPasskeyOnThisDevice(kind);
-    }
-  }, [data, kind]);
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
-  const text = tone === "dark" ? "text-gray-300" : "text-gray-600 dark:text-gray-300";
-  const btn =
-    tone === "dark"
-      ? "text-emerald-300 hover:text-emerald-200"
-      : "text-blue-600 hover:text-blue-700 dark:text-blue-400";
-
-  if (!supported) return null;
+  const dark = tone === "dark";
+  const card = dark
+    ? "bg-gray-800 rounded-xl border border-gray-700 overflow-hidden"
+    : "bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden";
+  const heading = dark
+    ? "text-white"
+    : "text-gray-900 dark:text-white";
+  const muted = dark
+    ? "text-gray-400"
+    : "text-gray-600 dark:text-gray-400";
+  const divider = dark
+    ? "border-gray-700"
+    : "border-gray-200 dark:border-gray-700";
+  const row = dark
+    ? "bg-gray-900/50 border-gray-700"
+    : "bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700";
 
   const enroll = async () => {
     setBusy(true);
-    setMessage(null);
+    setError(null);
     try {
       await registerThisDevice(getOptions, verify);
       markPasskeyOnThisDevice(kind);
       await queryClient.invalidateQueries({ queryKey: ["passkeys", queryKey] });
-      setMessage("This device can now sign in with fingerprint or Face ID.");
+      setToast({
+        type: "success",
+        message: t("profile.signIn.success"),
+      });
     } catch (err) {
       const name = err instanceof Error ? err.name : "";
-      setMessage(
-        name === "NotAllowedError"
-          ? "Cancelled."
-          : err instanceof Error
-            ? err.message
-            : "Could not enable device login",
-      );
+      if (name === "NotAllowedError") {
+        setError(t("profile.signIn.cancelled"));
+      } else {
+        const message =
+          err instanceof Error ? err.message : t("profile.signIn.failed");
+        setError(message);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeDevice = async (id: string) => {
+    const confirmed = window.confirm(t("profile.signIn.removeConfirm"));
+    if (!confirmed) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await remove(id);
+      const remaining = (data || []).filter((item) => item.id !== id);
+      if (remaining.length === 0) {
+        clearPasskeyOnThisDevice(kind);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["passkeys", queryKey] });
+      setToast({ type: "success", message: t("profile.signIn.removed") });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("profile.signIn.failed"));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className={`text-xs ${text}`}>
-      <button
-        type="button"
-        onClick={enroll}
-        disabled={busy}
-        className={`inline-flex items-center gap-1 font-medium ${btn} disabled:opacity-50`}
-      >
-        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Fingerprint className="h-3.5 w-3.5" />}
-        {data?.length ? "Add this device" : "Enable fingerprint / Face ID"}
-      </button>
-      {message && <p className="mt-1">{message}</p>}
-      {(data || []).length > 0 && (
-        <ul className="mt-2 space-y-1">
-          {data!.map((row) => (
-            <li key={row.id} className="flex items-center justify-between gap-2">
-              <span>{row.label || "This device"}</span>
+    <>
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed top-6 left-1/2 z-[100] flex max-w-[min(92vw,28rem)] -translate-x-1/2 items-start gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-white shadow-xl ${
+            toast.type === "success" ? "bg-emerald-600" : "bg-red-600"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <Check className="mt-0.5 h-5 w-5 shrink-0" />
+          ) : (
+            <X className="mt-0.5 h-5 w-5 shrink-0" />
+          )}
+          <span>{toast.message}</span>
+        </div>
+      )}
+
+      <section className={card}>
+        <div className={`px-6 py-4 border-b ${divider}`}>
+          <div className="flex items-start gap-3">
+            <div
+              className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                dark
+                  ? "bg-emerald-500/15 text-emerald-300"
+                  : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              }`}
+            >
+              <Fingerprint className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className={`font-semibold ${heading}`}>
+                {t("profile.signIn.title")}
+              </h2>
+              <p className={`mt-1 text-sm ${muted}`}>
+                {t("profile.signIn.description")}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {!supported ? (
+            <p className={`text-sm ${muted}`}>{t("profile.signIn.unsupported")}</p>
+          ) : (
+            <>
               <button
                 type="button"
-                onClick={async () => {
-                  await remove(row.id);
-                  const remaining = (data || []).filter((item) => item.id !== row.id);
-                  if (remaining.length === 0) {
-                    clearPasskeyOnThisDevice(kind);
-                  }
-                  await queryClient.invalidateQueries({ queryKey: ["passkeys", queryKey] });
-                }}
-                className="text-red-500 hover:text-red-400"
-                aria-label="Remove device"
+                onClick={enroll}
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                {busy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Fingerprint className="h-4 w-4" />
+                )}
+                {data?.length
+                  ? t("profile.signIn.addDevice")
+                  : t("profile.signIn.enable")}
               </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+
+              {error && (
+                <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
+              )}
+
+              <div>
+                <h3 className={`text-sm font-medium ${heading}`}>
+                  {t("profile.signIn.devices")}
+                </h3>
+                {isLoading ? (
+                  <div className={`mt-3 flex items-center gap-2 text-sm ${muted}`}>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t("common.loading")}
+                  </div>
+                ) : (data || []).length === 0 ? (
+                  <p className={`mt-2 text-sm ${muted}`}>
+                    {t("profile.signIn.empty")}
+                  </p>
+                ) : (
+                  <ul className="mt-3 space-y-2">
+                    {data!.map((row) => {
+                      const added = formatDate(row.createdAt);
+                      const lastUsed = formatDate(row.lastUsedAt);
+                      return (
+                        <li
+                          key={row.id}
+                          className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 ${row}`}
+                        >
+                          <div className="min-w-0">
+                            <p className={`truncate text-sm font-medium ${heading}`}>
+                              {row.label || t("profile.signIn.thisDevice")}
+                            </p>
+                            <p className={`mt-0.5 text-xs ${muted}`}>
+                              {added
+                                ? t("profile.signIn.added", { date: added })
+                                : t("profile.signIn.thisDevice")}
+                              {lastUsed
+                                ? ` · ${t("profile.signIn.lastUsed", { date: lastUsed })}`
+                                : ` · ${t("profile.signIn.neverUsed")}`}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeDevice(row.id)}
+                            disabled={busy}
+                            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                            aria-label={t("profile.signIn.remove")}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            {t("profile.signIn.remove")}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+    </>
   );
 }

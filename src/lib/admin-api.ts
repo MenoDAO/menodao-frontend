@@ -1,6 +1,6 @@
 import { getApiUrl } from "./api";
-
 import { parseApiError } from "./parse-api-error";
+import type { ActivityItem } from "./activity";
 
 const API_BASE_URL = getApiUrl();
 
@@ -203,7 +203,8 @@ class AdminApiClient {
     return this.request<{
       id: string;
       username: string;
-      lastLogin: string;
+      role: string;
+      lastLogin: string | null;
       createdAt: string;
     }>("/admin/profile");
   }
@@ -522,6 +523,12 @@ class AdminApiClient {
   // Audit Logs
   async getAuditLogs(limit = 50) {
     return this.request<AuditLogEntry[]>(`/admin/audit-logs?limit=${limit}`);
+  }
+
+  async getMyActivity(limit = 20) {
+    return this.request<{ items: ActivityItem[] }>(
+      `/admin/audit-logs/me?limit=${limit}`,
+    );
   }
 
   // Subscriptions list for renewal management

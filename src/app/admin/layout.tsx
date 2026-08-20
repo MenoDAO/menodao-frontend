@@ -19,27 +19,27 @@ import {
   HeartPulse,
   Landmark,
   Wrench,
+  ClipboardList,
 } from "lucide-react";
 import { useState } from "react";
-import { PasskeyManager } from "@/components/PasskeyManager";
-import { adminApi } from "@/lib/admin-api";
 
 const navItems = [
   { href: "/admin", label: "Care Intelligence", icon: HeartPulse },
   { href: "/admin/data-room", label: "Impact Room", icon: Landmark },
   { href: "/admin/operations", label: "Operations", icon: Wrench },
+  {
+    href: "/admin/audit",
+    label: "Operations log",
+    icon: ClipboardList,
+    superAdminOnly: true,
+  },
   { href: "/admin/metrics", label: "Site traffic", icon: BarChart3 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/clinics", label: "Clinics", icon: Building2 },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/withdrawals", label: "Withdrawals", icon: Wallet },
   { href: "/admin/alerts", label: "Alerts", icon: Bell },
-  {
-    href: "/admin/settings",
-    label: "Settings",
-    icon: Settings,
-    superAdminOnly: true,
-  },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
 
 export default function AdminLayout({
@@ -168,19 +168,6 @@ export default function AdminLayout({
                     : "Administrator"}
                 </p>
               </div>
-            </div>
-            <div className="px-3 mb-2">
-                <PasskeyManager
-                  queryKey="admin"
-                  kind="admin"
-                  tone="dark"
-                list={() => adminApi.listPasskeys()}
-                getOptions={() => adminApi.webauthnRegisterOptions()}
-                verify={(credential, label) =>
-                  adminApi.webauthnRegisterVerify(credential, label)
-                }
-                remove={(id) => adminApi.deletePasskey(id)}
-              />
             </div>
             <button
               onClick={handleLogout}

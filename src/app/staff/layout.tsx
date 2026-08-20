@@ -5,7 +5,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useStaffStore } from "@/lib/staff-store";
 import { staffApi } from "@/lib/staff-api";
 import { Menu, X } from "lucide-react";
-import { PasskeyManager } from "@/components/PasskeyManager";
 
 export default function StaffLayout({
   children,
@@ -128,24 +127,22 @@ export default function StaffLayout({
                 >
                   Communication
                 </a>
+                <a
+                  onClick={() => router.push("/staff/settings")}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer ${
+                    pathname?.startsWith("/staff/settings")
+                      ? "border-blue-500 text-gray-900 dark:text-white"
+                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  Settings
+                </a>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <span className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
                 {staff?.fullName}
               </span>
-              <div className="hidden md:block">
-                <PasskeyManager
-                  queryKey="staff"
-                  kind="staff"
-                  list={() => staffApi.listPasskeys()}
-                  getOptions={() => staffApi.webauthnRegisterOptions()}
-                  verify={(credential, label) =>
-                    staffApi.webauthnRegisterVerify(credential, label)
-                  }
-                  remove={(id) => staffApi.deletePasskey(id)}
-                />
-              </div>
               <button
                 onClick={() => {
                   logout();
@@ -253,6 +250,19 @@ export default function StaffLayout({
                 }`}
               >
                 Communication
+              </a>
+              <a
+                onClick={() => {
+                  router.push("/staff/settings");
+                  setMobileMenuOpen(false);
+                }}
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium cursor-pointer ${
+                  pathname?.startsWith("/staff/settings")
+                    ? "bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                    : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                }`}
+              >
+                Settings
               </a>
             </div>
             <div className="pt-4 pb-3 border-t border-gray-200 dark:border-gray-700">
