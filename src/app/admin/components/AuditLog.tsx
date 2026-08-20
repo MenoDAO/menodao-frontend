@@ -30,7 +30,17 @@ function formatRelativeTime(timestamp: string): string {
   return new Date(timestamp).toLocaleDateString();
 }
 
-export function AuditLog({ limit = 20 }: { limit?: number }) {
+export function AuditLog({
+  limit = 20,
+  title = "Operations log",
+  enabled = true,
+  tall = false,
+}: {
+  limit?: number;
+  title?: string;
+  enabled?: boolean;
+  tall?: boolean;
+}) {
   const {
     data: logs,
     isLoading,
@@ -39,7 +49,10 @@ export function AuditLog({ limit = 20 }: { limit?: number }) {
     queryKey: ["admin", "audit-logs", limit],
     queryFn: () => adminApi.getAuditLogs(limit),
     refetchInterval: 30000,
+    enabled,
   });
+
+  if (!enabled) return null;
 
   if (isLoading) {
     return (
@@ -66,7 +79,7 @@ export function AuditLog({ limit = 20 }: { limit?: number }) {
     <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
       <div className="flex items-center gap-2 mb-4">
         <ClipboardList className="w-5 h-5 text-emerald-500" />
-        <h2 className="text-lg font-semibold text-white">Activity Log</h2>
+        <h2 className="text-lg font-semibold text-white">{title}</h2>
       </div>
 
       {!logs || logs.length === 0 ? (
@@ -74,7 +87,7 @@ export function AuditLog({ limit = 20 }: { limit?: number }) {
           No admin actions recorded yet
         </p>
       ) : (
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className={`space-y-3 overflow-y-auto ${tall ? "max-h-[70vh]" : "max-h-96"}`}>
           {logs.map((log: AuditLogEntry) => (
             <div
               key={log.id}

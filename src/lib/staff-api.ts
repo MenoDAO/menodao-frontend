@@ -1,7 +1,23 @@
 import { getApiUrl } from "./api";
 import { parseApiError } from "./parse-api-error";
+import type { ActivityItem } from "./activity";
 
 const API_BASE_URL = getApiUrl();
+
+export interface StaffClinic {
+  id: string;
+  name: string;
+  subCounty: string;
+  physicalLocation?: string;
+  operatingHours?: string;
+  operatesOnWeekends?: boolean;
+  status?: string;
+  email?: string | null;
+  whatsappNumber?: string;
+  leadDentistName?: string;
+  branchName?: string | null;
+  parentClinic?: { id: string; name: string } | null;
+}
 
 export interface Staff {
   id: string;
@@ -12,11 +28,7 @@ export interface Staff {
   clinicId?: string;
   lastLogin?: string;
   createdAt?: string;
-  clinic?: {
-    id: string;
-    name: string;
-    subCounty: string;
-  };
+  clinic?: StaffClinic | null;
 }
 
 export interface StaffLoginResponse {
@@ -343,6 +355,12 @@ class StaffApiClient {
 
   async getProfile(): Promise<Staff> {
     return this.request<Staff>("/staff/profile");
+  }
+
+  async getActivity(limit = 20) {
+    return this.request<{ items: ActivityItem[] }>(
+      `/staff/activity?limit=${limit}`,
+    );
   }
 
   async changePassword(currentPassword: string, newPassword: string) {
