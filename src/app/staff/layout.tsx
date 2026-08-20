@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useStaffStore } from "@/lib/staff-store";
 import { staffApi } from "@/lib/staff-api";
 import { Menu, X } from "lucide-react";
+import { PasskeyEnrollPrompt } from "@/components/PasskeyEnrollPrompt";
 
 export default function StaffLayout({
   children,
@@ -296,6 +297,13 @@ export default function StaffLayout({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+      <PasskeyEnrollPrompt
+        kind="staff"
+        getOptions={() => staffApi.webauthnRegisterOptions()}
+        verify={(credential, label) =>
+          staffApi.webauthnRegisterVerify(credential, label)
+        }
+      />
     </div>
   );
 }

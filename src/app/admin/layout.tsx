@@ -22,6 +22,8 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { useState } from "react";
+import { PasskeyEnrollPrompt } from "@/components/PasskeyEnrollPrompt";
+import { adminApi } from "@/lib/admin-api";
 
 const navItems = [
   { href: "/admin", label: "Care Intelligence", icon: HeartPulse },
@@ -199,6 +201,14 @@ export default function AdminLayout({
         {/* Page content */}
         <main className="flex-1 p-4 lg:p-6 overflow-auto">{children}</main>
       </div>
+      <PasskeyEnrollPrompt
+        kind="admin"
+        tone="dark"
+        getOptions={() => adminApi.webauthnRegisterOptions()}
+        verify={(credential, label) =>
+          adminApi.webauthnRegisterVerify(credential, label)
+        }
+      />
     </div>
   );
 }

@@ -75,6 +75,23 @@ export function isAlreadyRegisteredError(err: unknown): boolean {
   );
 }
 
+function promptSkipKey(kind: PasskeyKind) {
+  return `menodao.passkey.prompt.skip.${kind}`;
+}
+
+export function shouldOfferPasskeyEnroll(kind: PasskeyKind): boolean {
+  if (typeof window === "undefined") return false;
+  if (!browserSupportsWebAuthn()) return false;
+  if (hasPasskeyOnThisDevice(kind)) return false;
+  if (sessionStorage.getItem(promptSkipKey(kind))) return false;
+  return true;
+}
+
+export function skipPasskeyEnrollPrompt(kind: PasskeyKind) {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(promptSkipKey(kind), "1");
+}
+
 export function shouldAutoStartPasskey(kind: PasskeyKind): boolean {
   if (typeof window === "undefined") return false;
   if (!hasPasskeyOnThisDevice(kind) || !browserSupportsWebAuthn()) return false;
