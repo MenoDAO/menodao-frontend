@@ -20,6 +20,7 @@ import {
   Landmark,
   Wrench,
   ClipboardList,
+  BookOpen,
 } from "lucide-react";
 import { useState } from "react";
 import { PasskeyEnrollPrompt } from "@/components/PasskeyEnrollPrompt";
@@ -41,6 +42,7 @@ const navItems = [
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/withdrawals", label: "Withdrawals", icon: Wallet },
   { href: "/admin/alerts", label: "Alerts", icon: Bell },
+  { href: "/admin/foundation", label: "Foundation site", icon: BookOpen },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
 
