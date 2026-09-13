@@ -216,6 +216,109 @@ class AdminApiClient {
     });
   }
 
+  async getFounderPhoto() {
+    return this.request<FounderPhotoMeta>("/admin/foundation/founder-photo");
+  }
+
+  async uploadFounderPhoto(file: File) {
+    const form = new FormData();
+    form.append("photo", file);
+    return this.requestForm<FounderPhotoMeta>(
+      "/admin/foundation/founder-photo",
+      { method: "POST", body: form },
+    );
+  }
+
+  async removeFounderPhoto() {
+    return this.request<FounderPhotoMeta>("/admin/foundation/founder-photo", {
+      method: "DELETE",
+    });
+  }
+
+  async listFoundationInquiries(params: {
+    kind?: string;
+    page?: number;
+    limit?: number;
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.kind) searchParams.set("kind", params.kind);
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.limit) searchParams.set("limit", String(params.limit));
+    const query = searchParams.toString();
+    return this.request<FoundationInquiryList>(
+      `/admin/foundation/inquiries${query ? `?${query}` : ""}`,
+    );
+  }
+
+  async getFoundationInquiry(id: string) {
+    return this.request<FoundationInquiryDetail>(
+      `/admin/foundation/inquiries/${id}`,
+    );
+  }
+
+  async getFoundationNetwork() {
+    return this.request<FoundationNetwork>("/admin/foundation/network");
+  }
+
+  async updateFoundationSettings(body: {
+    whatsappNumber?: string | null;
+    anchorClinicId?: string | null;
+    clinicalClassification?: string | null;
+    impact?: FoundationImpactOverride;
+    clinics?: FoundationClinicOverride[];
+  }) {
+    return this.request<FoundationNetwork>("/admin/foundation/settings", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async uploadFoundationClinicLogo(id: string, file: File) {
+    const form = new FormData();
+    form.append("logo", file);
+    return this.requestForm<FoundationNetwork>(
+      `/admin/foundation/clinics/${id}/logo`,
+      { method: "POST", body: form },
+    );
+  }
+
+  async removeFoundationClinicLogo(id: string) {
+    return this.request<FoundationNetwork>(
+      `/admin/foundation/clinics/${id}/logo`,
+      { method: "DELETE" },
+    );
+  }
+
+  private async requestForm<T>(
+    endpoint: string,
+    options: RequestInit,
+  ): Promise<T> {
+    const headers: HeadersInit = { ...options.headers };
+    const token = this.getToken();
+    if (token) {
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = parseApiError(errorData, response.status, errorMessage)
+          .message;
+      } catch {
+        errorMessage = "Request failed";
+      }
+      throw new Error(errorMessage);
+    }
+
+    return response.json() as Promise<T>;
+  }
+
   // Stats
   async getOverviewStats() {
     return this.request<OverviewStats>("/admin/stats/overview");
@@ -1073,6 +1176,89 @@ export interface Web3Stats {
     verifiedAt: string;
     explorerUrl: string | null;
   }[];
+}
+
+export interface FounderPhotoMeta {
+  hasPhoto: boolean;
+  url: string | null;
+  updatedAt: string | null;
+  mimeType: string | null;
+}
+
+export type FoundationInquiryKind =
+  | "SCHOOL"
+  | "VOLUNTEER"
+  | "FACILITY"
+  | "CONTACT";
+
+export interface FoundationInquiryRow {
+  id: string;
+  kind: FoundationInquiryKind;
+  formId: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  summary: string | null;
+  createdAt: string;
+}
+
+export interface FoundationInquiryList {
+  items: FoundationInquiryRow[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface FoundationInquiryDetail extends FoundationInquiryRow {
+  payload: Record<string, string | string[]>;
+}
+
+export interface FoundationClinicCard {
+  id: string;
+  name: string;
+  location: string;
+  chairs: number | null;
+  isAnchor: boolean;
+  isNamedPartner: boolean;
+  hidden: boolean;
+  logoUrl: string | null;
+  logo: FounderPhotoMeta;
+}
+
+export interface FoundationImpactOverride {
+  registeredMembers?: number | null;
+  contributingMembers?: number | null;
+  approvedFacilities?: number | null;
+  counties?: number | null;
+}
+
+export interface FoundationClinicOverride {
+  id: string;
+  displayName?: string | null;
+  location?: string | null;
+  hidden?: boolean;
+}
+
+export interface FoundationImpactFigures {
+  registeredMembers: number;
+  contributingMembers: number;
+  approvedFacilities: number;
+  counties: number;
+}
+
+export interface FoundationNetwork {
+  whatsappNumber: string | null;
+  anchorClinicId: string | null;
+  clinicalClassification: string | null;
+  liveImpact: FoundationImpactFigures;
+  publishedImpact: {
+    registeredMembers: number | null;
+    contributingMembers: number | null;
+    approvedFacilities: number | null;
+    counties: number | null;
+  };
+  impact: FoundationImpactFigures;
+  clinics: FoundationClinicCard[];
 }
 
 export interface SubscriptionRow {
