@@ -580,6 +580,7 @@ function ClinicEditor({
           </button>
         ) : null}
       </div>
+      </div>
     </div>
   );
 }
