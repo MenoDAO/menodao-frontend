@@ -1,0 +1,13 @@
+# MenoDAO Robots.txt
+# https://menodao.org
+
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://menodao.org/sitemap.xml
+
+# Block certain paths if needed
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/

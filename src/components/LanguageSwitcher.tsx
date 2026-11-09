@@ -15,12 +15,16 @@ export default function LanguageSwitcher({
   onLocaleChange,
   className = "",
 }: LanguageSwitcherProps) {
-  const [currentLocale, setCurrentLocale] = useState<Locale>("en");
+  const [currentLocale, setCurrentLocale] = useState<Locale>(() =>
+    i18n.language === "sw" ? "sw" : "en",
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem(LOCALE_STORAGE_KEY) as Locale | null;
     if (stored === "en" || stored === "sw") {
       setCurrentLocale(stored);
+    } else if (i18n.language === "en" || i18n.language === "sw") {
+      setCurrentLocale(i18n.language as Locale);
     }
   }, []);
 
@@ -29,14 +33,16 @@ export default function LanguageSwitcher({
     await i18n.changeLanguage(locale);
     localStorage.setItem(LOCALE_STORAGE_KEY, locale);
 
-    // Fire-and-forget: persist to backend using authenticated API client
-    try {
-      await api.updateProfile({ preferredLanguage: locale });
-    } catch (err) {
-      console.error(
-        "[LanguageSwitcher] Failed to persist language preference:",
-        err,
-      );
+    // Persist only when there is an authenticated session (e.g. not on the public landing page)
+    if (api.getToken()) {
+      try {
+        await api.updateProfile({ preferredLanguage: locale });
+      } catch (err) {
+        console.error(
+          "[LanguageSwitcher] Failed to persist language preference:",
+          err,
+        );
+      }
     }
 
     onLocaleChange?.(locale);

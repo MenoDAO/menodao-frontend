@@ -12,7 +12,7 @@ function ComplianceContent() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800">
       <header className="border-b border-emerald-100 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link href="/login" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <img src="/logo.png" alt="MenoDAO" className="h-9 w-9" />
             <span className="font-bold text-lg text-gray-900 dark:text-white font-outfit">
               MenoDAO
@@ -36,7 +36,7 @@ function ComplianceContent() {
         </div>
         <div className="mt-10 flex flex-wrap gap-4">
           <Link
-            href="/login"
+            href="/"
             className="text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 font-semibold underline underline-offset-4"
           >
             {t("compliance.backHome")}
