@@ -1,9 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { SendNotification } from "../../components/SendNotification";
 
-export default function SendNotificationPage() {
+function SendNotificationPageContent() {
   const searchParams = useSearchParams();
   const initialPhone = searchParams.get("phone") ?? undefined;
   // Bulk: comma-separated phone list pre-populates the CSV field
@@ -31,5 +32,13 @@ export default function SendNotificationPage() {
         initialMessage={initialMessage}
       />
     </div>
+  );
+}
+
+export default function SendNotificationPage() {
+  return (
+    <Suspense fallback={null}>
+      <SendNotificationPageContent />
+    </Suspense>
   );
 }

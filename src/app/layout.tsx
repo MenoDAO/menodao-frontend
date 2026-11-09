@@ -16,6 +16,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://app.menodao.org"),
   title: {
     default: "MenoDAO - Member Portal | Dental Care Dashboard",
     template: "%s | MenoDAO",
