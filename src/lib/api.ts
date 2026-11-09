@@ -9,7 +9,11 @@ export const getApiUrl = (): string => {
   // Client-side runtime detection based on hostname
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
-    if (hostname === "app.menodao.org") {
+    if (
+      hostname === "app.menodao.org" ||
+      hostname === "menodao.org" ||
+      hostname === "www.menodao.org"
+    ) {
       return "https://api.menodao.org";
     }
     if (hostname === "dev.menodao.org") {
