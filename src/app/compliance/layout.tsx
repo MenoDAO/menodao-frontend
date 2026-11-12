@@ -8,10 +8,14 @@ export const metadata: Metadata = {
     title: "Compliance | MenoDAO",
     description:
       "Community-powered dental care platform in Kenya. KES payments via licensed mobile money only.",
-    url: "https://app.menodao.org/compliance",
+    url: "https://menodao.org/compliance",
   },
   alternates: {
-    canonical: "https://app.menodao.org/compliance",
+    canonical: "https://menodao.org/compliance",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
