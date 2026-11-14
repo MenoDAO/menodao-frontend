@@ -621,7 +621,7 @@ function InquiriesSection({
           <h2 className="text-lg font-semibold text-white">Form submissions</h2>
           <p className="mt-1 text-sm text-gray-400">
             School, volunteer, facility, and contact entries from the Foundation
-            site. New records also email menodao.org@gmail.com.
+            site. New records also email support@menodao.org.
           </p>
         </div>
         <select
