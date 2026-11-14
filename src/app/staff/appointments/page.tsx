@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { staffApi, StaffAppointment } from "@/lib/staff-api";
@@ -22,6 +22,15 @@ export default function StaffAppointmentsPage() {
   } | null>(null);
   const [reason, setReason] = useState("");
   const [newTimeLocal, setNewTimeLocal] = useState("");
+
+  // Deep links from notification emails land here with ?date=YYYY-MM-DD.
+  // Read it in an effect so server and client render the same initial markup.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("date");
+    if (requested && /^\d{4}-\d{2}-\d{2}$/.test(requested)) {
+      setDate(requested);
+    }
+  }, []);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["staff-appointments", date],
