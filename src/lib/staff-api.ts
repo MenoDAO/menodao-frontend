@@ -300,6 +300,16 @@ class StaffApiClient {
     });
   }
 
+  async setupPassword(token: string, newPassword: string) {
+    return this.request<{ message: string; username: string }>(
+      "/staff/setup-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ token, newPassword }),
+      },
+    );
+  }
+
   async webauthnLoginOptions(username?: string) {
     return this.request<import("@simplewebauthn/browser").PublicKeyCredentialRequestOptionsJSON>(
       "/staff/webauthn/login/options",
