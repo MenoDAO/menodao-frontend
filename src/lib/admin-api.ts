@@ -764,6 +764,146 @@ class AdminApiClient {
       `/admin/care-intelligence/cohorts/${key}`,
     );
   }
+
+  // ─── Bot WhatsApp instances ───────────────────────────────────────────────
+
+  async listWhatsappInstances() {
+    return this.request<AdminWhatsappOverview>("/admin/whatsapp/instances");
+  }
+
+  async syncWhatsappInstances() {
+    return this.request<AdminWhatsappOverview>(
+      "/admin/whatsapp/instances/sync",
+      { method: "POST" },
+    );
+  }
+
+  async getWhatsappInstance(id: string) {
+    return this.request<AdminWhatsappInstance>(
+      `/admin/whatsapp/instances/${id}`,
+    );
+  }
+
+  async createWhatsappInstance(body: { label?: string; phoneNumber?: string }) {
+    return this.request<AdminWhatsappInstance>("/admin/whatsapp/instances", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async updateWhatsappInstance(id: string, body: { label?: string }) {
+    return this.request<AdminWhatsappInstance>(
+      `/admin/whatsapp/instances/${id}`,
+      { method: "PATCH", body: JSON.stringify(body) },
+    );
+  }
+
+  async storeWhatsappInstanceKey(id: string, apiKey: string) {
+    return this.request<AdminWhatsappInstance>(
+      `/admin/whatsapp/instances/${id}/key`,
+      { method: "PATCH", body: JSON.stringify({ apiKey }) },
+    );
+  }
+
+  async activateWhatsappInstance(id: string) {
+    return this.request<AdminWhatsappInstance>(
+      `/admin/whatsapp/instances/${id}/activate`,
+      { method: "POST" },
+    );
+  }
+
+  async reconnectWhatsappInstance(id: string) {
+    return this.request<AdminWhatsappInstance>(
+      `/admin/whatsapp/instances/${id}/reconnect`,
+      { method: "POST" },
+    );
+  }
+
+  async relinkWhatsappInstance(id: string, phoneNumber: string) {
+    return this.request<{
+      instance: AdminWhatsappInstance;
+      pairingCode: string | null;
+      phoneNumber: string;
+      next: string;
+    }>(`/admin/whatsapp/instances/${id}/relink`, {
+      method: "POST",
+      body: JSON.stringify({ phoneNumber }),
+    });
+  }
+
+  async whatsappPairingCode(id: string, phoneNumber?: string) {
+    return this.request<{ pairingCode: string | null; status: string }>(
+      `/admin/whatsapp/instances/${id}/pairing-code`,
+      { method: "POST", body: JSON.stringify({ phoneNumber }) },
+    );
+  }
+
+  async whatsappQr(id: string) {
+    return this.request<{ qr: string | null; status: string | null }>(
+      `/admin/whatsapp/instances/${id}/qr`,
+    );
+  }
+
+  async deleteWhatsappInstance(id: string) {
+    return this.request<void>(`/admin/whatsapp/instances/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  // ─── Bot conversations ────────────────────────────────────────────────────
+
+  async listBotThreads(params: {
+    instanceId?: string;
+    memberId?: string;
+    contactId?: string;
+    status?: string;
+    limit?: number;
+  } = {}) {
+    const search = new URLSearchParams();
+    if (params.instanceId) search.set("instanceId", params.instanceId);
+    if (params.memberId) search.set("memberId", params.memberId);
+    if (params.contactId) search.set("contactId", params.contactId);
+    if (params.status) search.set("status", params.status);
+    if (params.limit) search.set("limit", String(params.limit));
+    const query = search.toString();
+    return this.request<AdminBotChatThread[]>(
+      `/admin/bot-chat/threads${query ? `?${query}` : ""}`,
+    );
+  }
+
+  async listBotThreadMessages(threadId: string, limit = 200) {
+    return this.request<AdminBotChatMessage[]>(
+      `/admin/bot-chat/threads/${threadId}/messages?limit=${limit}`,
+    );
+  }
+
+  async botChatRetention() {
+    return this.request<{ retentionDays: number; description: string }>(
+      "/admin/bot-chat/retention",
+    );
+  }
+
+  async purgeBotChat() {
+    return this.request<{ threads: number; messages: number }>(
+      "/admin/bot-chat/purge",
+      { method: "POST" },
+    );
+  }
+
+  async eraseBotChatMember(memberId: string) {
+    return this.request<{
+      threads: number;
+      messages: number;
+      aiHistoryEntries: number;
+      llmCallLogs: number;
+    }>(`/admin/bot-chat/members/${memberId}/erase`, { method: "POST" });
+  }
+
+  async exportBotChatMember(memberId: string) {
+    return this.request<Record<string, unknown>>(
+      `/admin/bot-chat/members/${memberId}/export`,
+    );
+  }
 }
 
 // Types
@@ -958,6 +1098,65 @@ export interface PaginatedResponse<T> {
     limit: number;
     totalPages: number;
   };
+}
+
+export interface AdminWhatsappInstance {
+  id: string;
+  provider: string;
+  providerId: string;
+  label: string | null;
+  phoneNumber: string | null;
+  status: string;
+  isActive: boolean;
+  webhookUrl: string | null;
+  hasStoredKey: boolean;
+  keyFingerprint: string | null;
+  lastCheckedAt: string | null;
+  lastConnectedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminWhatsappOverview {
+  instances: AdminWhatsappInstance[];
+  activeInstanceId: string | null;
+  plan: {
+    name: string | null;
+    maxInstances: number | null;
+    maxApiCalls: number | null;
+    status: string | null;
+    endsAt: string | null;
+  };
+  slotsUsed: number;
+  slotsRemaining: number | null;
+  webhookUrl: string | null;
+  webhookNote: string;
+}
+
+export interface AdminBotChatThread {
+  id: string;
+  instanceId: string | null;
+  memberId: string | null;
+  contactId: string;
+  contactName: string | null;
+  status: string;
+  consentBasis: string | null;
+  startedAt: string;
+  lastMessageAt: string;
+  messageCount: number;
+  retentionUntil: string;
+  erasedAt: string | null;
+}
+
+export interface AdminBotChatMessage {
+  id: string;
+  threadId: string;
+  direction: "INBOUND" | "OUTBOUND";
+  content: string;
+  contentType: string;
+  deliveryStatus: string;
+  providerMessageId: string | null;
+  sentAt: string;
 }
 
 export const adminApi = new AdminApiClient(API_BASE_URL);

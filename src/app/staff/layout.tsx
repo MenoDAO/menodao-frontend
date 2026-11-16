@@ -18,7 +18,9 @@ export default function StaffLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isPublicStaffRoute =
-    pathname === "/staff/login" || pathname === "/staff/security-check";
+    pathname === "/staff/login" ||
+    pathname === "/staff/security-check" ||
+    pathname === "/staff/setup";
 
   useEffect(() => {
     if (!isAuthenticated && !isPublicStaffRoute) {
