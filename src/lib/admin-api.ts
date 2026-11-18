@@ -965,10 +965,26 @@ class AdminApiClient {
   }
 
   async importBrandContext(body: ImportBrandContextBody) {
-    return this.request<unknown>("/admin/brand-context/import", {
+    return this.request<ImportBrandContextResult>("/admin/brand-context/import", {
       method: "POST",
       body: JSON.stringify(body),
     });
+  }
+
+  async listBrandContextVersions(id: string) {
+    return this.request<AdminBrandContextVersion[]>(
+      `/admin/brand-context/documents/${id}/versions`,
+    );
+  }
+
+  async restoreBrandContextVersion(id: string, version: number) {
+    return this.request<AdminBrandContextDocument>(
+      `/admin/brand-context/documents/${id}/restore`,
+      {
+        method: "POST",
+        body: JSON.stringify({ version }),
+      },
+    );
   }
 
   async previewBrandContext(query: string, kind?: string, topK?: number) {
@@ -1267,6 +1283,28 @@ export interface ImportBrandContextBody {
   source?: string;
   externalId?: string;
   externalUrl?: string;
+}
+
+export interface ImportBrandContextResult {
+  created: number;
+  updated: number;
+  deactivated: number;
+  documents: AdminBrandContextDocument[];
+}
+
+export interface AdminBrandContextVersion {
+  id: string;
+  documentId: string;
+  version: number;
+  kind: string;
+  title: string | null;
+  content: string;
+  contentHash: string;
+  source: string;
+  externalRevision: string | null;
+  changeType: string;
+  createdByAdminId: string | null;
+  createdAt: string;
 }
 
 export interface BrandContextPreview {
