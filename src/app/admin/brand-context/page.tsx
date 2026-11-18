@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   BookOpen,
   CheckCircle2,
+  History,
   Loader2,
   Pencil,
   Plus,
@@ -16,6 +17,7 @@ import {
 import {
   adminApi,
   type AdminBrandContextDocument,
+  type AdminBrandContextVersion,
   type BrandContextPreview,
   type CreateBrandContextBody,
   type ImportBrandContextBody,
@@ -74,6 +76,10 @@ export default function AdminBrandContextPage() {
   const [deleteTarget, setDeleteTarget] =
     useState<AdminBrandContextDocument | null>(null);
 
+  const [historyDoc, setHistoryDoc] =
+    useState<AdminBrandContextDocument | null>(null);
+  const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
+
   const [previewQuery, setPreviewQuery] = useState("");
   const [previewKind, setPreviewKind] = useState<string>("ALL");
   const [previewTopK, setPreviewTopK] = useState<number>(3);
@@ -98,6 +104,12 @@ export default function AdminBrandContextPage() {
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["admin", "brand-context"] });
+
+  const versionsQuery = useQuery({
+    queryKey: ["admin", "brand-context", "versions", historyDoc?.id],
+    queryFn: () => adminApi.listBrandContextVersions(historyDoc?.id ?? ""),
+    enabled: Boolean(historyDoc?.id),
+  });
 
   const createMutation = useMutation({
     mutationFn: (body: CreateBrandContextBody) =>
@@ -159,16 +171,40 @@ export default function AdminBrandContextPage() {
     },
   });
 
+  const restoreMutation = useMutation({
+    mutationFn: ({ id, version }: { id: string; version: number }) =>
+      adminApi.restoreBrandContextVersion(id, version),
+    onSuccess: (restored, variables) => {
+      invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "brand-context", "versions"],
+      });
+      setSelectedVersion(restored.version);
+      setToast({
+        type: "success",
+        message: `Restored v${variables.version} as v${restored.version}.`,
+      });
+    },
+    onError: (error: unknown) => {
+      setToast({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to restore version",
+      });
+    },
+  });
+
   const importMutation = useMutation({
     mutationFn: (body: ImportBrandContextBody) =>
       adminApi.importBrandContext(body),
     onSuccess: (result) => {
       invalidate();
       setShowImport(false);
-      const created = (result as { created?: number } | null)?.created ?? 0;
       setToast({
         type: "success",
-        message: `Imported guide into ${importDraft.kind} — ${created} section(s) created.`,
+        message: `Imported into ${importDraft.kind} — ${result.created} created, ${result.updated} updated, ${result.deactivated} deactivated.`,
       });
     },
     onError: (error: unknown) => {
@@ -219,6 +255,16 @@ export default function AdminBrandContextPage() {
     });
     setShowCreate(true);
   };
+
+  const openHistory = (doc: AdminBrandContextDocument) => {
+    setHistoryDoc(doc);
+    setSelectedVersion(doc.version);
+  };
+
+  const selectedSnapshot = (versionsQuery.data ?? []).find(
+    (entry: AdminBrandContextVersion) => entry.version === selectedVersion,
+  );
+  const latestVersion = versionsQuery.data?.[0]?.version;
 
   const isSaving =
     createMutation.isPending ||
@@ -370,26 +416,36 @@ export default function AdminBrandContextPage() {
                     {doc.content.length} chars
                   </p>
                 </div>
-                {canWrite && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(doc)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-gray-200 hover:bg-white/10"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(doc)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-300 hover:bg-red-500/20"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Delete
-                    </button>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openHistory(doc)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-gray-200 hover:bg-white/10"
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    History
+                  </button>
+                  {canWrite && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openEdit(doc)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-gray-200 hover:bg-white/10"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(doc)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-300 hover:bg-red-500/20"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               <p className="mt-2 line-clamp-2 whitespace-pre-line text-xs text-gray-400">
                 {doc.content}
@@ -670,6 +726,109 @@ export default function AdminBrandContextPage() {
                   )}
                   Import
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {historyDoc && (
+        <div className="fixed inset-0 z-60 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8">
+          <div className="relative w-full max-w-4xl rounded-2xl border border-gray-700 bg-gray-800 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-700 px-6 py-5">
+              <div>
+                <h2 className="text-lg font-bold text-white">Version history</h2>
+                <p className="mt-1 text-xs text-gray-400">
+                  {historyDoc.title || "Untitled"} · {historyDoc.kind} · current
+                  v{historyDoc.version}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHistoryDoc(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="grid gap-4 p-6 md:grid-cols-[220px_1fr]">
+              <div className="space-y-2">
+                {versionsQuery.isLoading && (
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                )}
+                {!versionsQuery.isLoading &&
+                  (versionsQuery.data?.length ?? 0) === 0 && (
+                    <p className="text-xs text-gray-400">
+                      No versions recorded yet. History starts with the next
+                      change.
+                    </p>
+                  )}
+                {(versionsQuery.data ?? []).map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    onClick={() => setSelectedVersion(entry.version)}
+                    className={`w-full rounded-lg border px-3 py-2 text-left text-xs ${
+                      entry.version === selectedVersion
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+                        : "border-white/10 bg-black/30 text-gray-300 hover:bg-white/5"
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="font-medium">v{entry.version}</span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-wide">
+                        {entry.changeType}
+                      </span>
+                    </span>
+                    <span className="mt-1 block text-[11px] text-gray-400">
+                      {formatDateTime(entry.createdAt)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                {selectedSnapshot ? (
+                  <>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          {selectedSnapshot.title || "Untitled"}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          v{selectedSnapshot.version} ·{" "}
+                          {selectedSnapshot.changeType} ·{" "}
+                          {formatDateTime(selectedSnapshot.createdAt)}
+                        </p>
+                      </div>
+                      {canWrite &&
+                        selectedSnapshot.version !== latestVersion && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              restoreMutation.mutate({
+                                id: historyDoc.id,
+                                version: selectedSnapshot.version,
+                              })
+                            }
+                            disabled={restoreMutation.isPending}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-40"
+                          >
+                            {restoreMutation.isPending && (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            )}
+                            Restore this version
+                          </button>
+                        )}
+                    </div>
+                    <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap text-xs text-gray-300">
+                      {selectedSnapshot.content}
+                    </pre>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-400">
+                    Select a version to preview it.
+                  </p>
+                )}
               </div>
             </div>
           </div>
