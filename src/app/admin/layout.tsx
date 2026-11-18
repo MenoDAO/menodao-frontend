@@ -46,6 +46,7 @@ const navItems = [
   { href: "/admin/alerts", label: "Alerts", icon: Bell },
   { href: "/admin/whatsapp", label: "WhatsApp bot", icon: MessageCircle },
   { href: "/admin/conversations", label: "Conversations", icon: MessagesSquare },
+  { href: "/admin/brand-context", label: "Brand Context", icon: BookOpen },
   { href: "/admin/foundation", label: "Foundation site", icon: BookOpen },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
