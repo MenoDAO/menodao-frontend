@@ -904,6 +904,81 @@ class AdminApiClient {
       `/admin/bot-chat/members/${memberId}/export`,
     );
   }
+
+  // ===== Brand Context (retrievable brand / knowledge base) =====
+
+  async listBrandContexts(params: {
+    kind?: string;
+    source?: string;
+    active?: boolean;
+    search?: string;
+  } = {}) {
+    const search = new URLSearchParams();
+    if (params.kind) search.set("kind", params.kind);
+    if (params.source) search.set("source", params.source);
+    if (params.active !== undefined) {
+      search.set("active", String(params.active));
+    }
+    if (params.search) search.set("search", params.search);
+    const query = search.toString();
+    return this.request<AdminBrandContextDocument[]>(
+      `/admin/brand-context/documents${query ? `?${query}` : ""}`,
+    );
+  }
+
+  async getBrandContext(id: string) {
+    return this.request<AdminBrandContextDocument>(
+      `/admin/brand-context/documents/${id}`,
+    );
+  }
+
+  async createBrandContext(body: CreateBrandContextBody) {
+    return this.request<AdminBrandContextDocument>(
+      "/admin/brand-context/documents",
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    );
+  }
+
+  async updateBrandContext(
+    id: string,
+    body: Partial<CreateBrandContextBody>,
+  ) {
+    return this.request<AdminBrandContextDocument>(
+      `/admin/brand-context/documents/${id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      },
+    );
+  }
+
+  async deleteBrandContext(id: string) {
+    return this.request<void>(
+      `/admin/brand-context/documents/${id}`,
+      {
+        method: "DELETE",
+      },
+    );
+  }
+
+  async importBrandContext(body: ImportBrandContextBody) {
+    return this.request<unknown>("/admin/brand-context/import", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async previewBrandContext(query: string, kind?: string, topK?: number) {
+    const params = new URLSearchParams({ query });
+    if (kind) params.set("kind", kind);
+    if (topK) params.set("topK", String(topK));
+    return this.request<BrandContextPreview>(
+      `/admin/brand-context/preview?${params.toString()}`,
+    );
+  }
 }
 
 // Types
@@ -1157,6 +1232,57 @@ export interface AdminBotChatMessage {
   deliveryStatus: string;
   providerMessageId: string | null;
   sentAt: string;
+}
+
+export interface AdminBrandContextDocument {
+  id: string;
+  kind: string;
+  title: string | null;
+  content: string;
+  active: boolean;
+  source: string;
+  externalId: string | null;
+  externalUrl: string | null;
+  lastSyncedAt: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBrandContextBody {
+  kind?: string;
+  title?: string;
+  content: string;
+  active?: boolean;
+  source?: string;
+  externalId?: string;
+  externalUrl?: string;
+}
+
+export interface ImportBrandContextBody {
+  kind?: string;
+  title?: string;
+  content: string;
+  active?: boolean;
+  source?: string;
+  externalId?: string;
+  externalUrl?: string;
+}
+
+export interface BrandContextPreview {
+  query: string;
+  kind: string;
+  scanned: number;
+  elapsedMs: number;
+  matched: Array<{
+    documentId: string;
+    title: string | null;
+    kind: string;
+    score: number;
+    content: string;
+  }>;
+  promptBlock: string;
+  injectedChars: number;
 }
 
 export const adminApi = new AdminApiClient(API_BASE_URL);
