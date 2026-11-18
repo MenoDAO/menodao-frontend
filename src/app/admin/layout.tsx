@@ -38,6 +38,12 @@ const navItems = [
     icon: ClipboardList,
     superAdminOnly: true,
   },
+  {
+    href: "/admin/admins",
+    label: "Admin users",
+    icon: Shield,
+    superAdminOnly: true,
+  },
   { href: "/admin/metrics", label: "Site traffic", icon: BarChart3 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/clinics", label: "Clinics", icon: Building2 },

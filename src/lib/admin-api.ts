@@ -150,6 +150,47 @@ class AdminApiClient {
     });
   }
 
+  // Admin account management (super admins only)
+
+  async listAdminUsers() {
+    return this.request<AdminUserRecord[]>("/admin/admins");
+  }
+
+  async createAdminUser(body: {
+    username: string;
+    role: AdminRole;
+    phoneNumber?: string;
+  }) {
+    return this.request<AdminInviteResult>("/admin/admins", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async updateAdminUser(
+    id: string,
+    body: { role?: AdminRole; isActive?: boolean; phoneNumber?: string | null },
+  ) {
+    return this.request<AdminUserRecord>(`/admin/admins/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async resetAdminPassword(id: string) {
+    return this.request<AdminInviteResult>(`/admin/admins/${id}/reset-password`, {
+      method: "POST",
+    });
+  }
+
+  /** Public (no auth required): sets the password from an invite token. */
+  async acceptAdminInvite(token: string, password: string) {
+    return this.request<{ message: string }>("/admin/invite/accept", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    });
+  }
+
   async webauthnLoginOptions(username?: string) {
     return this.request<import("@simplewebauthn/browser").PublicKeyCredentialRequestOptionsJSON>(
       "/admin/webauthn/login/options",
@@ -1622,6 +1663,26 @@ export interface FoundationNetwork {
   };
   impact: FoundationImpactFigures;
   clinics: FoundationClinicCard[];
+}
+
+export type AdminRole = "SUPER_ADMIN" | "JUNIOR_ADMIN" | "CUSTOMER_SERVICE";
+
+export interface AdminUserRecord {
+  id: string;
+  username: string;
+  phoneNumber: string | null;
+  role: AdminRole;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  lastLogin: string | null;
+  createdAt: string;
+}
+
+/** The token is returned once here and is never stored on the server. */
+export interface AdminInviteResult {
+  admin: AdminUserRecord;
+  inviteToken: string;
+  expiresAt: string;
 }
 
 export interface SubscriptionRow {
