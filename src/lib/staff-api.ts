@@ -1,5 +1,6 @@
 import { getApiUrl } from "./api";
 import { parseApiError } from "./parse-api-error";
+import { currentAppPath, withCallbackUrl } from "./redirect";
 import type { ActivityItem } from "./activity";
 
 const API_BASE_URL = getApiUrl();
@@ -265,7 +266,10 @@ class StaffApiClient {
         !window.location.pathname.startsWith("/staff/security-check") &&
         !window.location.pathname.startsWith("/staff/login")
       ) {
-        window.location.href = "/staff/security-check";
+        window.location.href = withCallbackUrl(
+          "/staff/security-check",
+          currentAppPath(),
+        );
       }
 
       throw err;
