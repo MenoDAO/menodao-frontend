@@ -400,6 +400,15 @@ export default function AdminBrandContextPage() {
     importMutation.isPending ||
     uploadFileMutation.isPending;
 
+  // Content typed into the dialog, or files waiting in the upload queue. The
+  // create button stays disabled until at least one of the two is present.
+  const canSubmit = editingDoc
+    ? Boolean((draft.content ?? "").trim())
+    : Boolean((draft.content ?? "").trim()) ||
+      uploadQueue.some(
+        (item) => item.status === "queued" || item.status === "error",
+      );
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -842,16 +851,7 @@ export default function AdminBrandContextPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={
-                    isSaving ||
-                    (editingDoc
-                      ? !draft.content?.trim()
-                      : !(draft.content?.trim() ??
-                        uploadQueue.some(
-                          (item) =>
-                            item.status === "queued" || item.status === "error",
-                        )))
-                  }
+                  disabled={isSaving || !canSubmit}
                   onClick={() => void submitCreate()}
                   className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-40"
                 >
