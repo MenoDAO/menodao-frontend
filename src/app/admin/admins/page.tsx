@@ -9,6 +9,7 @@ import {
   Copy,
   KeyRound,
   Loader2,
+  Phone,
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
@@ -101,16 +102,24 @@ export default function AdminUsersPage() {
       body,
     }: {
       id: string;
-      body: { role?: AdminRole; isActive?: boolean };
+      body: {
+        role?: AdminRole;
+        isActive?: boolean;
+        phoneNumber?: string | null;
+      };
     }) => adminApi.updateAdminUser(id, body),
     onSuccess: (_, variables) => {
       invalidate();
       setToast({
         type: "success",
         message:
-          variables.body.isActive === false
-            ? "Admin deactivated. Their sessions are no longer valid."
-            : "Admin updated.",
+          variables.body.phoneNumber !== undefined
+            ? variables.body.phoneNumber
+              ? "Admin phone saved. They can now use WhatsApp admin mode."
+              : "Admin phone cleared. WhatsApp admin mode is disabled for this admin."
+            : variables.body.isActive === false
+              ? "Admin deactivated. Their sessions are no longer valid."
+              : "Admin updated.",
       });
     },
     onError: (error) => showError(error, "Failed to update admin"),
@@ -158,7 +167,9 @@ export default function AdminUsersPage() {
           </h1>
           <p className="text-sm text-gray-400 mt-1">
             Create admin accounts, assign roles and deactivate access. Passwords
-            are never sent or stored in plain text.
+            are never sent or stored in plain text. Set an admin&apos;s phone to
+            the WhatsApp number they will use for <code>ADMIN</code> record
+            access; a blank phone disables that access.
           </p>
         </div>
         <button
@@ -383,6 +394,33 @@ export default function AdminUsersPage() {
                         className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 disabled:opacity-40 rounded"
                       >
                         {item.isActive ? "Deactivate" : "Deactivated"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const entered = window.prompt(
+                            `WhatsApp phone for ${item.username} (9-15 digits, e.g. 254712345678). Leave blank to disable admin mode for this account.`,
+                            item.phoneNumber ?? "",
+                          );
+                          if (entered === null) return;
+                          const phone = entered.trim();
+                          if (phone && !/^\+?\d{9,15}$/.test(phone)) {
+                            showError(
+                              new Error(
+                                "Phone number must be 9-15 digits, optionally prefixed with +.",
+                              ),
+                              "",
+                            );
+                            return;
+                          }
+                          updateMutation.mutate({
+                            id: item.id,
+                            body: { phoneNumber: phone || null },
+                          });
+                        }}
+                        className="px-2 py-1 text-xs bg-sky-900/60 hover:bg-sky-800 text-sky-200 rounded inline-flex items-center gap-1"
+                      >
+                        <Phone className="w-3 h-3" /> Set phone
                       </button>
                       <button
                         type="button"
