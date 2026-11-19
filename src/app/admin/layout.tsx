@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAdminStore } from "@/lib/admin-store";
+import { currentAppPath, withCallbackUrl } from "@/lib/redirect";
 import {
   Users,
   CreditCard,
@@ -74,7 +75,7 @@ export default function AdminLayout({
     }
 
     if (!isAuthenticated) {
-      router.replace("/admin/login");
+      router.replace(withCallbackUrl("/admin/login", currentAppPath()));
     }
   }, [isAuthenticated, pathname, router]);
 

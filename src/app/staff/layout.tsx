@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useStaffStore } from "@/lib/staff-store";
 import { staffApi } from "@/lib/staff-api";
+import {
+  currentAppPath,
+  currentCallbackUrl,
+  resolveCallbackUrl,
+  withCallbackUrl,
+} from "@/lib/redirect";
 import { Menu, X } from "lucide-react";
 import { PasskeyEnrollPrompt } from "@/components/PasskeyEnrollPrompt";
 
@@ -24,23 +30,23 @@ export default function StaffLayout({
 
   useEffect(() => {
     if (!isAuthenticated && !isPublicStaffRoute) {
-      router.push("/staff/login");
+      router.push(withCallbackUrl("/staff/login", currentAppPath()));
       return;
     }
     if (isAuthenticated && pathname === "/staff/login") {
-      router.push("/staff");
+      router.push(resolveCallbackUrl(currentCallbackUrl(), "/staff"));
       return;
     }
 
     if (isAuthenticated && staffApi.getToken() && !isPublicStaffRoute) {
       staffApi.getProfile().catch((error: Error & { code?: string }) => {
         if (error.code === "CAPTCHA_REQUIRED") {
-          router.push("/staff/security-check");
+          router.push(withCallbackUrl("/staff/security-check", currentAppPath()));
           return;
         }
         console.error("Token validation failed:", error);
         logout();
-        router.push("/staff/login");
+        router.push(withCallbackUrl("/staff/login", currentAppPath()));
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

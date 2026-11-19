@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, Loader2, ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { resolveCallbackUrl, withCallbackUrl } from "@/lib/redirect";
 import { useTranslation } from "@/lib/i18n";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { useCaptcha } from "@/hooks/useCaptcha";
@@ -83,7 +84,10 @@ function VerifyOTPContent() {
       }
 
       // Navigate to dashboard - use callbackUrl if present, otherwise default to dashboard
-      const destination = searchParams.get("callbackUrl") ?? "/dashboard";
+      const destination = resolveCallbackUrl(
+        searchParams.get("callbackUrl"),
+        "/dashboard",
+      );
       window.location.href = destination;
     } catch (err) {
       console.error("OTP verification error:", err);
@@ -135,7 +139,10 @@ function VerifyOTPContent() {
     if (flow === "signup") {
       router.push("/sign-up");
     } else {
-      router.push("/login");
+      // Keep the original destination so going back doesn't lose it.
+      router.push(
+        withCallbackUrl("/login", searchParams.get("callbackUrl") ?? ""),
+      );
     }
   };
 

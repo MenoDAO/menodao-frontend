@@ -12,11 +12,13 @@ import { isCaptchaEnabled } from "@/lib/captcha";
 import { PasskeyLoginButton } from "@/components/PasskeyLoginButton";
 import { hasPasskeyOnThisDevice } from "@/lib/passkeys";
 import { useAuthStore } from "@/lib/auth-store";
+import { sanitizeCallbackUrl } from "@/lib/redirect";
 
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams?.get("callbackUrl") ?? null;
+  // Only same-site relative paths are honoured (see sanitizeCallbackUrl).
+  const callbackUrl = sanitizeCallbackUrl(searchParams?.get("callbackUrl"));
   const { t } = useTranslation();
   const { loginWithSession } = useAuthStore();
   const [phoneNumber, setPhoneNumber] = useState("");
