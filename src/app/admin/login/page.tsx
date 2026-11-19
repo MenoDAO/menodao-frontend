@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { adminApi } from "@/lib/admin-api";
 import { useAdminStore } from "@/lib/admin-store";
+import { resolveCallbackUrl } from "@/lib/redirect";
 import { Shield, Loader2, Eye, EyeOff, Lock, User } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { useCaptcha } from "@/hooks/useCaptcha";
@@ -12,8 +13,11 @@ import { isCaptchaEnabled } from "@/lib/captcha";
 import { PasskeyLoginButton } from "@/components/PasskeyLoginButton";
 import { hasPasskeyOnThisDevice } from "@/lib/passkeys";
 
-export default function AdminLoginPage() {
+function AdminLoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Where the guard found the user before it bounced them here.
+  const callbackUrl = resolveCallbackUrl(searchParams?.get("callbackUrl"), "/admin");
   const { login, isAuthenticated } = useAdminStore();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -31,9 +35,9 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/admin");
+      router.replace(callbackUrl);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, callbackUrl, router]);
 
   useEffect(() => {
     const has = hasPasskeyOnThisDevice("admin");
@@ -46,7 +50,7 @@ export default function AdminLoginPage() {
     onSuccess: (data) => {
       adminApi.setToken(data.accessToken);
       login(data.admin, data.accessToken);
-      router.push("/admin");
+      router.push(callbackUrl);
     },
     onError: (error: Error) => {
       clearCaptcha();
@@ -74,7 +78,7 @@ export default function AdminLoginPage() {
   }) => {
     adminApi.setToken(data.accessToken);
     login(data.admin, data.accessToken);
-    router.push("/admin");
+    router.push(callbackUrl);
   };
 
   return (
@@ -223,5 +227,17 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4" />
+      }
+    >
+      <AdminLoginPageContent />
+    </Suspense>
   );
 }

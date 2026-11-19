@@ -1,5 +1,6 @@
 import { getApiUrl } from "./api";
 import { parseApiError } from "./parse-api-error";
+import { currentAppPath, withCallbackUrl } from "./redirect";
 import type { ActivityItem } from "./activity";
 
 const API_BASE_URL = getApiUrl();
@@ -113,7 +114,10 @@ class AdminApiClient {
           window.location.pathname.startsWith("/admin") &&
           window.location.pathname !== "/admin/login"
         ) {
-          window.location.href = "/admin/login";
+          window.location.href = withCallbackUrl(
+            "/admin/login",
+            currentAppPath(),
+          );
         }
       }
 

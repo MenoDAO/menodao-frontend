@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
+import { currentAppPath, withCallbackUrl } from "@/lib/redirect";
 import {
   Home,
   CreditCard,
@@ -70,7 +71,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/login");
+      router.push(withCallbackUrl("/login", currentAppPath()));
     }
   }, [isAuthenticated, router]);
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api, Member } from './api';
+import { currentAppPath, withCallbackUrl } from './redirect';
 
 interface AuthState {
   member: Member | null;
@@ -88,7 +89,8 @@ export const useAuthStore = create<AuthState>()(
           if (code === 'CAPTCHA_REQUIRED') {
             set({ isLoading: false });
             if (typeof window !== 'undefined') {
-              window.location.href = '/security-check';
+              // Carry the page the user was on through the captcha detour.
+              window.location.href = withCallbackUrl('/security-check', currentAppPath());
             }
             return;
           }

@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, Loader2 } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { isCaptchaEnabled } from "@/lib/captcha";
+import { resolveCallbackUrl } from "@/lib/redirect";
 
-export default function SecurityCheckPage() {
+function SecurityCheckPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // The page the captcha detour interrupted, or the dashboard by default.
+  const destination = resolveCallbackUrl(
+    searchParams?.get("callbackUrl"),
+    "/dashboard",
+  );
   const { loadUser } = useAuthStore();
   const { captchaToken, setCaptchaToken, clearCaptcha, captchaReady, captchaWidgetKey } =
     useCaptcha();
@@ -32,7 +39,7 @@ export default function SecurityCheckPage() {
         api.setToken(accessToken);
       }
       await loadUser();
-      router.replace("/dashboard");
+      router.replace(destination);
     } catch (err) {
       clearCaptcha();
       setError(
@@ -91,5 +98,17 @@ export default function SecurityCheckPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function SecurityCheckPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900" />
+      }
+    >
+      <SecurityCheckPageContent />
+    </Suspense>
   );
 }

@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useStaffStore } from "@/lib/staff-store";
 import { staffApi } from "@/lib/staff-api";
+import { resolveCallbackUrl } from "@/lib/redirect";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { isCaptchaEnabled } from "@/lib/captcha";
 import { PasskeyLoginButton } from "@/components/PasskeyLoginButton";
 import { hasPasskeyOnThisDevice } from "@/lib/passkeys";
 
-export default function StaffLoginPage() {
+function StaffLoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Where the guard found the user before it bounced them here.
+  const callbackUrl = resolveCallbackUrl(searchParams?.get("callbackUrl"), "/staff");
   const { setStaff } = useStaffStore();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -49,7 +53,7 @@ export default function StaffLoginPage() {
       const response = await staffApi.login(username, password, captchaToken);
       staffApi.setToken(response.accessToken);
       setStaff(response.staff, response.accessToken);
-      router.push("/staff");
+      router.push(callbackUrl);
     } catch (err: unknown) {
       clearCaptcha();
       setError(
@@ -93,7 +97,7 @@ export default function StaffLoginPage() {
             onSuccess={(response) => {
               staffApi.setToken(response.accessToken);
               setStaff(response.staff, response.accessToken);
-              router.push("/staff");
+              router.push(callbackUrl);
             }}
             onError={(message) => {
               setError(message);
@@ -190,12 +194,24 @@ export default function StaffLoginPage() {
             onSuccess={(response) => {
               staffApi.setToken(response.accessToken);
               setStaff(response.staff, response.accessToken);
-              router.push("/staff");
+              router.push(callbackUrl);
             }}
             onError={(message) => setError(message)}
           />
         )}
       </div>
     </div>
+  );
+}
+
+export default function StaffLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800" />
+      }
+    >
+      <StaffLoginPageContent />
+    </Suspense>
   );
 }
