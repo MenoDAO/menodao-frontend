@@ -42,6 +42,14 @@ function formatDateTime(value: string | null): string {
   return date.toLocaleString();
 }
 
+type UploadQueueItem = {
+  id: string;
+  file: File;
+  status: "queued" | "uploading" | "done" | "error";
+  message?: string;
+  sections?: number;
+};
+
 export default function AdminBrandContextPage() {
   const { admin } = useAdminStore();
   const canWrite = admin?.role === "SUPER_ADMIN";
@@ -85,6 +93,11 @@ export default function AdminBrandContextPage() {
   const [previewTopK, setPreviewTopK] = useState<number>(3);
   const [previewResult, setPreviewResult] =
     useState<BrandContextPreview | null>(null);
+
+  // Uploads waiting to be turned into retrievable context documents. Files are
+  // sent one after another so each surfaces its own progress and error.
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
+  const [isDraggingUpload, setIsDraggingUpload] = useState(false);
 
   useEffect(() => {
     if (!toast) return;
@@ -238,10 +251,125 @@ export default function AdminBrandContextPage() {
     },
   });
 
+  const uploadFileMutation = useMutation({
+    mutationFn: (input: {
+      file: File;
+      kind?: string;
+      title?: string;
+      active?: boolean;
+    }) => adminApi.uploadBrandContextFile(input.file, input),
+    onSuccess: (result, input) => {
+      setUploadQueue((prev) =>
+        prev.map((item) =>
+          item.file === input.file
+            ? {
+                ...item,
+                status: "done",
+                sections: result.sections,
+                message: undefined,
+              }
+            : item,
+        ),
+      );
+      invalidate();
+      setToast({
+        type: "success",
+        message: `Imported ${result.filename} — ${result.sections} section(s) ready for the bot.`,
+      });
+    },
+    onError: (error: unknown, input) => {
+      setUploadQueue((prev) =>
+        prev.map((item) =>
+          item.file === input.file
+            ? {
+                ...item,
+                status: "error",
+                message:
+                  error instanceof Error ? error.message : "Upload failed",
+              }
+            : item,
+        ),
+      );
+      setToast({
+        type: "error",
+        message: `Could not import ${input.file.name}.`,
+      });
+    },
+  });
+
   const openCreate = () => {
     setEditingDoc(null);
     setDraft({ kind: "BIBLE", content: "", active: true, title: "" });
+    setUploadQueue([]);
     setShowCreate(true);
+  };
+
+  const addUploadFiles = (files: File[]) => {
+    const items: UploadQueueItem[] = files.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      status: "queued",
+      message: undefined,
+      sections: undefined,
+    }));
+    setUploadQueue((prev) => [...prev, ...items]);
+  };
+
+  const submitCreate = async () => {
+    if (editingDoc) {
+      if (!draft.content?.trim()) {
+        setToast({
+          type: "error",
+          message: "A document needs content before it can be saved.",
+        });
+        return;
+      }
+      await updateMutation.mutateAsync({
+        id: editingDoc.id,
+        body: {
+          kind: draft.kind,
+          title: draft.title?.trim() || undefined,
+          content: draft.content ?? "",
+          active: draft.active,
+        },
+      });
+      return;
+    }
+
+    const hasContent = Boolean((draft.content ?? "").trim());
+    const hasFiles = uploadQueue.some(
+      (item) => item.status === "queued" || item.status === "error",
+    );
+    if (!hasContent && !hasFiles) {
+      setToast({
+        type: "error",
+        message: "Add some content or upload a file first.",
+      });
+      return;
+    }
+
+    if (hasContent) {
+      await createMutation.mutateAsync({
+        kind: draft.kind,
+        title: draft.title?.trim() || undefined,
+        content: draft.content ?? "",
+        active: draft.active,
+      });
+    }
+
+    // One file per request, sent one after another. Large collections should be
+    // zipped first so the queue does not get backed up.
+    for (const item of uploadQueue) {
+      if (item.status !== "queued" && item.status !== "error") continue;
+      await uploadFileMutation.mutateAsync({
+        file: item.file,
+        kind: draft.kind,
+        title: draft.title?.trim() || undefined,
+        active: draft.active,
+      });
+    }
+
+    setUploadQueue([]);
   };
 
   const openEdit = (doc: AdminBrandContextDocument) => {
@@ -269,7 +397,8 @@ export default function AdminBrandContextPage() {
   const isSaving =
     createMutation.isPending ||
     updateMutation.isPending ||
-    importMutation.isPending;
+    importMutation.isPending ||
+    uploadFileMutation.isPending;
 
   return (
     <div className="space-y-6 p-6">
@@ -560,43 +689,135 @@ export default function AdminBrandContextPage() {
               </button>
             </div>
             <div className="space-y-4 p-6">
-              <label className="block text-sm text-gray-300">
-                Title
-                <input
-                  value={draft.title ?? ""}
-                  onChange={(event) =>
-                    setDraft({ ...draft, title: event.target.value })
-                  }
-                  className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-emerald-500/50 focus:outline-none"
-                />
-              </label>
-              <label className="block text-sm text-gray-300">
-                Kind
-                <select
-                  value={draft.kind ?? "BIBLE"}
-                  onChange={(event) =>
-                    setDraft({ ...draft, kind: event.target.value })
-                  }
-                  className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-emerald-500/50 focus:outline-none"
-                >
-                  {KIND_OPTIONS.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {kind}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm text-gray-300">
+                  Title
+                  <input
+                    value={draft.title ?? ""}
+                    onChange={(event) =>
+                      setDraft({ ...draft, title: event.target.value })
+                    }
+                    placeholder="Optional — derived from the file name when uploading"
+                    className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-emerald-500/50 focus:outline-none"
+                  />
+                </label>
+                <label className="block text-sm text-gray-300">
+                  Kind
+                  <select
+                    value={draft.kind ?? "BIBLE"}
+                    onChange={(event) =>
+                      setDraft({ ...draft, kind: event.target.value })
+                    }
+                    className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-emerald-500/50 focus:outline-none"
+                  >
+                    {KIND_OPTIONS.map((kind) => (
+                      <option key={kind} value={kind}>
+                        {kind}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <label className="block text-sm text-gray-300">
                 Content
                 <textarea
-                  value={draft.content}
+                  value={draft.content ?? ""}
                   onChange={(event) =>
                     setDraft({ ...draft, content: event.target.value })
                   }
-                  rows={12}
+                  rows={10}
+                  placeholder="Optional — paste brand context here, or upload a file below."
                   className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-emerald-500/50 focus:outline-none"
                 />
               </label>
+
+              <div>
+                <p className="text-sm font-medium text-gray-300">Attachments</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Optional — import from a file. PDF, Word (.docx), markdown, plain
+                  text or a zip of them. One file per upload; zip large bundles first
+                  so the queue does not get backed up.
+                </p>
+                <div
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setIsDraggingUpload(true);
+                  }}
+                  onDragLeave={() => setIsDraggingUpload(false)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setIsDraggingUpload(false);
+                    addUploadFiles(Array.from(event.dataTransfer.files));
+                  }}
+                  className={`mt-3 rounded-xl border border-dashed px-4 py-6 text-center transition-colors ${
+                    isDraggingUpload
+                      ? "border-emerald-500/70 bg-emerald-500/10"
+                      : "border-white/15 bg-black/30 hover:border-white/30"
+                  }`}
+                >
+                  <Upload className="mx-auto mb-2 h-6 w-6 text-gray-400" />
+                  <p className="text-sm text-gray-300">
+                    Drag &amp; drop a file here, or{" "}
+                    <span className="text-emerald-400">browse your device</span>
+                  </p>
+                  <input
+                    id="brand-context-file-upload"
+                    type="file"
+                    multiple
+                    className="mt-2 block w-full text-sm text-gray-400 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:text-white hover:file:bg-white/20"
+                    accept=".md,.markdown,.txt,.text,.pdf,.docx,.doc,.html,.htm,.zip"
+                    onChange={(event) => {
+                      addUploadFiles(Array.from(event.target.files ?? []));
+                      event.target.value = "";
+                    }}
+                  />
+                </div>
+
+                {uploadQueue.length > 0 && (
+                  <div className="mt-3 space-y-2 rounded-xl border border-white/10 bg-black/30 p-4">
+                    <p className="text-xs uppercase tracking-wide text-gray-400">
+                      Uploads queued
+                    </p>
+                    {uploadQueue.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm text-white">
+                            {item.file.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(item.file.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {item.status === "uploading" && (
+                            <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+                          )}
+                          {item.status === "done" && (
+                            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                          )}
+                          {item.status === "error" && (
+                            <AlertTriangle className="h-4 w-4 text-red-400" />
+                          )}
+                          <span className="text-xs text-gray-400">
+                            {item.status === "queued"
+                              ? "Queued"
+                              : item.status === "uploading"
+                                ? "Uploading…"
+                                : item.status === "done"
+                                  ? "Imported"
+                                  : item.message ?? "Failed"}
+                            {typeof item.sections === "number" &&
+                              ` — ${item.sections} section(s)`}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <label className="flex items-center gap-2 text-sm text-gray-300">
                 <input
                   type="checkbox"
@@ -621,25 +842,17 @@ export default function AdminBrandContextPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={!draft.content.trim() || isSaving}
-                  onClick={() =>
-                    editingDoc
-                      ? updateMutation.mutate({
-                          id: editingDoc.id,
-                          body: {
-                            kind: draft.kind,
-                            title: draft.title || undefined,
-                            content: draft.content,
-                            active: draft.active,
-                          },
-                        })
-                      : createMutation.mutate({
-                          kind: draft.kind,
-                          title: draft.title || undefined,
-                          content: draft.content,
-                          active: draft.active,
-                        })
+                  disabled={
+                    isSaving ||
+                    (editingDoc
+                      ? !draft.content?.trim()
+                      : !(draft.content?.trim() ??
+                        uploadQueue.some(
+                          (item) =>
+                            item.status === "queued" || item.status === "error",
+                        )))
                   }
+                  onClick={() => void submitCreate()}
                   className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-40"
                 >
                   {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}

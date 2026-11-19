@@ -1016,6 +1016,29 @@ class AdminApiClient {
     });
   }
 
+  /**
+   * Uploads one context file. The backend accepts a single file per request
+   * (multipart), extracts it into retrievable sections, keeps the raw bytes in
+   * S3 and returns a summary. Archives such as zips are expanded server-side
+   * into one document per entry.
+   */
+  async uploadBrandContextFile(
+    file: File,
+    fields?: { kind?: string; title?: string; active?: boolean },
+  ) {
+    const form = new FormData();
+    form.append("file", file);
+    if (fields?.kind) form.append("kind", fields.kind);
+    if (fields?.title) form.append("title", fields.title);
+    if (fields?.active !== undefined) {
+      form.append("active", String(fields.active));
+    }
+    return this.request<ContextFileIngestResult>(
+      "/admin/brand-context/files",
+      { method: "POST", body: form },
+    );
+  }
+
   async listBrandContextVersions(id: string) {
     return this.request<AdminBrandContextVersion[]>(
       `/admin/brand-context/documents/${id}/versions`,
@@ -1033,12 +1056,12 @@ class AdminApiClient {
   }
 
   async previewBrandContext(query: string, kind?: string, topK?: number) {
-    const params = new URLSearchParams({ query });
-    if (kind) params.set("kind", kind);
-    if (topK) params.set("topK", String(topK));
-    return this.request<BrandContextPreview>(
-      `/admin/brand-context/preview?${params.toString()}`,
-    );
+    // The backend declares @Post('preview') with a JSON body, so the preview
+    // must go through a POST rather than a query-string GET.
+    return this.request<BrandContextPreview>("/admin/brand-context/preview", {
+      method: "POST",
+      body: JSON.stringify({ query, kind, topK }),
+    });
   }
 }
 
@@ -1313,7 +1336,11 @@ export interface AdminBrandContextDocument {
 export interface CreateBrandContextBody {
   kind?: string;
   title?: string;
-  content: string;
+  /**
+   * The document body. Optional at the form level — the admin can supply a
+   * file instead, in which case it is extracted server-side.
+   */
+  content?: string;
   active?: boolean;
   source?: string;
   externalId?: string;
@@ -1335,6 +1362,39 @@ export interface ImportBrandContextResult {
   updated: number;
   deactivated: number;
   documents: AdminBrandContextDocument[];
+}
+
+/** Outcome of ingesting an uploaded context file. */
+export interface ContextFileIngestResult {
+  fileId: string;
+  filename: string;
+  /** How many retrievable sections the upload produced. */
+  sections: number;
+  created: number;
+  updated: number;
+  deactivated: number;
+  /** Archive entries that could not be turned into text. */
+  skipped: string[];
+}
+
+/** A context file that has been uploaded and extracted (server-side record). */
+export interface AdminBrandContextFile {
+  id: string;
+  filename: string;
+  contentType: string;
+  byteSize: number;
+  sha256: string;
+  storageKey: string;
+  textStorageKey: string | null;
+  status: string;
+  extractError: string | null;
+  extractedAt: string | null;
+  sectionCount: number;
+  kind: string;
+  title: string | null;
+  uploadedByAdminId: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AdminBrandContextVersion {
