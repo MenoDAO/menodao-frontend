@@ -1033,7 +1033,10 @@ class AdminApiClient {
     if (fields?.active !== undefined) {
       form.append("active", String(fields.active));
     }
-    return this.request<ContextFileIngestResult>(
+    // requestForm keeps the browser-managed multipart boundary; `request`
+    // would pin Content-Type: application/json and the upload would be
+    // unparseable.
+    return this.requestForm<ContextFileIngestResult>(
       "/admin/brand-context/files",
       { method: "POST", body: form },
     );

@@ -292,7 +292,9 @@ export default function AdminBrandContextPage() {
       );
       setToast({
         type: "error",
-        message: `Could not import ${input.file.name}.`,
+        message: `Could not import ${input.file.name}. ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
       });
     },
   });
