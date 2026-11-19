@@ -99,7 +99,7 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
+    <div className="h-screen bg-gray-900 flex overflow-hidden">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -110,11 +110,11 @@ export default function AdminLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-gray-800 border-r border-gray-700 transform transition-transform duration-200 ease-in-out ${
+        className={`fixed lg:sticky lg:top-0 inset-y-0 left-0 z-50 h-screen w-64 shrink-0 bg-gray-800 border-r border-gray-700 transform transition-transform duration-200 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-700">
             <div className="flex items-center gap-2">
@@ -132,7 +132,7 @@ export default function AdminLayout({
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
             {navItems
               .filter((item) => {
                 if ("superAdminOnly" in item && item.superAdminOnly) {
@@ -197,7 +197,7 @@ export default function AdminLayout({
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Mobile header */}
         <header className="lg:hidden flex items-center h-16 px-4 bg-gray-800 border-b border-gray-700">
           <button
@@ -213,7 +213,7 @@ export default function AdminLayout({
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">{children}</main>
+        <main className="flex-1 min-h-0 p-4 lg:p-6 overflow-auto">{children}</main>
       </div>
       <PasskeyEnrollPrompt
         kind="admin"
