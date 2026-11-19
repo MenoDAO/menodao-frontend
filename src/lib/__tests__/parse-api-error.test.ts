@@ -33,4 +33,21 @@ describe("parseApiError", () => {
     const parsed = parseApiError({}, 503, "Request failed");
     expect(parsed.message).toBe("Request failed");
   });
+
+  it("surfaces the real cause carried in wrapped error details", () => {
+    const parsed = parseApiError(
+      {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "An unexpected error occurred",
+          details: { message: "AccessDenied: not authorized" },
+        },
+      },
+      500,
+    );
+
+    expect(parsed.message).toBe("AccessDenied: not authorized");
+    expect(parsed.code).toBe("INTERNAL_ERROR");
+  });
 });

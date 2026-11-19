@@ -32,8 +32,21 @@ export function parseApiError(
         ? record.code
         : undefined;
 
+  // Wrapped error responses put a friendly sentence in `message` and the real
+  // cause in `details.message` — e.g. "An unexpected error occurred" with
+  // { message: "AccessDenied..." }. Surface the specific cause.
+  const details = source.details;
+  const detailedMessage =
+    details &&
+    typeof details === "object" &&
+    typeof (details as Record<string, unknown>).message === "string"
+      ? (details as Record<string, string>).message
+      : undefined;
+
   let message: string;
-  if (typeof rawMessage === "string") {
+  if (detailedMessage) {
+    message = detailedMessage;
+  } else if (typeof rawMessage === "string") {
     message = rawMessage;
   } else if (Array.isArray(rawMessage)) {
     message = rawMessage.join(", ");
