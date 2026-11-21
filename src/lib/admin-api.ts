@@ -471,6 +471,122 @@ class AdminApiClient {
     return this.request<AdminClinic[]>(`/admin/clinics/${id}/branches`);
   }
 
+  // Booking configuration (doctors, availability, hours, durations, calendars)
+  async listBookingProcedures() {
+    return this.request<{ procedures: AdminBookingProcedure[] }>(
+      "/admin/booking/procedures",
+    );
+  }
+
+  async updateProcedureDuration(id: string, durationMinutes: number) {
+    return this.request<{ procedure: AdminBookingProcedure }>(
+      `/admin/booking/procedures/${id}/duration`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ durationMinutes }),
+      },
+    );
+  }
+
+  async listDoctors(clinicId: string) {
+    return this.request<{ doctors: AdminDoctor[] }>(
+      `/admin/booking/clinics/${clinicId}/doctors`,
+    );
+  }
+
+  async createDoctor(
+    clinicId: string,
+    data: Partial<AdminDoctor> & { name: string },
+  ) {
+    return this.request<{ doctor: AdminDoctor }>(
+      `/admin/booking/clinics/${clinicId}/doctors`,
+      { method: "POST", body: JSON.stringify(data) },
+    );
+  }
+
+  async updateDoctor(id: string, data: Partial<AdminDoctor>) {
+    return this.request<{ doctor: AdminDoctor }>(
+      `/admin/booking/doctors/${id}`,
+      { method: "PATCH", body: JSON.stringify(data) },
+    );
+  }
+
+  async deleteDoctor(id: string) {
+    return this.request<{ ok: boolean }>(`/admin/booking/doctors/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async setDoctorAvailability(
+    id: string,
+    items: Array<{
+      dayOfWeek: number;
+      startTime: string;
+      endTime: string;
+      isActive?: boolean;
+    }>,
+  ) {
+    return this.request<{ availability: DoctorAvailability[] }>(
+      `/admin/booking/doctors/${id}/availability`,
+      { method: "PUT", body: JSON.stringify({ items }) },
+    );
+  }
+
+  async listClinicHours(clinicId: string) {
+    return this.request<{ hours: ClinicOperatingHour[] }>(
+      `/admin/booking/clinics/${clinicId}/hours`,
+    );
+  }
+
+  async setClinicHours(
+    clinicId: string,
+    items: Array<{
+      dayOfWeek: number;
+      openTime?: string | null;
+      closeTime?: string | null;
+      isClosed?: boolean;
+    }>,
+  ) {
+    return this.request<{ hours: ClinicOperatingHour[] }>(
+      `/admin/booking/clinics/${clinicId}/hours`,
+      { method: "PUT", body: JSON.stringify({ items }) },
+    );
+  }
+
+  async getCalendarProviders() {
+    return this.request<{
+      google: { configured: boolean; clientId: string | null };
+      microsoft: { configured: boolean; clientId: string | null };
+    }>("/admin/calendar/providers");
+  }
+
+  async startCalendarConnect(
+    ownerType: "DOCTOR" | "CLINIC",
+    ownerId: string,
+    provider: "GOOGLE" | "MICROSOFT",
+  ) {
+    const params = new URLSearchParams({
+      ownerType,
+      ownerId,
+      provider,
+    });
+    return this.request<{ url: string }>(
+      `/admin/calendar/connect?${params.toString()}`,
+    );
+  }
+
+  async disconnectCalendar(
+    ownerType: "DOCTOR" | "CLINIC",
+    ownerId: string,
+    provider: "GOOGLE" | "MICROSOFT",
+  ) {
+    const params = new URLSearchParams({ provider });
+    return this.request<{ ok: boolean }>(
+      `/admin/calendar/${ownerType}/${ownerId}?${params.toString()}`,
+      { method: "DELETE" },
+    );
+  }
+
   // Payments
   async listPayments(params: {
     page?: number;
@@ -1760,6 +1876,44 @@ export interface AdminInviteResult {
   admin: AdminUserRecord;
   inviteToken: string;
   expiresAt: string;
+}
+
+export interface AdminBookingProcedure {
+  id: string;
+  code: string;
+  name: string;
+  durationMinutes: number;
+  isActive: boolean;
+}
+
+export interface DoctorAvailability {
+  id: string;
+  doctorId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+}
+
+export interface ClinicOperatingHour {
+  id: string;
+  clinicId: string;
+  dayOfWeek: number;
+  openTime: string | null;
+  closeTime: string | null;
+  isClosed: boolean;
+}
+
+export interface AdminDoctor {
+  id: string;
+  clinicId: string;
+  name: string;
+  title: string | null;
+  specialty: string | null;
+  isActive: boolean;
+  consultationMinutes: number;
+  bufferMinutes: number;
+  availability: DoctorAvailability[];
 }
 
 export interface SubscriptionRow {
