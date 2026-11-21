@@ -300,7 +300,9 @@ export default function AdminBrandContextPage() {
       invalidate();
       setToast({
         type: "success",
-        message: `Imported ${result.filename} — ${result.sections} section(s) ready for the bot.`,
+        message: result.duplicate
+          ? `${result.filename} is already up to date — no duplicate was saved.`
+          : `Imported ${result.filename} — ${result.sections} section(s) ready for the bot.`,
       });
     },
     onError: (error: unknown, input) => {

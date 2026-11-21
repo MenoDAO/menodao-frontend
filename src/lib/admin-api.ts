@@ -1504,6 +1504,8 @@ export interface ContextFileIngestResult {
   deactivated: number;
   /** Archive entries that could not be turned into text. */
   skipped: string[];
+  /** True when an identical title + content was already stored. */
+  duplicate: boolean;
 }
 
 /** A context file that has been uploaded and extracted (server-side record). */
