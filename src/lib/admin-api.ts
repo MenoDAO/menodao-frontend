@@ -311,6 +311,10 @@ class AdminApiClient {
     clinicalClassification?: string | null;
     impact?: FoundationImpactOverride;
     clinics?: FoundationClinicOverride[];
+    hero?: FoundationHeroContent;
+    founderVideo?: FoundationFounderVideo;
+    mediaItems?: FoundationMediaItem[];
+    copy?: FoundationCopyOverrides;
   }) {
     return this.request<FoundationNetwork>("/admin/foundation/settings", {
       method: "PATCH",
@@ -1654,6 +1658,59 @@ export interface FoundationImpactFigures {
   counties: number;
 }
 
+export type FoundationPlaybackRate = 0.5 | 0.75 | 1 | 1.25 | 1.5 | 2;
+
+export interface FoundationHeroContent {
+  videoUrl: string | null;
+  posterUrl: string | null;
+  playbackRate: FoundationPlaybackRate;
+  autoplay: boolean;
+  muted: boolean;
+  loop: boolean;
+}
+
+export interface FoundationFounderVideo {
+  videoUrl: string | null;
+  posterUrl: string | null;
+  caption: string | null;
+  playbackRate: FoundationPlaybackRate;
+  muted: boolean;
+}
+
+export interface FoundationMediaItem {
+  id: string;
+  kind: "image" | "video";
+  src: string;
+  posterUrl?: string | null;
+  alt?: string | null;
+  altSw?: string | null;
+  caption?: string | null;
+  captionSw?: string | null;
+  href?: string | null;
+  playbackRate?: FoundationPlaybackRate;
+}
+
+export interface FoundationCopyLocale {
+  eyebrow?: string | null;
+  h1?: string | null;
+  subhead?: string | null;
+  primaryCta?: string | null;
+  secondaryCta?: string | null;
+  challengeTitle?: string | null;
+  pillarsTitle?: string | null;
+  letterEyebrow?: string | null;
+  letterTitle?: string | null;
+  letterBody?: string | null;
+  letterSummary?: string | null;
+  involvedTitle?: string | null;
+  involvedBody?: string | null;
+}
+
+export interface FoundationCopyOverrides {
+  en?: FoundationCopyLocale;
+  sw?: FoundationCopyLocale;
+}
+
 export interface FoundationNetwork {
   whatsappNumber: string | null;
   anchorClinicId: string | null;
@@ -1667,6 +1724,11 @@ export interface FoundationNetwork {
   };
   impact: FoundationImpactFigures;
   clinics: FoundationClinicCard[];
+  hero: FoundationHeroContent;
+  founderVideo: FoundationFounderVideo;
+  mediaItems: FoundationMediaItem[];
+  copy: Required<FoundationCopyOverrides>;
+  contentUpdatedAt: string | null;
 }
 
 export type AdminRole = "SUPER_ADMIN" | "JUNIOR_ADMIN" | "CUSTOMER_SERVICE";

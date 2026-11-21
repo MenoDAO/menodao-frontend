@@ -11,6 +11,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
+import { FoundationContentSection } from "./FoundationContentSection";
 import {
   adminApi,
   type FoundationClinicCard,
@@ -210,6 +211,8 @@ export default function FoundationSitePage() {
           </div>
         </div>
       </section>
+
+      <FoundationContentSection />
 
       <ClinicalNetworkSection />
     </div>
