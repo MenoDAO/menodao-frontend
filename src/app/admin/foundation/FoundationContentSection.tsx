@@ -104,7 +104,7 @@ export function FoundationContentSection() {
 
   return (
     <FoundationContentEditor
-      key={network.data.contentUpdatedAt || "initial"}
+      key="foundation-content-editor"
       data={network.data}
     />
   );
@@ -146,6 +146,10 @@ function FoundationContentEditor({ data }: { data: FoundationNetwork }) {
     ) {
       return;
     }
+    setHero(DEFAULT_HERO);
+    setFounderVideo(DEFAULT_FOUNDER_VIDEO);
+    setMediaItems([]);
+    setCopy({ en: { ...EMPTY_COPY }, sw: { ...EMPTY_COPY } });
     save.mutate({
       hero: DEFAULT_HERO,
       founderVideo: DEFAULT_FOUNDER_VIDEO,
