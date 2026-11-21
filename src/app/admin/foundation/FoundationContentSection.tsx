@@ -240,12 +240,12 @@ function FoundationContentEditor({ data }: { data: FoundationNetwork }) {
       ) : null}
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
-        <fieldset className="rounded-lg border border-gray-700 bg-gray-900 p-4">
-          <legend className="flex items-center gap-2 px-1 text-sm font-semibold text-white">
+        <section className="rounded-lg border border-gray-700 bg-gray-900 p-4">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
             <Video className="h-4 w-4 text-emerald-400" />
             Hero film
-          </legend>
-          <p className="mb-4 text-xs text-gray-500">
+          </h3>
+          <p className="mb-4 mt-1 text-xs text-gray-500">
             Optional. When set, this replaces the photo plate in the hero.
           </p>
           <UrlField
@@ -281,14 +281,14 @@ function FoundationContentEditor({ data }: { data: FoundationNetwork }) {
               onChange={(loop) => setHero({ ...hero, loop })}
             />
           </div>
-        </fieldset>
+        </section>
 
-        <fieldset className="rounded-lg border border-gray-700 bg-gray-900 p-4">
-          <legend className="flex items-center gap-2 px-1 text-sm font-semibold text-white">
+        <section className="rounded-lg border border-gray-700 bg-gray-900 p-4">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
             <Video className="h-4 w-4 text-emerald-400" />
             Founder&apos;s short video
-          </legend>
-          <p className="mb-4 text-xs text-gray-500">
+          </h3>
+          <p className="mb-4 mt-1 text-xs text-gray-500">
             Optional. Appears beside the founder note. Keep it under two
             minutes for a personal, scannable message.
           </p>
@@ -334,7 +334,7 @@ function FoundationContentEditor({ data }: { data: FoundationNetwork }) {
               onChange={(muted) => setFounderVideo({ ...founderVideo, muted })}
             />
           </div>
-        </fieldset>
+        </section>
       </div>
 
       <div className="mt-6 rounded-lg border border-gray-700 bg-gray-900 p-4">
