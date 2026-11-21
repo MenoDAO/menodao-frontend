@@ -1009,6 +1009,16 @@ class AdminApiClient {
     );
   }
 
+  async bulkDeleteBrandContext(ids: string[]) {
+    return this.request<{ deleted: number }>(
+      "/admin/brand-context/documents/bulk-delete",
+      {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      },
+    );
+  }
+
   async importBrandContext(body: ImportBrandContextBody) {
     return this.request<ImportBrandContextResult>("/admin/brand-context/import", {
       method: "POST",

@@ -83,6 +83,8 @@ export default function AdminBrandContextPage() {
 
   const [deleteTarget, setDeleteTarget] =
     useState<AdminBrandContextDocument | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const [historyDoc, setHistoryDoc] =
     useState<AdminBrandContextDocument | null>(null);
@@ -104,6 +106,8 @@ export default function AdminBrandContextPage() {
     const timer = setTimeout(() => setToast(null), 5000);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  const clearSelection = () => setSelectedIds(new Set());
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ["admin", "brand-context", kindFilter, statusFilter, search],
@@ -180,6 +184,28 @@ export default function AdminBrandContextPage() {
         type: "error",
         message:
           error instanceof Error ? error.message : "Failed to delete context",
+      });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) => adminApi.bulkDeleteBrandContext(ids),
+    onSuccess: (result) => {
+      invalidate();
+      setSelectedIds(new Set());
+      setBulkDeleteOpen(false);
+      setToast({
+        type: "success",
+        message: `Deleted ${result.deleted} document(s).`,
+      });
+    },
+    onError: (error: unknown) => {
+      setToast({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to bulk delete context documents",
       });
     },
   });
@@ -476,14 +502,20 @@ export default function AdminBrandContextPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
           <input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              clearSelection();
+            }}
             placeholder="Search title or content"
             className="w-full rounded-lg border border-white/10 bg-black/40 py-2 pl-9 pr-3 text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/50 focus:outline-none"
           />
         </div>
         <select
           value={kindFilter}
-          onChange={(event) => setKindFilter(event.target.value)}
+          onChange={(event) => {
+            setKindFilter(event.target.value);
+            clearSelection();
+          }}
           className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-gray-200 focus:border-emerald-500/50 focus:outline-none"
         >
           <option value="ALL">All kinds</option>
@@ -495,7 +527,10 @@ export default function AdminBrandContextPage() {
         </select>
         <select
           value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
+          onChange={(event) => {
+            setStatusFilter(event.target.value);
+            clearSelection();
+          }}
           className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-gray-200 focus:border-emerald-500/50 focus:outline-none"
         >
           {STATUS_OPTIONS.map((status) => (
@@ -523,14 +558,80 @@ export default function AdminBrandContextPage() {
             bot only grounds replies in active documents.
           </p>
         )}
+        {canWrite && (documents?.length ?? 0) > 0 && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+            <label className="inline-flex items-center gap-2 text-xs text-gray-300">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-white/20 bg-black/40"
+                checked={
+                  (documents?.length ?? 0) > 0 &&
+                  selectedIds.size === (documents?.length ?? 0)
+                }
+                onChange={(e) => {
+                  const allIds = (documents ?? []).map((d) => d.id);
+                  setSelectedIds(e.target.checked ? new Set(allIds) : new Set());
+                }}
+              />
+              Select all
+              {selectedIds.size > 0 && (
+                <span className="text-gray-400">
+                  ({selectedIds.size} selected)
+                </span>
+              )}
+            </label>
+            <div className="flex items-center gap-2">
+              {selectedIds.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setBulkDeleteOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-300 hover:bg-red-500/20"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete selected ({selectedIds.size})
+                </button>
+              )}
+              {selectedIds.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-xs text-gray-400 hover:text-gray-200"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="space-y-3">
           {(documents ?? []).map((doc) => (
             <div
               key={doc.id}
-              className="rounded-lg border border-white/10 bg-black/30 p-3"
+              className={`rounded-lg border bg-black/30 p-3 ${
+                selectedIds.has(doc.id)
+                  ? "border-red-500/40"
+                  : "border-white/10"
+              }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-start gap-3">
+                  {canWrite && (
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-white/20 bg-black/40"
+                      checked={selectedIds.has(doc.id)}
+                      onChange={(e) => {
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(doc.id);
+                          else next.delete(doc.id);
+                          return next;
+                        });
+                      }}
+                      aria-label={`Select ${doc.title || "document"}`}
+                    />
+                  )}
+                  <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="truncate text-sm font-medium text-white">
                       {doc.title || "Untitled"}
@@ -555,6 +656,7 @@ export default function AdminBrandContextPage() {
                     v{doc.version} · updated {formatDateTime(doc.updatedAt)} ·{" "}
                     {doc.content.length} chars
                   </p>
+                </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -1077,6 +1179,42 @@ export default function AdminBrandContextPage() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 )}
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkDeleteOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 px-4">
+          <div className="relative w-full max-w-md rounded-2xl border border-gray-700 bg-gray-800 p-6">
+            <h2 className="text-lg font-bold text-white">
+              Delete selected documents?
+            </h2>
+            <p className="mt-2 text-sm text-gray-400">
+              {selectedIds.size} document(s) will be permanently removed from
+              retrieval. This cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setBulkDeleteOpen(false)}
+                className="rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-300 hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  bulkDeleteMutation.mutate(Array.from(selectedIds))
+                }
+                disabled={bulkDeleteMutation.isPending || selectedIds.size === 0}
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-40"
+              >
+                {bulkDeleteMutation.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                Delete {selectedIds.size}
               </button>
             </div>
           </div>
