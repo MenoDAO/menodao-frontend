@@ -385,19 +385,26 @@ export default function AdminBrandContextPage() {
       });
     }
 
-    // One file per request, sent one after another. Large collections should be
-    // zipped first so the queue does not get backed up.
+    // One file per request, sent one after another. A failed upload must not
+    // abort the rest of the queue — otherwise later files stay "Queued" forever.
     for (const item of uploadQueue) {
       if (item.status !== "queued" && item.status !== "error") continue;
-      await uploadFileMutation.mutateAsync({
-        file: item.file,
-        kind: draft.kind,
-        title: draft.title?.trim() || undefined,
-        active: draft.active,
-      });
+      try {
+        await uploadFileMutation.mutateAsync({
+          file: item.file,
+          kind: draft.kind,
+          title: draft.title?.trim() || undefined,
+          active: draft.active,
+        });
+      } catch {
+        // The mutation's onError handler records the reason on the queue item.
+        // Keep going so a single bad file cannot stall the remaining uploads.
+      }
     }
 
-    setUploadQueue([]);
+    // Successful uploads are done; leave failures visible with their error so
+    // they can be retried instead of silently disappearing.
+    setUploadQueue((prev) => prev.filter((item) => item.status === "error"));
   };
 
   const openEdit = (doc: AdminBrandContextDocument) => {
