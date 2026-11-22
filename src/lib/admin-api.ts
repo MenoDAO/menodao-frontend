@@ -783,6 +783,13 @@ class AdminApiClient {
     );
   }
 
+  // Voice Metrics
+  async getVoiceMetrics(days = 30) {
+    return this.request<VoiceMetricsResponse>(
+      `/admin/stats/voice-metrics?days=${days}`,
+    );
+  }
+
   // Web3 / Filecoin / Hypercert impact stats
   async getWeb3Stats() {
     return this.request<Web3Stats>("/admin/stats/web3");
@@ -1739,6 +1746,27 @@ export interface SmsMetricsResponse {
   todayCount: number;
   byStatus: { status: string; count: number }[];
   dailyBreakdown: { date: string; count: number }[];
+}
+
+export interface VoiceMetricsResponse {
+  days: number;
+  totalVoiceConversations: number;
+  averageConfidence: number | null;
+  lowConfidenceCount: number;
+  byDay: { date: string; count: number; avgConfidence: number | null }[];
+  recent: {
+    id: string;
+    occurredAt: string;
+    memberId: string | null;
+    sessionId: string | null;
+    isVoice: boolean;
+    transcriptLength: number | null;
+    detectedLanguage: string | null;
+    intent: string | null;
+    intentConfidence: number | null;
+    action: string | null;
+    audioDuration: number | null;
+  }[];
 }
 
 export interface AuditLogEntry {

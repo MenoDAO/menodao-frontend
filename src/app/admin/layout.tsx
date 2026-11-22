@@ -25,6 +25,7 @@ import {
   BookOpen,
   MessageCircle,
   MessagesSquare,
+  Mic,
 } from "lucide-react";
 import { useState } from "react";
 import { PasskeyEnrollPrompt } from "@/components/PasskeyEnrollPrompt";
@@ -55,6 +56,7 @@ const navItems = [
   { href: "/admin/alerts", label: "Alerts", icon: Bell },
   { href: "/admin/whatsapp", label: "WhatsApp bot", icon: MessageCircle },
   { href: "/admin/conversations", label: "Conversations", icon: MessagesSquare },
+  { href: "/admin/voice-metrics", label: "Voice metrics", icon: Mic },
   { href: "/admin/brand-context", label: "Brand Context", icon: BookOpen },
   { href: "/admin/foundation", label: "Foundation site", icon: BookOpen },
   { href: "/admin/settings", label: "Settings", icon: Settings },
