@@ -1203,6 +1203,137 @@ class AdminApiClient {
       body: JSON.stringify({ query, kind, topK }),
     });
   }
+
+  // ─── Restricted WhatsApp field-data collection ────────────────────────────
+
+  async listFieldDataContributors() {
+    return this.request<FieldContributor[]>("/admin/field-data/contributors");
+  }
+
+  async createFieldDataContributor(body: {
+    phoneNumber: string;
+    displayName: string;
+    role?: FieldContributorRole;
+    organization?: string;
+  }) {
+    return this.request<FieldContributor>("/admin/field-data/contributors", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async updateFieldDataContributor(
+    id: string,
+    body: {
+      displayName?: string;
+      role?: FieldContributorRole;
+      organization?: string | null;
+      isActive?: boolean;
+    },
+  ) {
+    return this.request<FieldContributor>(
+      `/admin/field-data/contributors/${id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      },
+    );
+  }
+
+  async deleteFieldDataContributor(id: string) {
+    return this.request<{ ok: true }>(`/admin/field-data/contributors/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async listFieldDataSubmissions(
+    params: {
+      status?: FieldSubmissionStatus;
+      contributorId?: string;
+      limit?: number;
+    } = {},
+  ) {
+    const search = new URLSearchParams();
+    if (params.status) search.set("status", params.status);
+    if (params.contributorId) search.set("contributorId", params.contributorId);
+    if (params.limit) search.set("limit", String(params.limit));
+    const query = search.toString();
+    return this.request<FieldSubmission[]>(
+      `/admin/field-data/submissions${query ? `?${query}` : ""}`,
+    );
+  }
+
+  async getFieldDataSubmission(id: string) {
+    return this.request<FieldSubmission>(`/admin/field-data/submissions/${id}`);
+  }
+
+  /**
+   * Fetches restricted media as a Blob using the admin JWT. The media endpoint
+   * requires authentication, so a plain public URL is never exposed.
+   */
+  async getFieldDataMediaBlob(id: string): Promise<Blob> {
+    const headers: HeadersInit = {};
+    const token = this.getToken();
+    if (token) {
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${this.baseUrl}/admin/field-data/media/${id}`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = parseApiError(errorData, response.status, errorMessage)
+          .message;
+      } catch {
+        errorMessage = "Request failed";
+      }
+
+      if (response.status === 401 && typeof window !== "undefined") {
+        localStorage.removeItem("admin-auth-storage");
+        if (
+          window.location.pathname.startsWith("/admin") &&
+          window.location.pathname !== "/admin/login"
+        ) {
+          window.location.href = withCallbackUrl(
+            "/admin/login",
+            currentAppPath(),
+          );
+        }
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    return response.blob();
+  }
+
+  async reviewFieldDataSubmission(
+    id: string,
+    body: {
+      status: "PROCESSED" | "REJECTED" | "NEEDS_REVIEW";
+      reviewNotes?: string;
+      extracted?: unknown;
+    },
+  ) {
+    return this.request<FieldSubmission>(
+      `/admin/field-data/submissions/${id}/review`,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    );
+  }
+
+  async reparseFieldDataSubmission(id: string) {
+    return this.request<FieldSubmission>(
+      `/admin/field-data/submissions/${id}/reparse`,
+      { method: "POST" },
+    );
+  }
 }
 
 // Types
@@ -1456,6 +1587,60 @@ export interface AdminBotChatMessage {
   deliveryStatus: string;
   providerMessageId: string | null;
   sentAt: string;
+}
+
+// ─── Restricted WhatsApp field-data collection ──────────────────────────────
+
+export type FieldContributorRole =
+  | "DOCTOR"
+  | "PHYSICIAN"
+  | "HEALTH_PERSONNEL"
+  | "NURSE";
+
+export interface FieldContributor {
+  id: string;
+  phoneNumber: string;
+  displayName: string;
+  role: FieldContributorRole;
+  organization: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type FieldSubmissionKind = "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+
+export type FieldSubmissionStatus =
+  | "PENDING"
+  | "PARSED"
+  | "NEEDS_REVIEW"
+  | "PROCESSED"
+  | "REJECTED";
+
+export interface FieldSubmission {
+  id: string;
+  contributorId: string;
+  contributor: FieldContributor;
+  memberId: string | null;
+  providerMessageId: string | null;
+  kind: FieldSubmissionKind;
+  mimeType: string;
+  fileKey: string;
+  fileSize: number;
+  originalFilename: string | null;
+  caption: string | null;
+  status: FieldSubmissionStatus;
+  confidence: number | null;
+  extracted: unknown;
+  summary: string | null;
+  parseError: string | null;
+  missingFields: string[];
+  needsAdminReview: boolean;
+  reviewedAt: string | null;
+  reviewerAdminId: string | null;
+  reviewNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AdminBrandContextDocument {
@@ -1860,6 +2045,8 @@ export interface FoundationImpactOverride {
   registeredMembers?: number | null;
   contributingMembers?: number | null;
   approvedFacilities?: number | null;
+  campsConducted?: number | null;
+  peopleServed?: number | null;
   counties?: number | null;
 }
 
@@ -1874,6 +2061,8 @@ export interface FoundationImpactFigures {
   registeredMembers: number;
   contributingMembers: number;
   approvedFacilities: number;
+  campsConducted: number;
+  peopleServed: number;
   counties: number;
 }
 
@@ -1939,6 +2128,8 @@ export interface FoundationNetwork {
     registeredMembers: number | null;
     contributingMembers: number | null;
     approvedFacilities: number | null;
+    campsConducted: number | null;
+    peopleServed: number | null;
     counties: number | null;
   };
   impact: FoundationImpactFigures;
