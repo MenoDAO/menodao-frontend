@@ -27,6 +27,7 @@ import {
   MessageCircle,
   MessagesSquare,
   Mic,
+  Ticket,
 } from "lucide-react";
 import { useState } from "react";
 import { PasskeyEnrollPrompt } from "@/components/PasskeyEnrollPrompt";
@@ -61,6 +62,7 @@ const navItems = [
   { href: "/admin/voice-metrics", label: "Voice metrics", icon: Mic },
   { href: "/admin/brand-context", label: "Brand Context", icon: BookOpen },
   { href: "/admin/foundation", label: "Foundation site", icon: BookOpen },
+  { href: "/admin/vouchers", label: "Care vouchers", icon: Ticket },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
 
