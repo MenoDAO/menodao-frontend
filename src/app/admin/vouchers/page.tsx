@@ -198,7 +198,33 @@ export default function VouchersPage() {
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
       }),
     onSuccess: (data) => {
-      setGenerated(data);
+      const rawBatch = (data as any)?.batch ?? (data as any);
+      const vouchers = Array.isArray((data as any)?.vouchers)
+        ? (data as any).vouchers
+        : [];
+      const normalized = {
+        batch: {
+          ...rawBatch,
+          total: Number(
+            rawBatch?.total ?? rawBatch?.totalInt ?? vouchers.length ?? 0,
+          ),
+        },
+        vouchers: vouchers.map((voucher: any) => ({
+          ...voucher,
+          sharedChannels: Array.isArray(voucher?.sharedChannels)
+            ? voucher.sharedChannels
+            : [],
+          batch: voucher?.batch
+            ? {
+                ...voucher.batch,
+                total: Number(
+                  voucher.batch.total ?? voucher.batch.totalInt ?? 0,
+                ),
+              }
+            : voucher?.batch,
+        })),
+      };
+      setGenerated(normalized);
       setFormError(null);
       setCount("10");
       setNote("");
@@ -206,7 +232,7 @@ export default function VouchersPage() {
       refresh();
       setToast({
         type: "success",
-        message: `${data.vouchers.length} voucher codes generated.`,
+        message: `${normalized.vouchers.length} voucher codes generated.`,
       });
     },
     onError: (error) =>
@@ -645,8 +671,8 @@ export default function VouchersPage() {
                   <div className="flex justify-between gap-4">
                     <dt className="text-gray-400">Shared via</dt>
                     <dd className="text-right text-gray-200">
-                      {selected.sharedChannels.length
-                        ? selected.sharedChannels.join(", ")
+                      {(selected.sharedChannels ?? []).length
+                        ? (selected.sharedChannels ?? []).join(", ")
                         : "Not shared yet"}
                     </dd>
                   </div>
