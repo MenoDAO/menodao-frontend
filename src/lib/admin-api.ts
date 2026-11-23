@@ -1334,6 +1334,99 @@ class AdminApiClient {
       { method: "POST" },
     );
   }
+
+  // Care vouchers (admin only)
+
+  async getVoucherStats() {
+    return this.request<VoucherStats>("/admin/vouchers/stats");
+  }
+
+  async listVouchers(
+    params: { status?: VoucherStatus; search?: string; limit?: number } = {},
+  ) {
+    const query = new URLSearchParams();
+    if (params.status) query.set("status", params.status);
+    if (params.search) query.set("search", params.search);
+    if (params.limit != null) query.set("limit", String(params.limit));
+    const suffix = query.toString();
+    return this.request<Voucher[]>(
+      `/admin/vouchers${suffix ? `?${suffix}` : ""}`,
+    );
+  }
+
+  async getVoucher(id: string) {
+    return this.request<Voucher>(`/admin/vouchers/${encodeURIComponent(id)}`);
+  }
+
+  async createVoucherBatch(body: {
+    count: number;
+    prefix?: string;
+    note?: string;
+    expiresAt?: string | null;
+  }) {
+    return this.request<{ batch: VoucherBatch; vouchers: Voucher[] }>(
+      "/admin/vouchers/batches",
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    );
+  }
+
+  async redeemVoucher(
+    id: string,
+    body: { redeemedBy?: string; notes?: string } = {},
+  ) {
+    return this.request<Voucher>(
+      `/admin/vouchers/${encodeURIComponent(id)}/redeem`,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    );
+  }
+
+  async shareVoucher(id: string, channel: VoucherShareChannel) {
+    return this.request<Voucher>(
+      `/admin/vouchers/${encodeURIComponent(id)}/share`,
+      {
+        method: "POST",
+        body: JSON.stringify({ channel }),
+      },
+    );
+  }
+
+  async voidVoucher(id: string) {
+    return this.request<Voucher>(
+      `/admin/vouchers/${encodeURIComponent(id)}/void`,
+      { method: "POST" },
+    );
+  }
+
+  /** Public endpoint — deliberately called without an admin JWT. */
+  async verifyVoucher(code: string): Promise<VoucherVerification> {
+    const response = await fetch(
+      `${this.baseUrl}/public/foundation/vouchers/verify`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      },
+    );
+
+    if (!response.ok) {
+      let message = `HTTP ${response.status}`;
+      try {
+        const data = await response.json();
+        message = parseApiError(data, response.status, message).message;
+      } catch {
+        // Keep the HTTP status message when the body is not JSON.
+      }
+      throw new Error(message);
+    }
+
+    return (await response.json()) as VoucherVerification;
+  }
 }
 
 // Types
@@ -1755,6 +1848,68 @@ export interface BrandContextPreview {
   injectedChars: number;
 }
 
+// Care vouchers
+
+export type VoucherStatus = "ISSUED" | "REDEEMED" | "EXPIRED" | "VOID";
+
+export type VoucherShareChannel =
+  | "WHATSAPP"
+  | "FACEBOOK"
+  | "INSTAGRAM"
+  | "X"
+  | "TIKTOK"
+  | "REFERRAL"
+  | "OTHER";
+
+export interface VoucherBatch {
+  id: string;
+  name: string;
+  codePrefix: string;
+  note: string | null;
+  total: number;
+  createdByAdminId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Voucher {
+  id: string;
+  code: string;
+  batchId: string;
+  batch?: {
+    id: string;
+    name: string;
+    codePrefix: string;
+    note: string | null;
+  };
+  status: VoucherStatus;
+  issuedToName: string | null;
+  issuedToPhone: string | null;
+  issuedAt: string;
+  expiresAt: string | null;
+  redeemedAt: string | null;
+  redeemedByAdminId: string | null;
+  redemptionNotes: string | null;
+  sharedChannels: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VoucherStats {
+  total: number;
+  issued: number;
+  redeemed: number;
+  expired: number;
+  void: number;
+  shared: number;
+}
+
+export interface VoucherVerification {
+  valid: boolean;
+  status?: string;
+  redeemedAt?: string | null;
+}
+
 export const adminApi = new AdminApiClient(API_BASE_URL);
 
 export interface AdminClinic {
@@ -2043,11 +2198,11 @@ export interface FoundationClinicCard {
 
 export interface FoundationImpactOverride {
   registeredMembers?: number | null;
-  contributingMembers?: number | null;
-  approvedFacilities?: number | null;
+  peopleReached?: number | null;
+  peopleScreened?: number | null;
+  treatmentsDone?: number | null;
+  totalReferrals?: number | null;
   campsConducted?: number | null;
-  peopleServed?: number | null;
-  counties?: number | null;
 }
 
 export interface FoundationClinicOverride {
@@ -2059,11 +2214,11 @@ export interface FoundationClinicOverride {
 
 export interface FoundationImpactFigures {
   registeredMembers: number;
-  contributingMembers: number;
-  approvedFacilities: number;
+  peopleReached: number;
+  peopleScreened: number;
+  treatmentsDone: number;
+  totalReferrals: number;
   campsConducted: number;
-  peopleServed: number;
-  counties: number;
 }
 
 export type FoundationPlaybackRate = 0.5 | 0.75 | 1 | 1.25 | 1.5 | 2;
@@ -2126,11 +2281,11 @@ export interface FoundationNetwork {
   liveImpact: FoundationImpactFigures;
   publishedImpact: {
     registeredMembers: number | null;
-    contributingMembers: number | null;
-    approvedFacilities: number | null;
+    peopleReached: number | null;
+    peopleScreened: number | null;
+    treatmentsDone: number | null;
+    totalReferrals: number | null;
     campsConducted: number | null;
-    peopleServed: number | null;
-    counties: number | null;
   };
   impact: FoundationImpactFigures;
   clinics: FoundationClinicCard[];

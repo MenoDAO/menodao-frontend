@@ -224,9 +224,11 @@ const IMPACT_FIELDS: {
   label: string;
 }[] = [
   { key: "registeredMembers", label: "Registered members" },
-  { key: "contributingMembers", label: "Contributing members" },
-  { key: "approvedFacilities", label: "Approved facilities" },
-  { key: "counties", label: "Counties" },
+  { key: "peopleReached", label: "People reached" },
+  { key: "peopleScreened", label: "People screened" },
+  { key: "treatmentsDone", label: "Treatments done" },
+  { key: "totalReferrals", label: "Total referrals" },
+  { key: "campsConducted", label: "Camps conducted" },
 ];
 
 function ClinicalNetworkSection() {
@@ -235,15 +237,19 @@ function ClinicalNetworkSection() {
   const [classification, setClassification] = useState("");
   const [followLive, setFollowLive] = useState<Record<string, boolean>>({
     registeredMembers: true,
-    contributingMembers: true,
-    approvedFacilities: true,
-    counties: true,
+    peopleReached: true,
+    peopleScreened: true,
+    treatmentsDone: true,
+    totalReferrals: true,
+    campsConducted: true,
   });
   const [impactDraft, setImpactDraft] = useState<FoundationImpactFigures>({
     registeredMembers: 0,
-    contributingMembers: 0,
-    approvedFacilities: 0,
-    counties: 2,
+    peopleReached: 0,
+    peopleScreened: 0,
+    treatmentsDone: 0,
+    totalReferrals: 0,
+    campsConducted: 0,
   });
   const [clinicDrafts, setClinicDrafts] = useState<
     Record<string, { displayName: string; location: string; hidden: boolean }>
@@ -261,9 +267,11 @@ function ClinicalNetworkSection() {
     setClassification(data.clinicalClassification || "");
     setFollowLive({
       registeredMembers: data.publishedImpact.registeredMembers == null,
-      contributingMembers: data.publishedImpact.contributingMembers == null,
-      approvedFacilities: data.publishedImpact.approvedFacilities == null,
-      counties: data.publishedImpact.counties == null,
+      peopleReached: data.publishedImpact.peopleReached == null,
+      peopleScreened: data.publishedImpact.peopleScreened == null,
+      treatmentsDone: data.publishedImpact.treatmentsDone == null,
+      totalReferrals: data.publishedImpact.totalReferrals == null,
+      campsConducted: data.publishedImpact.campsConducted == null,
     });
     setImpactDraft(data.impact);
     setClinicDrafts(
@@ -312,13 +320,19 @@ function ClinicalNetworkSection() {
         registeredMembers: followLive.registeredMembers
           ? null
           : impactDraft.registeredMembers,
-        contributingMembers: followLive.contributingMembers
+        peopleReached: followLive.peopleReached ? null : impactDraft.peopleReached,
+        peopleScreened: followLive.peopleScreened
           ? null
-          : impactDraft.contributingMembers,
-        approvedFacilities: followLive.approvedFacilities
+          : impactDraft.peopleScreened,
+        treatmentsDone: followLive.treatmentsDone
           ? null
-          : impactDraft.approvedFacilities,
-        counties: followLive.counties ? null : impactDraft.counties,
+          : impactDraft.treatmentsDone,
+        totalReferrals: followLive.totalReferrals
+          ? null
+          : impactDraft.totalReferrals,
+        campsConducted: followLive.campsConducted
+          ? null
+          : impactDraft.campsConducted,
       },
       clinics: (data?.clinics || []).map((clinic) => {
         const draft = clinicDrafts[clinic.id];
