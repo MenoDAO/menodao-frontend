@@ -87,14 +87,20 @@ export default function DischargeScreen({
           </div>
         </div>
 
-        <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-            New Balance After Discharge
+        {visit.visit.isSelfPay ? (
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            This is a self-pay visit. Record payment through your clinic’s usual process.
           </p>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            KES {newRemainingLimit.toLocaleString()}
-          </p>
-        </div>
+        ) : (
+          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+              New Balance After Discharge
+            </p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+              KES {newRemainingLimit.toLocaleString()}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-4">

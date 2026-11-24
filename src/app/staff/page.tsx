@@ -55,42 +55,30 @@ export default function StaffDashboardPage() {
     initStats();
   }, [currentScreen, fetchStats]); // Added fetchStats to dependencies
 
+  useEffect(() => {
+    const memberId = sessionStorage.getItem("menodao.openVisitMemberId");
+    if (!memberId) return;
+    sessionStorage.removeItem("menodao.openVisitMemberId");
+
+    void staffApi.getOpenVisit(memberId).then((visit) => {
+      if (!visit) return;
+      setOpenVisit(visit);
+      setCurrentScreen("treatment");
+    }).catch(() => {
+      setCurrentScreen("checkin");
+    });
+  }, []);
+
   const handleSearch = async (phoneNumber: string) => {
     try {
       const result = await staffApi.searchMember(phoneNumber);
-      console.log("Search result:", result);
       setSearchResult(result);
+      if (!result.found || !result.member) return;
 
-      // If member not found or inactive, just show the result on checkin screen
-      if (!result.found || !result.active || !result.member) {
-        console.log("Member not found or inactive");
-        return;
-      }
-
-      // Member found and active - check for open visit
-      try {
-        const visit = await staffApi.getOpenVisit(result.member.id);
-        console.log("Open visit response:", visit);
-
-        if (visit) {
-          console.log("Visit has member?", !!visit.member);
-          console.log("Visit has subscription?", !!visit.member?.subscription);
-
-          // Validate before switching
-          if (!visit.member || !visit.member.subscription) {
-            console.error("Invalid visit data:", visit);
-            alert("Error: Visit data is incomplete. Please contact support.");
-            return;
-          }
-
-          // Has open visit - go to treatment
-          setOpenVisit(visit);
-          setCurrentScreen("treatment");
-        }
-        // If no visit, stay on checkin screen (already there)
-      } catch (visitError) {
-        // Error fetching visit - stay on checkin screen
-        console.error("Error fetching open visit:", visitError);
+      const visit = await staffApi.getOpenVisit(result.member.id);
+      if (visit?.member && (visit.visit.isSelfPay || visit.member.subscription)) {
+        setOpenVisit(visit);
+        setCurrentScreen("treatment");
       }
     } catch (error: unknown) {
       console.error("Search error:", error);
