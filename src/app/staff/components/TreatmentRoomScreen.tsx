@@ -22,21 +22,17 @@ export default function TreatmentRoomScreen({
   const [error, setError] = useState("");
 
   const hasMember = visit?.member;
-  const hasSubscription = visit?.member?.subscription;
+  const tier = visit.member?.subscription?.tier;
+  const isSelfPay = visit.visit.isSelfPay === true;
 
   const loadProcedures = useCallback(async () => {
-    if (!hasSubscription) return;
-
     try {
-      const tier = visit.member.subscription?.tier;
-      if (tier) {
-        const procs = await staffApi.getProceduresForTier(tier);
-        setProcedures(procs);
-      }
+      if (isSelfPay) setProcedures((await staffApi.getProcedures()).filter((procedure) => procedure.isActive));
+      else if (tier) setProcedures(await staffApi.getProceduresForTier(tier));
     } catch (err) {
       console.error("Failed to load procedures:", err);
     }
-  }, [visit?.member?.subscription?.tier, hasSubscription]);
+  }, [isSelfPay, tier]);
 
   useEffect(() => {
     loadProcedures();
@@ -59,7 +55,7 @@ export default function TreatmentRoomScreen({
     );
   }
 
-  if (!hasSubscription) {
+  if (!isSelfPay && !tier) {
     return (
       <div className="bg-white rounded-lg shadow-lg p-6">
         <p className="text-red-600 font-semibold mb-4">
@@ -106,7 +102,9 @@ export default function TreatmentRoomScreen({
             Patient: {visit.member.fullName || visit.member.phoneNumber}
           </p>
         </div>
-        {visit.member.subscription?.tier && (
+        {isSelfPay ? (
+          <span className="text-sm font-semibold text-gray-700">Self-pay</span>
+        ) : visit.member.subscription?.tier && (
           <span
             className={`px-3 py-1 rounded-full text-sm font-semibold ${getTierBadgeColor(
               visit.member.subscription.tier,
@@ -118,14 +116,18 @@ export default function TreatmentRoomScreen({
       </div>
 
       <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <p className="text-sm text-gray-600 mb-1">Current Balance</p>
+        <p className="text-sm text-gray-600 mb-1">{isSelfPay ? "Visit total" : "Remaining cover"}</p>
         <p className="text-3xl font-bold text-blue-600">
-          KES {visit.remainingLimit.toLocaleString()}
+          KES {(isSelfPay ? totalCost : visit.remainingLimit).toLocaleString()}
         </p>
-        <p className="text-xs text-gray-500 mt-1">
-          Visit Total: KES {totalCost.toLocaleString()} | Allocated: KES{" "}
-          {visit.allocatedLimit.toLocaleString()}
-        </p>
+        {isSelfPay ? (
+          <p className="text-xs text-gray-500 mt-1">Payment is handled by the clinic.</p>
+        ) : (
+          <p className="text-xs text-gray-500 mt-1">
+            Visit Total: KES {totalCost.toLocaleString()} | Allocated: KES{" "}
+            {visit.allocatedLimit.toLocaleString()}
+          </p>
+        )}
       </div>
 
       <div className="mb-6">

@@ -75,17 +75,19 @@ export default function StaffAppointmentsPage() {
   });
 
   const checkIn = async (row: StaffAppointment) => {
+    if (!window.confirm("Has the patient agreed to treatment and data processing at this visit?")) return;
     try {
-      await staffApi.checkIn({
+      const result = await staffApi.checkIn({
         phoneNumber: row.member.phoneNumber,
         chiefComplaint: row.intakeReason,
         medicalHistory: [row.allergies, row.currentMedications, row.medicalConditions]
           .filter(Boolean)
           .join("; "),
-        hasConsent: row.hasConsent,
+        hasConsent: true,
         appointmentId: row.id,
       });
       invalidate();
+      sessionStorage.setItem("menodao.openVisitMemberId", result.visit.memberId);
       router.push("/staff");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Check-in failed");

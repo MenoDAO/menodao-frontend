@@ -65,12 +65,13 @@ export interface CheckInResponse {
     status: string;
     checkedInAt: string;
     totalCost: number;
+    isSelfPay?: boolean;
   };
   member: {
     id: string;
     fullName: string | null;
     phoneNumber: string;
-    tier: string;
+    tier: string | null;
   };
   claimLimit: {
     allocated: number;
@@ -105,6 +106,7 @@ export interface OpenVisit {
     memberId: string;
     status: string;
     totalCost: number;
+    isSelfPay?: boolean;
     checkedInAt: string;
     procedures: VisitProcedure[];
   };
