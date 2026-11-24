@@ -200,6 +200,7 @@ export function AppointmentsPanel({
   data: CareIntelligenceDashboard["appointments"];
 }) {
   if (!data) return null;
+  const whatsapp = data.whatsappBooking;
   return (
     <section className="rounded-2xl border border-gray-700 bg-gray-800 p-5">
       <h2 className="text-lg font-semibold text-white">Appointments</h2>
@@ -214,6 +215,29 @@ export function AppointmentsPanel({
         <ImpactStat label="Kept rate" value={formatPct(data.keptRate)} />
         <ImpactStat label="No-show rate" value={formatPct(data.noShowRate)} />
       </div>
+      {whatsapp && (
+        <div className="mt-6 border-t border-gray-700 pt-5">
+          <h3 className="text-base font-semibold text-white">WhatsApp booking</h3>
+          <p className="mt-1 text-sm text-gray-400">
+            Attempts started in the selected period, with their latest outcomes.
+            Repeat attendance measures patients who attended more than one booking in this group.
+          </p>
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <ImpactStat label="Started" value={formatNumber(whatsapp.started)} />
+            <ImpactStat label="Booked" value={formatNumber(whatsapp.booked)} />
+            <ImpactStat label="Attended" value={formatNumber(whatsapp.attended)} />
+            <ImpactStat label="Visits completed" value={formatNumber(whatsapp.completedVisits)} />
+            <ImpactStat label="In progress" value={formatNumber(whatsapp.inProgress)} />
+            <ImpactStat label="Abandoned" value={formatNumber(whatsapp.abandoned)} />
+            <ImpactStat label="Stopped before booking" value={formatNumber(whatsapp.stopped)} />
+            <ImpactStat label="Cancelled after booking" value={formatNumber(whatsapp.cancelledBookings)} />
+            <ImpactStat label="No-shows" value={formatNumber(whatsapp.noShows)} />
+            <ImpactStat label="Booking conversion" value={formatPct(whatsapp.conversionRate)} />
+            <ImpactStat label="Booking drop-off" value={formatPct(whatsapp.dropOffRate)} />
+            <ImpactStat label="Repeat attendance" value={formatPct(whatsapp.repeatAttendanceRate)} />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

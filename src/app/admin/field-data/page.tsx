@@ -1010,14 +1010,20 @@ export default function FieldDataPage() {
                     >
                       Reject
                     </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => reparseMutation.mutate(detail.id)}
-                      className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-600 disabled:opacity-50"
-                    >
-                      <RefreshCw className="h-4 w-4" /> Reparse
-                    </button>
+                    {(detail.kind === "IMAGE" ||
+                      (detail.kind === "DOCUMENT" &&
+                        (detail.mimeType === "application/pdf" ||
+                          (detail.mimeType === "application/octet-stream" &&
+                            /\.pdf$/i.test(detail.originalFilename ?? ""))))) && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => reparseMutation.mutate(detail.id)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-600 disabled:opacity-50"
+                      >
+                        <RefreshCw className="h-4 w-4" /> Reparse
+                      </button>
+                    )}
                   </div>
                 </section>
               </div>

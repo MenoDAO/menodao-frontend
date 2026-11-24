@@ -270,6 +270,20 @@ export interface CareIntelligenceDashboard {
     capacityNote: string;
   };
   appointments: {
+    whatsappBooking?: {
+      started: number;
+      booked: number;
+      attended: number;
+      completedVisits: number;
+      noShows: number;
+      cancelledBookings: number;
+      stopped: number;
+      abandoned: number;
+      inProgress: number;
+      conversionRate: number | null;
+      dropOffRate: number | null;
+      repeatAttendanceRate: number | null;
+    };
     created: number;
     bookedMembers: number;
     attended: number;
