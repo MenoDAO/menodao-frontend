@@ -38,19 +38,16 @@ export default function CareIntelligencePage() {
   const [preset, setPreset] = useState<(typeof PRESETS)[number]["id"]>("month");
   const [county, setCounty] = useState("");
 
-  const range = useMemo(() => {
-    const to = new Date().toISOString();
-    if (preset === "month") return { from: startOfMonthIso(), to };
-    const days = Number(preset);
-    return { from: daysAgoIso(days), to };
-  }, [preset]);
+  const from = useMemo(
+    () => preset === "month" ? startOfMonthIso() : daysAgoIso(Number(preset)),
+    [preset],
+  );
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["admin", "care-intelligence", range.from, range.to, county],
+    queryKey: ["admin", "care-intelligence", from, county],
     queryFn: () =>
       adminApi.getCareIntelligence({
-        from: range.from,
-        to: range.to,
+        from,
         county: county || undefined,
       }),
     refetchInterval: 60_000,

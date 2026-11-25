@@ -80,6 +80,7 @@ export default function SubscriptionPage() {
   const { data: subscription, isLoading: subLoading } = useQuery({
     queryKey: ["subscription"],
     queryFn: () => api.getCurrentSubscription(),
+    refetchInterval: 30_000,
   });
 
   const subscribeMutation = useMutation({

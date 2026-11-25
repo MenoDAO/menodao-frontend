@@ -409,6 +409,24 @@ export function Sustainability({ data }: { data: CareIntelligenceDashboard["sust
           <dd className="text-lg text-white">{formatKes(data.subsidyPerTreatment)}</dd>
         </div>
       </dl>
+      {data.stkRevenue && (
+        <div className="mt-5 border-t border-gray-700 pt-4">
+          <h3 className="text-sm font-semibold text-white">Membership payments by checkout channel</h3>
+          <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              { label: "WhatsApp STK", amount: data.stkRevenue.whatsappKes, count: data.stkRevenue.whatsappPayments },
+              { label: "Web STK", amount: data.stkRevenue.webKes, count: data.stkRevenue.webPayments },
+              { label: "M-Pesa without a recorded channel", amount: data.stkRevenue.unattributedKes, count: data.stkRevenue.unattributedPayments },
+            ].map(({ label, amount, count }) => (
+              <div key={label}>
+                <dt className="text-xs text-gray-400">{label}</dt>
+                <dd className="text-lg text-white">{formatKes(amount)}</dd>
+                <dd className="text-xs text-gray-400">{formatNumber(count)} completed payments</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
       {data.unitImpact && (
         <p className="mt-4 text-sm text-emerald-300">
           KSh 1,000 of sustainable funding currently corresponds to{" "}
