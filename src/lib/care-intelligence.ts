@@ -248,6 +248,14 @@ export interface CareIntelligenceDashboard {
   };
   sustainability: {
     membershipContributionsKes: number;
+    stkRevenue?: {
+      whatsappKes: number;
+      whatsappPayments: number;
+      webKes: number;
+      webPayments: number;
+      unattributedKes: number;
+      unattributedPayments: number;
+    };
     careDisbursedKes: number;
     fundingPerCompletedTreatment: number | null;
     costPerCompletedTreatment: number | null;
